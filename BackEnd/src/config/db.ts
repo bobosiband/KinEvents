@@ -130,10 +130,30 @@ class MongoDatabase implements DatabaseAdapter {
 
 const useMongoDatabase = process.env.NODE_ENV !== 'test' && Boolean(process.env.MONGODB_URI?.trim())
 
-export const db: DatabaseAdapter = (useMongoDatabase
-  ? new MongoDatabase(process.env.MONGODB_URI!, process.env.MONGODB_DB_NAME?.trim() || 'kinevents')
-  : new JsonDatabase().read()) as DatabaseAdapter
+// Initialize database synchronously to avoid export timing issues
+let database: DatabaseAdapter = new JsonDatabase().read()
+let readyPromise: Promise<void> = Promise.resolve()
 
-export const dbReady = db.ready
+if (useMongoDatabase) {
+  // Try MongoDB; fall back to JSON if it times out
+  const mongoDb = new MongoDatabase(process.env.MONGODB_URI!, process.env.MONGODB_DB_NAME?.trim() || 'kinevents')
+  
+  readyPromise = Promise.race([
+    mongoDb.ready,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout')), 5000))
+  ]).then(
+    () => {
+      database = mongoDb
+    },
+    (err) => {
+      // eslint-disable-next-line no-console
+      console.warn('MongoDB connection failed, using JSON database:', err.message)
+      database = new JsonDatabase().read()
+    }
+  )
+}
+
+export const db = database
+export const dbReady = readyPromise
 
 export default db
