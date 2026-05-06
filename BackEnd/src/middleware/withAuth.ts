@@ -28,7 +28,7 @@ export function withAuth(
   handler: (req: RequestWithUser, res: VercelResponse) => void | Promise<void>,
   requirements?: AuthorizationRequirement | AuthorizationRequirement[]
 ): VercelHandler {
-  return (req: VercelRequest, res: VercelResponse) => {
+  return async (req: VercelRequest, res: VercelResponse) => {
     const authorizationHeader = req.headers.authorization
 
     if (!authorizationHeader?.startsWith('Bearer ')) {
@@ -96,7 +96,7 @@ export function withAuth(
         }
       }
 
-      return handler(requestWithUser, res)
+      await handler(requestWithUser, res)
     } catch {
       res.status(401).json({ success: false, message: 'Invalid or expired token' })
     }

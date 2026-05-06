@@ -19,13 +19,23 @@ import notificationSendHandler from '../../api/notifications/send'
 import userByIdHandler from '../../api/users/[id]'
 import usersHandler from '../../api/users/index'
 import promoteUserHandler from '../../api/users/promote'
+import { dbReady } from '../config/db'
 import { env } from '../config/env'
 
-type VercelHandler = (req: VercelRequest, res: VercelResponse) => void
+type VercelHandler = (req: VercelRequest, res: VercelResponse) => void | Promise<void>
 
 function toVercelHandler(handler: VercelHandler) {
-  return (req: Request, res: Response) => {
-    handler(req as unknown as VercelRequest, res as unknown as VercelResponse)
+  return async (req: Request, res: Response) => {
+    try {
+      await dbReady
+      await handler(req as unknown as VercelRequest, res as unknown as VercelResponse)
+    } catch (error) {
+      console.error(error)
+
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: (error as Error).message })
+      }
+    }
   }
 }
 
@@ -76,12 +86,18 @@ for (const route of routes) {
 
 const port = env.PORT
 
-app.listen(port, () => {
-  console.log('KinEvents backend local server')
-  console.log(`Listening on port ${port}`)
-  for (const route of routes) {
-    console.log(`${String(route.method).toUpperCase()} ${route.path}`)
-  }
-})
+async function startServer() {
+  await dbReady
+
+  app.listen(port, () => {
+    console.log('KinEvents backend local server')
+    console.log(`Listening on port ${port}`)
+    for (const route of routes) {
+      console.log(`${String(route.method).toUpperCase()} ${route.path}`)
+    }
+  })
+}
+
+void startServer()
 
 export { app, toVercelHandler }

@@ -15,9 +15,9 @@ const upsertContentSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method === 'GET') {
-    const content = contentService.listContent()
+    const content = await contentService.listContent()
     res.status(200).json({ success: true, data: content })
   } else if (req.method === 'POST' || req.method === 'PUT') {
     const parseResult = upsertContentSchema.safeParse(req.body)
@@ -27,7 +27,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     try {
-      const content = contentService.upsertContent(parseResult.data.key, parseResult.data.value, parseResult.data.updatedBy)
+      const content = await contentService.upsertContent(parseResult.data.key, parseResult.data.value, parseResult.data.updatedBy)
       res.status(201).json({
         success: true,
         data: content,

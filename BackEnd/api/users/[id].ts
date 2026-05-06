@@ -18,7 +18,7 @@ const updateUserSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   const queryId = req.query?.id
   const paramsId = (req as unknown as { params?: Record<string, unknown> }).params?.id
   const id = typeof queryId === 'string' ? queryId : typeof paramsId === 'string' ? paramsId : undefined
@@ -53,7 +53,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
       }
     }
 
-    const updatedUser = userRepository.update(id, updateData)
+    const updatedUser = await userRepository.update(id, updateData)
 
     if (!updatedUser) {
       res.status(404).json({ success: false, message: 'User not found' })
@@ -62,7 +62,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
 
     res.status(200).json({ success: true, data: updatedUser })
   } else if (req.method === 'DELETE') {
-    const deleted = userRepository.remove(id)
+    const deleted = await userRepository.remove(id)
     if (!deleted) {
       res.status(404).json({ success: false, message: 'User not found' })
       return

@@ -8,7 +8,7 @@ export class ContentService {
    * Returns every stored content block.
     * @returns All content blocks.
    */
-  listContent(): IContentBlock[] {
+  async listContent(): Promise<IContentBlock[]> {
     return contentRepository.findAll()
   }
 
@@ -17,7 +17,7 @@ export class ContentService {
     * @param key Content block key.
     * @returns The matching content block, or undefined when no match exists.
    */
-  getContent(key: ContentBlockKey): IContentBlock | undefined {
+  async getContent(key: ContentBlockKey): Promise<IContentBlock | undefined> {
     return contentRepository.findByKey(key)
   }
 
@@ -28,7 +28,7 @@ export class ContentService {
     * @param updatedBy Identifier for the editor.
     * @returns The stored content block.
    */
-  upsertContent(key: ContentBlockKey, value: string, updatedBy: string): IContentBlock {
+  async upsertContent(key: ContentBlockKey, value: string, updatedBy: string): Promise<IContentBlock> {
     const contentBlock: IContentBlock = {
       key,
       value,

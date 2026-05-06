@@ -14,7 +14,7 @@ const requestAccessSchema = z.object({
  * @param req Incoming request object.
  * @param res Vercel response object.
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -26,6 +26,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const accessRequest = authService.requestAccess(parseResult.data)
+  const accessRequest = await authService.requestAccess(parseResult.data)
   res.status(201).json({ success: true, data: accessRequest })
 }

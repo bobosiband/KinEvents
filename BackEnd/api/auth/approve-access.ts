@@ -15,7 +15,7 @@ const approveAccessSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -28,7 +28,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const { request, user } = authService.approveAccess(parseResult.data.accessRequestId)
+    const { request, user } = await authService.approveAccess(parseResult.data.accessRequestId)
     const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
 
     res.status(200).json({

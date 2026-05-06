@@ -3,19 +3,19 @@ import { accessRequestRepository } from '../src/repositories/accessRequest.repos
 import { authService } from '../src/services/auth.service'
 
 describe('Authentication Routes', () => {
-  afterEach(() => {
+  afterEach(async () => {
     // Clear repositories after each test
-    userRepository.findAll().forEach((user) => {
-      userRepository.remove(user.id)
-    })
-    accessRequestRepository.findAll().forEach((req) => {
-      accessRequestRepository.remove(req.id)
-    })
+    for (const user of userRepository.findAll()) {
+      await userRepository.remove(user.id)
+    }
+    for (const req of accessRequestRepository.findAll()) {
+      await accessRequestRepository.remove(req.id)
+    }
   })
 
   describe('POST /api/auth/request-access', () => {
     it('should create a new access request', async () => {
-      const accessRequest = authService.requestAccess({
+      const accessRequest = await authService.requestAccess({
         name: 'John Doe',
         email: 'john@example.com',
         message: 'I want to join',
@@ -26,7 +26,7 @@ describe('Authentication Routes', () => {
     })
 
     it('should not create duplicate pending requests', async () => {
-      authService.requestAccess({
+      await authService.requestAccess({
         name: 'John Doe',
         email: 'john@example.com',
       })
@@ -39,12 +39,12 @@ describe('Authentication Routes', () => {
 
   describe('POST /api/auth/approve-access', () => {
     it('should approve access request and create user', async () => {
-      const accessRequest = authService.requestAccess({
+      const accessRequest = await authService.requestAccess({
         name: 'Jane Doe',
         email: 'jane@example.com',
       })
 
-      const { request: approved, user } = authService.approveAccess(accessRequest.id)
+      const { request: approved, user } = await authService.approveAccess(accessRequest.id)
 
       expect(approved.status).toBe('approved')
       expect(user.accessStatus).toBe('approved')
@@ -52,20 +52,18 @@ describe('Authentication Routes', () => {
     })
 
     it('should return 404 for non-existent access request', async () => {
-      expect(() => {
-        authService.approveAccess('00000000-0000-0000-0000-000000000000')
-      }).toThrow()
+      await expect(authService.approveAccess('00000000-0000-0000-0000-000000000000')).rejects.toThrow()
     })
   })
 
   describe('POST /api/auth/revoke-access', () => {
     it('should revoke access request', async () => {
-      const accessRequest = authService.requestAccess({
+      const accessRequest = await authService.requestAccess({
         name: 'Bob Smith',
         email: 'bob@example.com',
       })
 
-      const revoked = authService.revokeAccess(accessRequest.id)
+      const revoked = await authService.revokeAccess(accessRequest.id)
 
       expect(revoked.status).toBe('rejected')
     })

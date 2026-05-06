@@ -20,7 +20,7 @@ export class EventService {
    * Returns every stored event.
     * @returns All events.
    */
-  listEvents(): IEvent[] {
+  async listEvents(): Promise<IEvent[]> {
     return eventRepository.findAll()
   }
 
@@ -29,7 +29,7 @@ export class EventService {
     * @param id Event identifier.
     * @returns The matching event, or undefined when no match exists.
    */
-  getEvent(id: string): IEvent | undefined {
+  async getEvent(id: string): Promise<IEvent | undefined> {
     return eventRepository.findById(id)
   }
 
@@ -38,7 +38,7 @@ export class EventService {
     * @param input Event payload.
     * @returns The created event.
    */
-  createEvent(input: CreateEventInput): IEvent {
+  async createEvent(input: CreateEventInput): Promise<IEvent> {
     const now = new Date().toISOString()
     const event: IEvent = {
       id: randomUUID(),
@@ -65,7 +65,7 @@ export class EventService {
     * @param patch Fields to update.
     * @returns The updated event, or null when no event exists.
    */
-  updateEvent(id: string, patch: Partial<Omit<IEvent, 'id' | 'createdAt' | 'createdBy'>>): IEvent | null {
+  async updateEvent(id: string, patch: Partial<Omit<IEvent, 'id' | 'createdAt' | 'createdBy'>>): Promise<IEvent | null> {
     return eventRepository.update(id, {
       ...patch,
       updatedAt: new Date().toISOString(),
@@ -77,7 +77,7 @@ export class EventService {
     * @param id Event identifier.
     * @returns True when an event was removed, otherwise false.
    */
-  deleteEvent(id: string): boolean {
+  async deleteEvent(id: string): Promise<boolean> {
     return eventRepository.remove(id)
   }
 
@@ -88,14 +88,14 @@ export class EventService {
     * @param status RSVP response value.
     * @returns The updated event.
    */
-  setRsvp(eventId: string, userId: string, status: RSVPStatus): IEvent {
+  async setRsvp(eventId: string, userId: string, status: RSVPStatus): Promise<IEvent> {
     const event = eventRepository.findById(eventId)
 
     if (!event) {
       throw new Error('Event not found')
     }
 
-    const updatedEvent = eventRepository.update(eventId, {
+    const updatedEvent = await eventRepository.update(eventId, {
       rsvps: {
         ...event.rsvps,
         [userId]: status,

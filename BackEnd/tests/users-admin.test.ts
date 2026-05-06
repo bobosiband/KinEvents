@@ -8,7 +8,7 @@ import { ROLE_CAPABILITIES } from '../src/constants/roles'
 describe('User Routes', () => {
   let testUser: any
 
-  beforeEach(() => {
+  beforeEach(async () => {
     testUser = {
       id: randomUUID(),
       name: 'Test Admin',
@@ -20,13 +20,13 @@ describe('User Routes', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    userRepository.insert(testUser)
+    await userRepository.insert(testUser)
   })
 
-  afterEach(() => {
-    userRepository.findAll().forEach((user) => {
-      userRepository.remove(user.id)
-    })
+  afterEach(async () => {
+    for (const user of userRepository.findAll()) {
+      await userRepository.remove(user.id)
+    }
   })
 
   describe('GET /api/users', () => {
@@ -52,7 +52,7 @@ describe('User Routes', () => {
 
   describe('PATCH /api/users/:id', () => {
     it('should update user profile', async () => {
-      const updated = userRepository.update(testUser.id, {
+      const updated = await userRepository.update(testUser.id, {
         name: 'Updated Name',
         birthday: '1990-01-15',
       })
@@ -62,7 +62,7 @@ describe('User Routes', () => {
     })
 
     it('should update notification preferences', async () => {
-      const updated = userRepository.update(testUser.id, {
+      const updated = await userRepository.update(testUser.id, {
         notificationPrefs: {
           level: 'important',
           channels: ['push'],
@@ -86,9 +86,9 @@ describe('User Routes', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      userRepository.insert(memberUser)
+      await userRepository.insert(memberUser)
 
-      const deleted = userRepository.remove(memberUser.id)
+      const deleted = await userRepository.remove(memberUser.id)
       expect(deleted).toBe(true)
 
       const retrieved = userRepository.findById(memberUser.id)
@@ -109,9 +109,9 @@ describe('User Routes', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      userRepository.insert(memberUser)
+      await userRepository.insert(memberUser)
 
-      const promoted = userRepository.update(memberUser.id, {
+      const promoted = await userRepository.update(memberUser.id, {
         role: 'manager',
         capabilities: ROLE_CAPABILITIES.manager,
       })
@@ -132,9 +132,9 @@ describe('User Routes', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      userRepository.insert(memberUser)
+      await userRepository.insert(memberUser)
 
-      const promoted = userRepository.update(memberUser.id, {
+      const promoted = await userRepository.update(memberUser.id, {
         role: 'admin',
         capabilities: ROLE_CAPABILITIES.admin,
       })
@@ -149,7 +149,7 @@ describe('User Routes', () => {
 describe('Admin Routes', () => {
   let testUser: any
 
-  beforeEach(() => {
+  beforeEach(async () => {
     testUser = {
       id: randomUUID(),
       name: 'Test Admin',
@@ -161,19 +161,19 @@ describe('Admin Routes', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    userRepository.insert(testUser)
+    await userRepository.insert(testUser)
   })
 
-  afterEach(() => {
-    userRepository.findAll().forEach((user) => {
-      userRepository.remove(user.id)
-    })
-    eventRepository.findAll().forEach((event) => {
-      eventRepository.remove(event.id)
-    })
-    accessRequestRepository.findAll().forEach((req) => {
-      accessRequestRepository.remove(req.id)
-    })
+  afterEach(async () => {
+    for (const user of userRepository.findAll()) {
+      await userRepository.remove(user.id)
+    }
+    for (const event of eventRepository.findAll()) {
+      await eventRepository.remove(event.id)
+    }
+    for (const req of accessRequestRepository.findAll()) {
+      await accessRequestRepository.remove(req.id)
+    }
   })
 
   describe('GET /api/admin/dashboard', () => {

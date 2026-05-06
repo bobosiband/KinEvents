@@ -37,7 +37,7 @@ export class AuthService {
     * @param input Request data submitted by the user.
     * @returns The existing or newly created access request.
    */
-  requestAccess(input: RequestAccessInput): IAccessRequest {
+  async requestAccess(input: RequestAccessInput): Promise<IAccessRequest> {
     const existingRequest = accessRequestRepository.findByEmail(input.email)
 
     if (existingRequest && existingRequest.status === 'pending') {
@@ -54,7 +54,7 @@ export class AuthService {
       requestedAt: now,
     }
 
-    accessRequestRepository.insert(request)
+    await accessRequestRepository.insert(request)
     return request
   }
 
@@ -64,7 +64,7 @@ export class AuthService {
     * @param resolvedBy Identifier for the admin or system actor that resolved it.
     * @returns The updated request and user records.
    */
-  approveAccess(accessRequestId: string, resolvedBy = 'system'): { request: IAccessRequest; user: IUser } {
+  async approveAccess(accessRequestId: string, resolvedBy = 'system'): Promise<{ request: IAccessRequest; user: IUser }> {
     const request = accessRequestRepository.findById(accessRequestId)
 
     if (!request) {
@@ -72,7 +72,7 @@ export class AuthService {
     }
 
     const now = new Date().toISOString()
-    const updatedRequest = accessRequestRepository.update(accessRequestId, {
+    const updatedRequest = await accessRequestRepository.update(accessRequestId, {
       status: 'approved',
       resolvedAt: now,
       resolvedBy,
@@ -84,14 +84,14 @@ export class AuthService {
 
     const existingUser = userRepository.findByEmail(request.email)
     const user = existingUser
-      ? userRepository.update(existingUser.id, {
+      ? await userRepository.update(existingUser.id, {
           name: request.name,
           accessStatus: 'approved',
           role: USER_ROLES.MEMBER,
           capabilities: [...ROLE_CAPABILITIES.member],
           updatedAt: now,
         })
-      : userRepository.insert(createDefaultUser(request.name, request.email))
+      : await userRepository.insert(createDefaultUser(request.name, request.email))
 
     if (!user) {
       throw new Error('User could not be created or updated')
@@ -106,9 +106,9 @@ export class AuthService {
     * @param resolvedBy Identifier for the admin or system actor that resolved it.
     * @returns The rejected access request.
    */
-  revokeAccess(accessRequestId: string, resolvedBy = 'system'): IAccessRequest {
+  async revokeAccess(accessRequestId: string, resolvedBy = 'system'): Promise<IAccessRequest> {
     const now = new Date().toISOString()
-    const updatedRequest = accessRequestRepository.update(accessRequestId, {
+    const updatedRequest = await accessRequestRepository.update(accessRequestId, {
       status: 'rejected',
       resolvedAt: now,
       resolvedBy,
@@ -125,7 +125,7 @@ export class AuthService {
    * Returns every stored access request.
     * @returns All access requests.
    */
-  listAccessRequests(): IAccessRequest[] {
+  async listAccessRequests(): Promise<IAccessRequest[]> {
     return accessRequestRepository.findAll()
   }
 
@@ -133,7 +133,7 @@ export class AuthService {
    * Returns every user whose access has been approved.
     * @returns All approved users.
    */
-  listApprovedUsers(): IUser[] {
+  async listApprovedUsers(): Promise<IUser[]> {
     return userRepository.findByAccessStatus('approved')
   }
 }

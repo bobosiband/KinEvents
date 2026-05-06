@@ -18,6 +18,12 @@ Parameters:
   AppUrl:
     Type: String
     Default: https://your-lambda-url.amazonaws.com
+  MongoDbUri:
+    Type: String
+    NoEcho: true
+  MongoDbName:
+    Type: String
+    Default: kinevents
 
 Resources:
   KinEventsFunction:
@@ -42,6 +48,8 @@ Resources:
           JWT_SECRET: !Ref JwtSecret
           SENDGRID_API_KEY: !Ref SendgridApiKey
           APP_URL: !Ref AppUrl
+          MONGODB_URI: !Ref MongoDbUri
+          MONGODB_DB_NAME: !Ref MongoDbName
 
 Outputs:
   ApiUrl:

@@ -18,7 +18,7 @@ const createAdminSchema = z.object({
  * @param req Incoming request object.
  * @param res Vercel response object.
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -52,7 +52,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const now = new Date().toISOString()
-    const admin = userRepository.insert({
+    const admin = await userRepository.insert({
       id: randomUUID(),
       name: parseResult.data.name,
       email: parseResult.data.email,

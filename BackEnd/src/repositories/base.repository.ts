@@ -1,4 +1,5 @@
 import { db, type DbSchema } from '../config/db'
+import type { MaybePromise } from '../interfaces/db.interface'
 
 export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends { id: string }> {
   protected constructor(private readonly collectionName: TKey) {}
@@ -38,10 +39,11 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     * @param item Record to persist.
     * @returns The inserted record.
    */
-  insert(item: TItem): TItem {
+  insert(item: TItem): MaybePromise<TItem> {
     this.items.push(item)
-    db.write()
-    return item
+
+    const writeResult = db.write()
+    return writeResult instanceof Promise ? writeResult.then(() => item) : item
   }
 
   /**
@@ -50,7 +52,7 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     * @param patch Fields to merge into the record.
     * @returns The updated record, or null when no record exists.
    */
-  update(id: string, patch: Partial<TItem>): TItem | null {
+  update(id: string, patch: Partial<TItem>): MaybePromise<TItem | null> {
     const item = this.findById(id)
 
     if (!item) {
@@ -58,8 +60,9 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     }
 
     Object.assign(item, patch)
-    db.write()
-    return item
+
+    const writeResult = db.write()
+    return writeResult instanceof Promise ? writeResult.then(() => item) : item
   }
 
   /**
@@ -67,7 +70,7 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     * @param id Record identifier.
     * @returns True when a record was removed, otherwise false.
    */
-  remove(id: string): boolean {
+  remove(id: string): MaybePromise<boolean> {
     const index = this.items.findIndex((item) => item.id === id)
 
     if (index < 0) {
@@ -75,7 +78,8 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     }
 
     this.items.splice(index, 1)
-    db.write()
-    return true
+
+    const writeResult = db.write()
+    return writeResult instanceof Promise ? writeResult.then(() => true) : true
   }
 }

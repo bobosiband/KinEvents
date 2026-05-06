@@ -34,7 +34,7 @@ export class BirthdayService {
     * @param limit Maximum number of records to return.
     * @returns Upcoming birthday previews.
    */
-  getUpcomingBirthdays(referenceDate = new Date(), limit = 10): BirthdayPreview[] {
+  async getUpcomingBirthdays(referenceDate = new Date(), limit = 10): Promise<BirthdayPreview[]> {
     const currentYear = referenceDate.getFullYear()
 
     return userRepository
@@ -62,7 +62,7 @@ export class BirthdayService {
     * @param year Calendar year to generate events for.
     * @returns The created birthday events.
    */
-  generateBirthdayEvents(year = new Date().getFullYear()): IEvent[] {
+  async generateBirthdayEvents(year = new Date().getFullYear()): Promise<IEvent[]> {
     const now = new Date().toISOString()
     const createdEvents: IEvent[] = []
 
@@ -78,7 +78,7 @@ export class BirthdayService {
       }
 
       const eventDate = `${year}-${birthdayParts.month}-${birthdayParts.day}`
-      const event = eventRepository.insert({
+      const event = await eventRepository.insert({
         id: randomUUID(),
         title: `${user.name}'s Birthday`,
         description: `Birthday celebration for ${user.name}`,

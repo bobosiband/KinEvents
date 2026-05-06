@@ -1,28 +1,29 @@
-import { userRepository } from '../src/repositories/user.repository'
-import { eventRepository } from '../src/repositories/event.repository'
-import { eventService } from '../src/services/event.service'
 import { randomUUID } from 'crypto'
 
+import { eventRepository } from '../src/repositories/event.repository'
+import { userRepository } from '../src/repositories/user.repository'
+import { eventService } from '../src/services/event.service'
+
 describe('Event Routes', () => {
-  afterEach(() => {
-    userRepository.findAll().forEach((user) => {
-      userRepository.remove(user.id)
-    })
-    eventRepository.findAll().forEach((event) => {
-      eventRepository.remove(event.id)
-    })
+  afterEach(async () => {
+    for (const user of userRepository.findAll()) {
+      await userRepository.remove(user.id)
+    }
+    for (const event of eventRepository.findAll()) {
+      await eventRepository.remove(event.id)
+    }
   })
 
   describe('GET /api/events', () => {
-    it('should return empty list of events initially', () => {
-      const events = eventService.listEvents()
+    it('should return empty list of events initially', async () => {
+      const events = await eventService.listEvents()
       expect(events).toEqual([])
     })
   })
 
   describe('POST /api/events', () => {
-    it('should create a new event', () => {
-      const event = eventService.createEvent({
+    it('should create a new event', async () => {
+      const event = await eventService.createEvent({
         title: 'Family Reunion',
         description: 'Annual family gathering',
         date: new Date().toISOString(),
@@ -37,58 +38,58 @@ describe('Event Routes', () => {
   })
 
   describe('GET /api/events/:id', () => {
-    it('should retrieve an event by id', () => {
-      const event = eventService.createEvent({
+    it('should retrieve an event by id', async () => {
+      const event = await eventService.createEvent({
         title: 'Birthday Party',
         description: 'Celebrating a milestone',
         date: new Date().toISOString(),
         createdBy: randomUUID(),
       })
 
-      const retrieved = eventService.getEvent(event.id)
+      const retrieved = await eventService.getEvent(event.id)
       expect(retrieved?.id).toBe(event.id)
     })
 
-    it('should return undefined for non-existent event', () => {
-      const retrieved = eventService.getEvent('00000000-0000-0000-0000-000000000000')
+    it('should return undefined for non-existent event', async () => {
+      const retrieved = await eventService.getEvent('00000000-0000-0000-0000-000000000000')
       expect(retrieved).toBeUndefined()
     })
   })
 
   describe('PATCH /api/events/:id', () => {
-    it('should update an event', () => {
-      const event = eventService.createEvent({
+    it('should update an event', async () => {
+      const event = await eventService.createEvent({
         title: 'Old Title',
         description: 'Old Description',
         date: new Date().toISOString(),
         createdBy: randomUUID(),
       })
 
-      const updated = eventService.updateEvent(event.id, { title: 'New Title' })
+      const updated = await eventService.updateEvent(event.id, { title: 'New Title' })
       expect(updated?.title).toBe('New Title')
     })
   })
 
   describe('DELETE /api/events/:id', () => {
-    it('should delete an event', () => {
-      const event = eventService.createEvent({
+    it('should delete an event', async () => {
+      const event = await eventService.createEvent({
         title: 'Event to Delete',
         description: 'Will be deleted',
         date: new Date().toISOString(),
         createdBy: randomUUID(),
       })
 
-      const deleted = eventService.deleteEvent(event.id)
+      const deleted = await eventService.deleteEvent(event.id)
       expect(deleted).toBe(true)
 
-      const retrieved = eventService.getEvent(event.id)
+      const retrieved = await eventService.getEvent(event.id)
       expect(retrieved).toBeUndefined()
     })
   })
 
   describe('POST /api/events/rsvp', () => {
-    it('should record an RSVP', () => {
-      const event = eventService.createEvent({
+    it('should record an RSVP', async () => {
+      const event = await eventService.createEvent({
         title: 'Party',
         description: 'Fun party',
         date: new Date().toISOString(),
@@ -96,7 +97,7 @@ describe('Event Routes', () => {
       })
 
       const userId = randomUUID()
-      const updated = eventService.setRsvp(event.id, userId, 'yes')
+      const updated = await eventService.setRsvp(event.id, userId, 'yes')
       expect(updated.rsvps[userId]).toBe('yes')
     })
   })

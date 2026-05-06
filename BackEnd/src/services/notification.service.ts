@@ -15,7 +15,7 @@ export class NotificationService {
    * Returns every stored notification.
     * @returns All notifications.
    */
-  listNotifications(): INotification[] {
+  async listNotifications(): Promise<INotification[]> {
     return notificationRepository.findAll()
   }
 
@@ -24,7 +24,7 @@ export class NotificationService {
     * @param input Notification payload.
     * @returns The created notification.
    */
-  createNotification(input: CreateNotificationInput): INotification {
+  async createNotification(input: CreateNotificationInput): Promise<INotification> {
     const notification: INotification = {
       id: randomUUID(),
       type: input.type,
@@ -42,7 +42,7 @@ export class NotificationService {
     * @param id Notification identifier.
     * @returns The updated notification, or null when no notification exists.
    */
-  markAsSent(id: string): INotification | null {
+  async markAsSent(id: string): Promise<INotification | null> {
     return notificationRepository.update(id, {
       status: 'sent',
       sentAt: new Date().toISOString(),
@@ -54,7 +54,7 @@ export class NotificationService {
     * @param id Notification identifier.
     * @returns The updated notification, or null when no notification exists.
    */
-  markAsFailed(id: string): INotification | null {
+  async markAsFailed(id: string): Promise<INotification | null> {
     return notificationRepository.update(id, {
       status: 'failed',
     })

@@ -39,6 +39,38 @@
       },
       "createdAt": "2026-05-06T14:31:29.872Z",
       "updatedAt": "2026-05-06T14:31:29.872Z"
+    },
+    {
+      "id": "3437d171-f978-4d62-8e5e-0b675f3b82b8",
+      "name": "Alice Local",
+      "email": "alice.local@example.com",
+      "role": "member",
+      "accessStatus": "approved",
+      "capabilities": [],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": [
+          "email"
+        ]
+      },
+      "createdAt": "2026-05-06T21:30:23.763Z",
+      "updatedAt": "2026-05-06T21:30:23.763Z"
+    },
+    {
+      "id": "39f35039-14bb-4761-83a0-23e61c0e02b2",
+      "name": "Bob Local",
+      "email": "bob.local@example.com",
+      "role": "admin",
+      "accessStatus": "approved",
+      "capabilities": [],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": [
+          "email"
+        ]
+      },
+      "createdAt": "2026-05-06T21:30:23.763Z",
+      "updatedAt": "2026-05-06T21:30:23.763Z"
     }
   ],
   "events": [

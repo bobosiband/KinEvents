@@ -19,7 +19,7 @@ const updateEventSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   const queryId = req.query?.id
   const paramsId = (req as unknown as { params?: Record<string, unknown> }).params?.id
   const id = typeof queryId === 'string' ? queryId : typeof paramsId === 'string' ? paramsId : undefined
@@ -30,7 +30,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   if (req.method === 'GET') {
-    const event = eventService.getEvent(id)
+    const event = await eventService.getEvent(id)
     if (!event) {
       res.status(404).json({ success: false, message: 'Event not found' })
       return
@@ -44,7 +44,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     try {
-      const updatedEvent = eventService.updateEvent(id, parseResult.data)
+      const updatedEvent = await eventService.updateEvent(id, parseResult.data)
       if (!updatedEvent) {
         res.status(404).json({ success: false, message: 'Event not found' })
         return
@@ -54,7 +54,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
       res.status(400).json({ success: false, message: (error as Error).message })
     }
   } else if (req.method === 'DELETE') {
-    const deleted = eventService.deleteEvent(id)
+    const deleted = await eventService.deleteEvent(id)
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Event not found' })
       return

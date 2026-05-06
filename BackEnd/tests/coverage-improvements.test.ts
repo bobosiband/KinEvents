@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto'
 
 import { accessRequestRepository } from '../src/repositories/accessRequest.repository'
 import { contentRepository } from '../src/repositories/content.repository'
-import { eventRepository } from '../src/repositories/event.repository'
 import { notificationRepository } from '../src/repositories/notification.repository'
 import { userRepository } from '../src/repositories/user.repository'
 import { authService } from '../src/services/auth.service'
@@ -16,8 +15,8 @@ describe('Coverage Improvements', () => {
     resetDb()
   })
 
-  it('covers content repository upsert/find/remove branches', () => {
-    const first = contentRepository.upsert({
+  it('covers content repository upsert/find/remove branches', async () => {
+    const first = await contentRepository.upsert({
       key: 'announcement',
       value: 'hello',
       updatedAt: new Date().toISOString(),
@@ -27,7 +26,7 @@ describe('Coverage Improvements', () => {
     expect(first.value).toBe('hello')
     expect(contentRepository.findByKey('announcement')?.value).toBe('hello')
 
-    const replaced = contentRepository.upsert({
+    const replaced = await contentRepository.upsert({
       key: 'announcement',
       value: 'updated',
       updatedAt: new Date().toISOString(),
@@ -36,12 +35,12 @@ describe('Coverage Improvements', () => {
 
     expect(replaced.value).toBe('updated')
     expect(contentRepository.findAll()).toHaveLength(1)
-    expect(contentRepository.removeByKey('homepage_title')).toBe(false)
-    expect(contentRepository.removeByKey('announcement')).toBe(true)
+    expect(await contentRepository.removeByKey('homepage_title')).toBe(false)
+    expect(await contentRepository.removeByKey('announcement')).toBe(true)
   })
 
-  it('covers access request repository queries', () => {
-    const request = authService.requestAccess({
+  it('covers access request repository queries', async () => {
+    const request = await authService.requestAccess({
       name: 'Case User',
       email: 'Case@Test.com',
       message: 'request',
@@ -52,8 +51,8 @@ describe('Coverage Improvements', () => {
     expect(accessRequestRepository.findByStatus('approved')).toHaveLength(0)
   })
 
-  it('covers auth service existing-user approval and list methods', () => {
-    const existingUser = userRepository.insert({
+  it('covers auth service existing-user approval and list methods', async () => {
+    const existingUser = await userRepository.insert({
       id: randomUUID(),
       name: 'Existing',
       email: 'existing@example.com',
@@ -65,25 +64,25 @@ describe('Coverage Improvements', () => {
       updatedAt: new Date().toISOString(),
     })
 
-    const request = authService.requestAccess({
+    const request = await authService.requestAccess({
       name: 'Existing Updated',
       email: 'existing@example.com',
     })
 
-    const approved = authService.approveAccess(request.id)
+    const approved = await authService.approveAccess(request.id)
     expect(approved.user.id).toBe(existingUser.id)
     expect(approved.user.accessStatus).toBe('approved')
-    expect(authService.listAccessRequests().length).toBeGreaterThan(0)
-    expect(authService.listApprovedUsers().length).toBeGreaterThan(0)
-    expect(() => authService.revokeAccess('missing-id')).toThrow('Access request not found')
+    expect((await authService.listAccessRequests()).length).toBeGreaterThan(0)
+    expect((await authService.listApprovedUsers()).length).toBeGreaterThan(0)
+    await expect(authService.revokeAccess('missing-id')).rejects.toThrow('Access request not found')
   })
 
-  it('covers event service error branch for missing RSVP target', () => {
-    expect(() => eventService.setRsvp('missing-event', 'user-id', 'yes')).toThrow('Event not found')
+  it('covers event service error branch for missing RSVP target', async () => {
+    await expect(eventService.setRsvp('missing-event', 'user-id', 'yes')).rejects.toThrow('Event not found')
   })
 
-  it('covers birthday service parsing and generation branches', () => {
-    userRepository.insert({
+  it('covers birthday service parsing and generation branches', async () => {
+    await userRepository.insert({
       id: randomUUID(),
       name: 'Valid Birthday User',
       email: 'valid@example.com',
@@ -96,7 +95,7 @@ describe('Coverage Improvements', () => {
       updatedAt: new Date().toISOString(),
     })
 
-    userRepository.insert({
+    await userRepository.insert({
       id: randomUUID(),
       name: 'Invalid Birthday User',
       email: 'invalid@example.com',
@@ -109,17 +108,17 @@ describe('Coverage Improvements', () => {
       updatedAt: new Date().toISOString(),
     })
 
-    const upcoming = birthdayService.getUpcomingBirthdays(new Date('2026-01-01T00:00:00.000Z'))
+    const upcoming = await birthdayService.getUpcomingBirthdays(new Date('2026-01-01T00:00:00.000Z'))
     expect(upcoming).toHaveLength(1)
     expect(upcoming[0]?.birthdayThisYear).toBe('2026-11-03')
 
-    const created = birthdayService.generateBirthdayEvents(2026)
+    const created = await birthdayService.generateBirthdayEvents(2026)
     expect(created).toHaveLength(1)
     expect(created[0]?.date).toBe('2026-11-03')
   })
 
-  it('covers notification service status transitions and misses', () => {
-    const notification = notificationService.createNotification({
+  it('covers notification service status transitions and misses', async () => {
+    const notification = await notificationService.createNotification({
       type: 'event_created',
       recipientId: 'recipient-1',
       payload: { eventId: 'evt-1' },
@@ -129,14 +128,14 @@ describe('Coverage Improvements', () => {
     expect(notificationRepository.findByRecipientId('recipient-1')).toHaveLength(1)
     expect(notificationRepository.findByStatus('pending')).toHaveLength(1)
 
-    const sent = notificationService.markAsSent(notification.id)
+    const sent = await notificationService.markAsSent(notification.id)
     expect(sent?.status).toBe('sent')
     expect(notificationRepository.findByStatus('sent')).toHaveLength(1)
 
-    const failed = notificationService.markAsFailed(notification.id)
+    const failed = await notificationService.markAsFailed(notification.id)
     expect(failed?.status).toBe('failed')
-    expect(notificationService.markAsSent('missing-id')).toBeNull()
-    expect(notificationService.markAsFailed('missing-id')).toBeNull()
-    expect(notificationService.listNotifications()).toHaveLength(1)
+    expect(await notificationService.markAsSent('missing-id')).toBeNull()
+    expect(await notificationService.markAsFailed('missing-id')).toBeNull()
+    expect(await notificationService.listNotifications()).toHaveLength(1)
   })
 })

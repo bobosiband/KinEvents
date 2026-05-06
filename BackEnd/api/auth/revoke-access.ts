@@ -13,7 +13,7 @@ const revokeAccessSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -26,7 +26,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const request = authService.revokeAccess(parseResult.data.accessRequestId)
+    const request = await authService.revokeAccess(parseResult.data.accessRequestId)
     res.status(200).json({
       success: true,
       data: request,

@@ -8,9 +8,9 @@ import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method === 'GET') {
-    const users = authService.listApprovedUsers()
+    const users = await authService.listApprovedUsers()
     res.status(200).json({ success: true, data: users })
   } else {
     res.status(405).json({ success: false, message: 'Method not allowed' })

@@ -20,9 +20,9 @@ const createEventSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method === 'GET') {
-    const events = eventService.listEvents()
+    const events = await eventService.listEvents()
     res.status(200).json({ success: true, data: events })
   } else if (req.method === 'POST') {
     const parseResult = createEventSchema.safeParse(req.body)
@@ -32,7 +32,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     try {
-      const event = eventService.createEvent(parseResult.data)
+      const event = await eventService.createEvent(parseResult.data)
       res.status(201).json({ success: true, data: event })
     } catch (error) {
       res.status(400).json({ success: false, message: (error as Error).message })

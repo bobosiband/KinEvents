@@ -1,5 +1,6 @@
 import type { ContentBlockKey, IContentBlock } from '../interfaces/content.interface'
 import { db } from '../config/db'
+import type { MaybePromise } from '../interfaces/db.interface'
 
 export class ContentRepository {
   /**
@@ -24,7 +25,7 @@ export class ContentRepository {
     * @param block Content block to store.
     * @returns The stored content block.
    */
-  upsert(block: IContentBlock): IContentBlock {
+  upsert(block: IContentBlock): MaybePromise<IContentBlock> {
     const existingIndex = db.data!.content.findIndex((item) => item.key === block.key)
 
     if (existingIndex >= 0) {
@@ -33,8 +34,9 @@ export class ContentRepository {
       db.data!.content.push(block)
     }
 
-    db.write()
-    return block
+
+    const writeResult = db.write()
+    return writeResult instanceof Promise ? writeResult.then(() => block) : block
   }
 
   /**
@@ -42,7 +44,7 @@ export class ContentRepository {
     * @param key Content block key.
     * @returns True when a content block was removed, otherwise false.
    */
-  removeByKey(key: ContentBlockKey): boolean {
+  removeByKey(key: ContentBlockKey): MaybePromise<boolean> {
     const index = db.data!.content.findIndex((item) => item.key === key)
 
     if (index < 0) {
@@ -50,8 +52,9 @@ export class ContentRepository {
     }
 
     db.data!.content.splice(index, 1)
-    db.write()
-    return true
+
+    const writeResult = db.write()
+    return writeResult instanceof Promise ? writeResult.then(() => true) : true
   }
 }
 

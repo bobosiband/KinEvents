@@ -11,7 +11,7 @@ import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -20,7 +20,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
   try {
     const allUsers = userRepository.findAll()
     const allAccessRequests = accessRequestRepository.findAll()
-    const allEvents = eventService.listEvents()
+    const allEvents = await eventService.listEvents()
 
     const dashboard = {
       users: {

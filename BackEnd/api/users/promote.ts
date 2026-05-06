@@ -15,7 +15,7 @@ const promoteUserSchema = z.object({
  * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-function handler(req: RequestWithUser, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -34,7 +34,7 @@ function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
-    const updatedUser = userRepository.update(parseResult.data.userId, {
+    const updatedUser = await userRepository.update(parseResult.data.userId, {
       role: parseResult.data.role,
       capabilities: ROLE_CAPABILITIES[parseResult.data.role],
       updatedAt: new Date().toISOString(),
