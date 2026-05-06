@@ -194,7 +194,9 @@ const swaggerDocument: OpenAPIV3_0 = {
       post: {
         tags: ['Authentication'],
         summary: 'Approve access request',
-        description: 'Approve a pending access request and create or update the user',
+        description: 'Approve a pending access request and create or update the user (Admin only)',
+        security: [{ bearerAuth: [] }],
+        'x-required-role': 'admin',
         requestBody: {
           required: true,
           content: {
@@ -218,8 +220,92 @@ const swaggerDocument: OpenAPIV3_0 = {
               },
             },
           },
+          '401': {
+            description: 'Missing or invalid authentication token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '403': {
+            description: 'Insufficient permissions (admin role required)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
           '404': {
             description: 'Access request not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/auth/login': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Login to get authentication token',
+        description: 'Authenticate with email and receive a JWT token (for approved users)',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                  email: { type: 'string', format: 'email', description: 'User email address' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Login successful',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        user: { $ref: '#/components/schemas/User' },
+                        token: { type: 'string', description: 'JWT Bearer token (valid for 7 days)' },
+                      },
+                    },
+                    message: { type: 'string', example: 'Login successful' },
+                  },
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '403': {
+            description: 'User account is not approved',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '404': {
+            description: 'User not found',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ApiError' },
@@ -233,7 +319,9 @@ const swaggerDocument: OpenAPIV3_0 = {
       post: {
         tags: ['Authentication'],
         summary: 'Revoke access request',
-        description: 'Reject a pending access request',
+        description: 'Reject a pending access request (Admin only)',
+        security: [{ bearerAuth: [] }],
+        'x-required-role': 'admin',
         requestBody: {
           required: true,
           content: {
@@ -257,6 +345,22 @@ const swaggerDocument: OpenAPIV3_0 = {
               },
             },
           },
+          '401': {
+            description: 'Missing or invalid authentication token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '403': {
+            description: 'Insufficient permissions (admin role required)',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
           '404': {
             description: 'Access request not found',
             content: {
@@ -272,7 +376,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       get: {
         tags: ['Users'],
         summary: 'List all users',
-        description: 'Get all approved users',
+        description: 'Get all approved users (Authentication required)',
         security: [{ bearerAuth: [] }],
         responses: {
           '200': {
@@ -283,6 +387,14 @@ const swaggerDocument: OpenAPIV3_0 = {
               },
             },
           },
+          '401': {
+            description: 'Missing or invalid authentication token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
         },
       },
     },
@@ -290,6 +402,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       get: {
         tags: ['Users'],
         summary: 'Get user details',
+        description: 'Get details for a specific user (Authentication required)',
         parameters: [
           {
             name: 'id',
@@ -308,6 +421,14 @@ const swaggerDocument: OpenAPIV3_0 = {
               },
             },
           },
+          '401': {
+            description: 'Missing or invalid authentication token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
           '404': {
             description: 'User not found',
             content: {
@@ -321,6 +442,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       patch: {
         tags: ['Users'],
         summary: 'Update user',
+        description: 'Update user profile information (Authentication required)',
         parameters: [
           {
             name: 'id',
@@ -337,7 +459,11 @@ const swaggerDocument: OpenAPIV3_0 = {
                 type: 'object',
                 properties: {
                   name: { type: 'string' },
-                  birthday: { type: 'string', format: 'date' },
+                  birthday: { 
+                    type: 'string', 
+                    format: 'date',
+                    description: 'Birthday in YYYY-MM-DD format (e.g., "1990-05-15")'
+                  },
                   notificationPrefs: { type: 'object' },
                 },
               },
@@ -350,6 +476,22 @@ const swaggerDocument: OpenAPIV3_0 = {
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ApiSuccess' },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '401': {
+            description: 'Missing or invalid authentication token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
               },
             },
           },
@@ -366,6 +508,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       delete: {
         tags: ['Users'],
         summary: 'Delete user',
+        description: 'Delete a user (Authentication required)',
         parameters: [
           {
             name: 'id',
@@ -381,6 +524,14 @@ const swaggerDocument: OpenAPIV3_0 = {
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ApiSuccess' },
+              },
+            },
+          },
+          '401': {
+            description: 'Missing or invalid authentication token',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
               },
             },
           },

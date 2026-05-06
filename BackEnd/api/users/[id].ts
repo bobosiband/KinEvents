@@ -1,11 +1,12 @@
 import { z } from 'zod'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 
 import { userRepository } from '../../src/repositories/user.repository'
+import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const updateUserSchema = z.object({
   name: z.string().optional(),
-  birthday: z.string().optional(),
+  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   notificationPrefs: z.object({
     level: z.enum(['all', 'important', 'none']).optional(),
     channels: z.array(z.enum(['email', 'push'])).optional(),
@@ -14,10 +15,10 @@ const updateUserSchema = z.object({
 
 /**
  * Retrieves, updates, or deletes a single user by id.
- * @param req Incoming request object.
+ * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+function handler(req: RequestWithUser, res: VercelResponse) {
   const queryId = req.query?.id
   const paramsId = (req as unknown as { params?: Record<string, unknown> }).params?.id
   const id = typeof queryId === 'string' ? queryId : typeof paramsId === 'string' ? paramsId : undefined
@@ -71,3 +72,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ success: false, message: 'Method not allowed' })
   }
 }
+
+export default withAuth(handler)

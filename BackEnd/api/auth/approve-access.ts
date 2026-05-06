@@ -1,9 +1,10 @@
 import { z } from 'zod'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../../src/config/env'
 import { authService } from '../../src/services/auth.service'
+import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const approveAccessSchema = z.object({
   accessRequestId: z.string().uuid(),
@@ -11,10 +12,10 @@ const approveAccessSchema = z.object({
 
 /**
  * Approves a pending access request.
- * @param req Incoming request object.
+ * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -39,3 +40,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     res.status(404).json({ success: false, message: (error as Error).message })
   }
 }
+
+export default withAuth(handler, 'admin')
