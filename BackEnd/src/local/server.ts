@@ -1,11 +1,14 @@
 import express, { type Request, type Response } from 'express'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import swaggerUi from 'swagger-ui-express'
 
+import swaggerDocument from '../config/swagger'
 import approveAccessHandler from '../../api/auth/approve-access'
 import requestAccessHandler from '../../api/auth/request-access'
 import revokeAccessHandler from '../../api/auth/revoke-access'
 import adminContentHandler from '../../api/admin/content'
 import adminDashboardHandler from '../../api/admin/dashboard'
+import createAdminHandler from '../../api/admin/create-admin'
 import birthdayGenerateHandler from '../../api/birthdays/generate'
 import birthdayUpcomingHandler from '../../api/birthdays/upcoming'
 import eventByIdHandler from '../../api/events/[id]'
@@ -44,6 +47,9 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', env: process.env.NODE_ENV })
 })
 
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument as unknown as swaggerUi.SwaggerUiOptions))
+
 const routes = [
   { method: 'all', path: '/api/auth/request-access', handler: requestAccessHandler },
   { method: 'all', path: '/api/auth/approve-access', handler: approveAccessHandler },
@@ -57,6 +63,7 @@ const routes = [
   { method: 'all', path: '/api/birthdays/generate', handler: birthdayGenerateHandler },
   { method: 'all', path: '/api/birthdays/upcoming', handler: birthdayUpcomingHandler },
   { method: 'all', path: '/api/notifications/send', handler: notificationSendHandler },
+  { method: 'all', path: '/api/admin/create-admin', handler: createAdminHandler },
   { method: 'all', path: '/api/admin/content', handler: adminContentHandler },
   { method: 'all', path: '/api/admin/dashboard', handler: adminDashboardHandler },
 ] as const

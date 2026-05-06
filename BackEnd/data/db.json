@@ -1,7 +1,75 @@
 {
-  "users": [],
-  "events": [],
-  "accessRequests": [],
+  "users": [
+    {
+      "id": "5407b069-0270-4574-b4b4-72fba12cccb8",
+      "name": "bongani",
+      "email": "bobosibanda35@gmail.com",
+      "role": "admin",
+      "accessStatus": "approved",
+      "capabilities": [
+        "create_event",
+        "edit_any_event",
+        "delete_any_event",
+        "edit_locked_event",
+        "manage_users",
+        "edit_content"
+      ],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": [
+          "email"
+        ]
+      },
+      "createdAt": "2026-05-06T14:28:23.593Z",
+      "updatedAt": "2026-05-06T14:58:38.725Z",
+      "birthday": "2006-05-14"
+    },
+    {
+      "id": "a95fea7f-d336-4c5b-aa47-92a4c382bf9f",
+      "name": "testUser",
+      "email": "user@example.com",
+      "role": "member",
+      "accessStatus": "approved",
+      "capabilities": [],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": [
+          "email"
+        ]
+      },
+      "createdAt": "2026-05-06T14:31:29.872Z",
+      "updatedAt": "2026-05-06T14:31:29.872Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "c541a953-36a0-43d5-a19c-4c07864b14e0",
+      "title": "Bonganis BirthDay",
+      "description": "The man the legend the might",
+      "date": "2026-05-06",
+      "type": "birthday",
+      "locked": true,
+      "createdBy": "5407b069-0270-4574-b4b4-72fba12cccb8",
+      "rsvps": {},
+      "createdAt": "2026-05-06T14:59:18.387Z",
+      "updatedAt": "2026-05-06T15:12:48.883Z",
+      "location": "online",
+      "onlineLink": "famlogs.vercel.app",
+      "imageUrl": "some thing"
+    }
+  ],
+  "accessRequests": [
+    {
+      "id": "d919e4ea-c9d1-4f7e-8eef-189ceca8eb13",
+      "name": "testUser",
+      "email": "user@example.com",
+      "message": "Please add me its your cousin from somewhere else",
+      "status": "approved",
+      "requestedAt": "2026-05-06T14:30:30.566Z",
+      "resolvedAt": "2026-05-06T14:31:29.871Z",
+      "resolvedBy": "system"
+    }
+  ],
   "notifications": [],
   "content": []
 }

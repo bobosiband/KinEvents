@@ -1,4 +1,17 @@
+import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+
+import { eventService } from '../../src/services/event.service'
+
+const updateEventSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  date: z.string().optional(),
+  location: z.string().optional(),
+  onlineLink: z.string().optional(),
+  imageUrl: z.string().optional(),
+  locked: z.boolean().optional(),
+})
 
 /**
  * Retrieves, updates, or deletes a single event by id.
@@ -6,5 +19,47 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
  * @param res Vercel response object.
  */
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  res.status(501).json({ success: false, message: 'Not implemented' })
+  const queryId = req.query?.id
+  const paramsId = (req as unknown as { params?: Record<string, unknown> }).params?.id
+  const id = typeof queryId === 'string' ? queryId : typeof paramsId === 'string' ? paramsId : undefined
+
+  if (!id) {
+    res.status(400).json({ success: false, message: 'Invalid event ID' })
+    return
+  }
+
+  if (req.method === 'GET') {
+    const event = eventService.getEvent(id)
+    if (!event) {
+      res.status(404).json({ success: false, message: 'Event not found' })
+      return
+    }
+    res.status(200).json({ success: true, data: event })
+  } else if (req.method === 'PUT' || req.method === 'PATCH') {
+    const parseResult = updateEventSchema.safeParse(req.body)
+    if (!parseResult.success) {
+      res.status(400).json({ success: false, message: 'Validation failed', details: parseResult.error.flatten() })
+      return
+    }
+
+    try {
+      const updatedEvent = eventService.updateEvent(id, parseResult.data)
+      if (!updatedEvent) {
+        res.status(404).json({ success: false, message: 'Event not found' })
+        return
+      }
+      res.status(200).json({ success: true, data: updatedEvent })
+    } catch (error) {
+      res.status(400).json({ success: false, message: (error as Error).message })
+    }
+  } else if (req.method === 'DELETE') {
+    const deleted = eventService.deleteEvent(id)
+    if (!deleted) {
+      res.status(404).json({ success: false, message: 'Event not found' })
+      return
+    }
+    res.status(200).json({ success: true, message: 'Event deleted successfully' })
+  } else {
+    res.status(405).json({ success: false, message: 'Method not allowed' })
+  }
 }
