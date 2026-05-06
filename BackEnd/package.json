@@ -5,7 +5,8 @@
   "engines": {
     "node": "22.x"
   },
-  "scripts": {
+    "scripts": {
+    "start": "node dist/src/local/server.js",
     "dev": "ts-node src/local/server.ts",
     "build": "tsc",
     "test": "jest",
