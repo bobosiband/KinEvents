@@ -1,7 +1,5 @@
-import { mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
-
-import { JSONFileSync, LowSync } from 'lowdb'
 
 import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IContentBlock } from '../interfaces/content.interface'
@@ -29,16 +27,37 @@ const defaultData: DbSchema = {
 
 mkdirSync(dirname(dbFilePath), { recursive: true })
 
-const adapter = new JSONFileSync<DbSchema>(dbFilePath)
-const database = new LowSync<DbSchema>(adapter)
+class JsonDatabase {
+  data: DbSchema = { ...defaultData }
 
-database.read()
-database.data = {
-  ...defaultData,
-  ...(database.data ?? {}),
+  read() {
+    if (!existsSync(dbFilePath)) {
+      this.write()
+      return this
+    }
+
+    try {
+      const fileContents = readFileSync(dbFilePath, 'utf8')
+      const parsedData = fileContents.trim() ? (JSON.parse(fileContents) as Partial<DbSchema>) : {}
+
+      this.data = {
+        ...defaultData,
+        ...parsedData,
+      }
+    } catch {
+      this.data = { ...defaultData }
+      this.write()
+    }
+
+    return this
+  }
+
+  write() {
+    writeFileSync(dbFilePath, `${JSON.stringify(this.data, null, 2)}\n`)
+    return this
+  }
 }
-database.write()
 
-export const db = database
+export const db = new JsonDatabase().read()
 
 export default db

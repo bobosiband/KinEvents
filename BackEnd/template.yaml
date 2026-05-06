@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: KinEvents backend (AWS SAM)
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Timeout: 10
+    MemorySize: 128
+
+Parameters:
+  JwtSecret:
+    Type: String
+    NoEcho: true
+  SendgridApiKey:
+    Type: String
+    NoEcho: true
+  AppUrl:
+    Type: String
+    Default: https://your-lambda-url.amazonaws.com
+
+Resources:
+  KinEventsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: dist/src/lambda.handler
+      CodeUri: .
+      Events:
+        ApiProxy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        ApiRoot:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+      Environment:
+        Variables:
+          NODE_ENV: production
+          JWT_SECRET: !Ref JwtSecret
+          SENDGRID_API_KEY: !Ref SendgridApiKey
+          APP_URL: !Ref AppUrl
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
