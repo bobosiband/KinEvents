@@ -8,7 +8,7 @@ const swaggerDocument: OpenAPIV3_0 = {
     description: 'Comprehensive API for managing events, users, and notifications for family gatherings',
     contact: {
       name: 'KinEvents Support',
-      url: 'https://kinevents.railway.app',
+      url: 'https://kinevents-production.up.railway.app',
     },
   },
   servers: [
@@ -17,7 +17,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       description: 'Local development server',
     },
     {
-      url: 'https://api.kinevents.app',
+      url: 'https://kinevents-production.up.railway.app',
       description: 'Production server',
     },
   ],
