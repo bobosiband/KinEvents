@@ -11,6 +11,22 @@ export interface BirthdayPreview {
   birthdayThisYear: string
 }
 
+function extractMonthDay(birthday: string): { month: string; day: string } | null {
+  const parts = birthday.split('-')
+
+  if (parts.length === 3) {
+    const [, month, day] = parts
+    return { month, day }
+  }
+
+  if (parts.length === 2) {
+    const [month, day] = parts
+    return { month, day }
+  }
+
+  return null
+}
+
 export class BirthdayService {
   /**
    * Returns a sorted list of users with birthdays coming up soon.
@@ -25,12 +41,18 @@ export class BirthdayService {
       .findAll()
       .filter((user) => Boolean(user.birthday))
       .map((user) => {
-        const [month, day] = (user.birthday ?? '').split('-')
+        const birthdayParts = extractMonthDay(user.birthday ?? '')
+
+        if (!birthdayParts) {
+          return null
+        }
+
         return {
           user,
-          birthdayThisYear: `${currentYear}-${month}-${day}`,
+          birthdayThisYear: `${currentYear}-${birthdayParts.month}-${birthdayParts.day}`,
         }
       })
+      .filter((item): item is BirthdayPreview => item !== null)
       .sort((left, right) => left.birthdayThisYear.localeCompare(right.birthdayThisYear))
       .slice(0, limit)
   }
@@ -49,8 +71,13 @@ export class BirthdayService {
         continue
       }
 
-      const [month, day] = user.birthday.split('-')
-      const eventDate = `${year}-${month}-${day}`
+      const birthdayParts = extractMonthDay(user.birthday)
+
+      if (!birthdayParts) {
+        continue
+      }
+
+      const eventDate = `${year}-${birthdayParts.month}-${birthdayParts.day}`
       const event = eventRepository.insert({
         id: randomUUID(),
         title: `${user.name}'s Birthday`,
