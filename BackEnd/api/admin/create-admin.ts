@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { randomUUID } from 'crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
@@ -52,7 +53,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     const now = new Date().toISOString()
     const admin = userRepository.insert({
-      id: require('crypto').randomUUID(),
+      id: randomUUID(),
       name: parseResult.data.name,
       email: parseResult.data.email,
       role: 'admin',

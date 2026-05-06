@@ -1,7 +1,8 @@
 import { z } from 'zod'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 
 import { birthdayService } from '../../src/services/birthday.service'
+import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const upcomingBirthdaysSchema = z.object({
   limit: z.number().int().optional(),
@@ -9,10 +10,10 @@ const upcomingBirthdaysSchema = z.object({
 
 /**
  * Lists the upcoming birthdays for the current calendar window.
- * @param req Incoming request object.
+ * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -31,3 +32,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ success: false, message: (error as Error).message })
   }
 }
+
+export default withAuth(handler)

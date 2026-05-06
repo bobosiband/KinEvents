@@ -1,7 +1,8 @@
 import { z } from 'zod'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 
 import { notificationService } from '../../src/services/notification.service'
+import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const sendNotificationSchema = z.object({
   type: z.enum(['event_created', 'event_updated', 'event_reminder', 'birthday_reminder', 'birthday_today', 'access_approved', 'access_rejected']),
@@ -11,10 +12,10 @@ const sendNotificationSchema = z.object({
 
 /**
  * Sends a notification to one or more recipients.
- * @param req Incoming request object.
+ * @param req Incoming request object with authenticated user.
  * @param res Vercel response object.
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -43,3 +44,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ success: false, message: (error as Error).message })
   }
 }
+
+export default withAuth(handler)

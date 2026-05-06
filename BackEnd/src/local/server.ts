@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express'
 import swaggerDocument from '../config/swagger'
 import approveAccessHandler from '../../api/auth/approve-access'
 import requestAccessHandler from '../../api/auth/request-access'
+import loginHandler from '../../api/auth/login'
 import revokeAccessHandler from '../../api/auth/revoke-access'
 import adminContentHandler from '../../api/admin/content'
 import adminDashboardHandler from '../../api/admin/dashboard'
@@ -52,20 +53,21 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument as unknown
 
 const routes = [
   { method: 'all', path: '/api/auth/request-access', handler: requestAccessHandler },
+  { method: 'all', path: '/api/auth/login', handler: loginHandler },
   { method: 'all', path: '/api/auth/approve-access', handler: approveAccessHandler },
   { method: 'all', path: '/api/auth/revoke-access', handler: revokeAccessHandler },
   { method: 'all', path: '/api/users', handler: usersHandler },
-  { method: 'all', path: '/api/users/:id', handler: userByIdHandler },
   { method: 'all', path: '/api/users/promote', handler: promoteUserHandler },
+  { method: 'all', path: '/api/users/:id', handler: userByIdHandler },
   { method: 'all', path: '/api/events', handler: eventsHandler },
-  { method: 'all', path: '/api/events/:id', handler: eventByIdHandler },
   { method: 'all', path: '/api/events/rsvp', handler: eventRsvpHandler },
-  { method: 'all', path: '/api/birthdays/generate', handler: birthdayGenerateHandler },
+  { method: 'all', path: '/api/events/:id', handler: eventByIdHandler },
   { method: 'all', path: '/api/birthdays/upcoming', handler: birthdayUpcomingHandler },
+  { method: 'all', path: '/api/birthdays/generate', handler: birthdayGenerateHandler },
   { method: 'all', path: '/api/notifications/send', handler: notificationSendHandler },
   { method: 'all', path: '/api/admin/create-admin', handler: createAdminHandler },
-  { method: 'all', path: '/api/admin/content', handler: adminContentHandler },
   { method: 'all', path: '/api/admin/dashboard', handler: adminDashboardHandler },
+  { method: 'all', path: '/api/admin/content', handler: adminContentHandler },
 ] as const
 
 for (const route of routes) {
