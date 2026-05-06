@@ -2,6 +2,9 @@
   "name": "kinevents-backend",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "ts-node src/local/server.ts",
     "build": "tsc",
