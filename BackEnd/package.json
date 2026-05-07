@@ -12,8 +12,10 @@
     "sam:build": "sam build",
     "local": "sam local start-api --port 3000",
     "deploy": "bash -lc 'set -a; source ./.env; set +a; npm run deploy:run'",
-    "deploy:run": "npm run build && npm run deploy:clean-pkg && sam deploy --parameter-overrides MongoDbUri=\"$MONGODB_URI\" MongoDbName=\"$MONGODB_DB_NAME\" --force-upload",
-    "deploy:clean-pkg": "rm -rf .lambda-pkg && mkdir .lambda-pkg && cp -r dist .lambda-pkg/dist && cp package.json package-lock.json .lambda-pkg/ && cd .lambda-pkg && npm ci --omit=dev",
+    "deploy:run": "npm run build && npm run deploy:clean-pkg && npm run deploy:package && npm run deploy:upload",
+    "deploy:clean-pkg": "rm -rf .lambda-pkg && mkdir .lambda-pkg && cp -r dist data .lambda-pkg/dist && cp -r data .lambda-pkg/data && cp package.json package-lock.json .lambda-pkg/ && cd .lambda-pkg && npm ci --omit=dev",
+    "deploy:package": "cd .lambda-pkg && zip -r ../.lambda-pkg.zip . -q && cd ..",
+    "deploy:upload": "aws lambda update-function-code --function-name kinevents-backend-KinEventsFunction-VYEGgUmx4oGJ --zip-file fileb://.lambda-pkg.zip --publish --region us-east-1",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --runInBand",
     "ci": "npm run build && npm test -- --runInBand"

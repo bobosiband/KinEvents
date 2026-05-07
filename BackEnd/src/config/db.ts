@@ -21,8 +21,36 @@ function getJsonDbFilePath() {
   if (process.env.LOCAL_DB_PATH?.trim()) {
     return resolve(process.env.LOCAL_DB_PATH)
   }
+  // Check for a packaged seed file (used when we include data/db.json in the package)
+  const seedPath = resolve(__dirname, '../../..', 'data', 'db.json')
+  if (existsSync(seedPath)) {
+    // If running inside Lambda (or SAM local), the package area is read-only.
+    // Copy the packaged seed into /tmp and use that writable path instead.
+    if (process.env.AWS_SAM_LOCAL === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME)) {
+      const tmpDir = resolve('/tmp', 'kinevents')
+      const tmpPath = resolve(tmpDir, 'db.json')
+      try {
+        mkdirSync(tmpDir, { recursive: true })
+        if (!existsSync(tmpPath)) {
+          const contents = readFileSync(seedPath, 'utf8')
+          writeFileSync(tmpPath, contents)
+          console.log('[DB] 📦 Copied seed data to writable /tmp path:', tmpPath)
+        } else {
+          console.log('[DB] 📦 Writable seed already exists at /tmp:', tmpPath)
+        }
+        return tmpPath
+      } catch (err) {
+        console.warn('[DB] ⚠️ Failed to copy seed to /tmp, will attempt to use packaged seed:', err instanceof Error ? err.message : err)
+        return seedPath
+      }
+    }
 
-  if (process.env.AWS_SAM_LOCAL === 'true' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    console.log('[DB] 📦 Found seed file:', seedPath)
+    return seedPath
+  }
+
+  // Fallback: use /tmp for ephemeral storage (if seed doesn't exist)
+  if (process.env.AWS_SAM_LOCAL === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME)) {
     return resolve('/tmp', 'kinevents', 'db.json')
   }
 
@@ -37,9 +65,13 @@ const defaultData: DbSchema = {
   content: [],
 }
 
-const collectionNames: Array<keyof DbSchema> = ['users', 'events', 'accessRequests', 'notifications', 'content']
-
-mkdirSync(dirname(getJsonDbFilePath()), { recursive: true })
+const collectionNames: Array<keyof DbSchema> = [
+  'users',
+  'events',
+  'accessRequests',
+  'notifications',
+  'content',
+]
 
 type DatabaseAdapter = {
   data: DbSchema
@@ -47,13 +79,16 @@ type DatabaseAdapter = {
   write(): void | Promise<void>
 }
 
-class JsonDatabase {
+class JsonDatabase implements DatabaseAdapter {
   data: DbSchema = { ...defaultData }
+
   readonly ready = Promise.resolve()
 
   constructor(private readonly filePath: string) {}
 
   read() {
+    mkdirSync(dirname(this.filePath), { recursive: true })
+
     if (!existsSync(this.filePath)) {
       this.write()
       return this
@@ -61,55 +96,103 @@ class JsonDatabase {
 
     try {
       const fileContents = readFileSync(this.filePath, 'utf8')
-      const parsedData = fileContents.trim() ? (JSON.parse(fileContents) as Partial<DbSchema>) : {}
+
+      const parsedData = fileContents.trim()
+        ? (JSON.parse(fileContents) as Partial<DbSchema>)
+        : {}
 
       this.data = {
         ...defaultData,
         ...parsedData,
       }
-    } catch {
+    } catch (error) {
+      console.error('[DB] Failed to read JSON database:', error)
+
       this.data = { ...defaultData }
+
       this.write()
     }
+
+    console.log('[DB] JSON users loaded:', this.data.users.length)
 
     return this
   }
 
   write(): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, `${JSON.stringify(this.data, null, 2)}\n`)
+    try {
+      mkdirSync(dirname(this.filePath), { recursive: true })
+
+      writeFileSync(
+        this.filePath,
+        `${JSON.stringify(this.data, null, 2)}\n`
+      )
+    } catch (err) {
+      console.warn('[DB] ⚠️ Failed to write JSON database:', err instanceof Error ? err.message : err)
+    }
   }
 }
 
 class MongoDatabase implements DatabaseAdapter {
   data: DbSchema = { ...defaultData }
+
   readonly ready: Promise<void>
 
   private client: MongoClient | null = null
   private database: Db | null = null
   private persistQueue: Promise<void> = Promise.resolve()
 
-  constructor(private readonly uri: string, private readonly databaseName: string) {
+  constructor(
+    private readonly uri: string,
+    private readonly databaseName: string
+  ) {
     this.ready = this.initialize()
   }
 
   private async initialize() {
+    console.log('[DB] Connecting to MongoDB...')
+
     this.client = new MongoClient(this.uri)
+
     await this.client.connect()
+
     this.database = this.client.db(this.databaseName)
 
+    console.log('[DB] MongoDB connected')
+
     const loadedCollections = await Promise.all(
-      collectionNames.map(async (collectionName) => [collectionName, await this.collection(collectionName).find().toArray()] as const)
+      collectionNames.map(async (collectionName) => {
+        const documents = await this.collection(collectionName)
+          .find({})
+          .toArray()
+
+        console.log(
+          `[DB] Loaded ${documents.length} documents from ${collectionName}`
+        )
+
+        return [collectionName, documents] as const
+      })
     )
 
-    this.data = { ...defaultData }
-    const mutableData = this.data as Record<keyof DbSchema, unknown[]>
-    for (const [collectionName, documents] of loadedCollections) {
-      mutableData[collectionName] = documents as unknown[]
+    const nextData: DbSchema = {
+      users: [],
+      events: [],
+      accessRequests: [],
+      notifications: [],
+      content: [],
     }
+
+    for (const [collectionName, documents] of loadedCollections) {
+      nextData[collectionName] = documents as never[]
+    }
+
+    this.data = nextData
+
+    console.log('[DB] Mongo users available:', this.data.users.length)
   }
 
-  private collection<T extends import('mongodb').Document>(collectionName: keyof DbSchema) {
+  private collection<T extends import('mongodb').Document>(
+    collectionName: keyof DbSchema
+  ) {
     if (!this.database) {
       throw new Error('Mongo database is not ready')
     }
@@ -125,9 +208,11 @@ class MongoDatabase implements DatabaseAdapter {
     await Promise.all(
       collectionNames.map(async (collectionName) => {
         const collection = this.collection(collectionName)
+
         await collection.deleteMany({})
 
         const documents = this.data[collectionName]
+
         if (documents.length > 0) {
           await collection.insertMany(documents as never[])
         }
@@ -137,69 +222,147 @@ class MongoDatabase implements DatabaseAdapter {
 
   write() {
     this.persistQueue = this.persistQueue.then(() => this.persist())
+
     return this.persistQueue
   }
 }
 
-const useMongoDatabase = process.env.NODE_ENV !== 'test' && Boolean(process.env.MONGODB_URI?.trim())
+const useMongoDatabase =
+  process.env.NODE_ENV !== 'test' &&
+  Boolean(process.env.MONGODB_URI?.trim())
+
 const allowJsonFallback =
   process.env.NODE_ENV === 'development' ||
   Boolean(process.env.LOCAL_DB_PATH?.trim()) ||
-  process.env.AWS_SAM_LOCAL === 'true' ||
-  Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
-  Boolean(process.env.AWS_REGION)
+  process.env.AWS_SAM_LOCAL === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME)
 
-// Proxy wrapper that delegates to an active adapter which can be swapped
 class ProxyDatabase implements DatabaseAdapter {
-  private _active: DatabaseAdapter
+  private activeAdapter: DatabaseAdapter
+  private adapterType: 'json' | 'mongo' = 'json'
+  private isReady = false
+
   readonly ready: Promise<void>
 
   constructor() {
-    // start with JSON DB snapshot
-    this._active = new JsonDatabase(getJsonDbFilePath()).read()
+    const jsonDb = new JsonDatabase(getJsonDbFilePath()).read()
 
-    if (useMongoDatabase) {
-      const mongoDb = new MongoDatabase(process.env.MONGODB_URI!, process.env.MONGODB_DB_NAME?.trim() || 'kinevents')
+    this.activeAdapter = jsonDb
+    this.adapterType = 'json'
 
-      this.ready = Promise.race([
-        mongoDb.ready,
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout')), 28000)),
-      ]).then(
-        () => {
-          // eslint-disable-next-line no-console
-          console.log('[DB] MongoDB connected successfully')
-          // copy any data that was written to the JSON DB while Mongo was connecting
-          mongoDb.data = this._active.data
-          this._active = mongoDb
-        },
-        (err) => {
-          if (!allowJsonFallback) throw err
-          // eslint-disable-next-line no-console
-          console.warn('[DB] MongoDB failed, using JSON database:', err.message)
-          // _active already points to JsonDatabase, nothing to do
-        }
-      )
-    } else {
-      // eslint-disable-next-line no-console
-      console.log('[DB] Using JSON database')
+    if (!useMongoDatabase) {
+      console.log('[DB] ✓ Using JSON database only')
+      console.log(`[DB] 📁 Path: ${getJsonDbFilePath()}`)
+      console.log(`[DB] 👥 Users: ${this.activeAdapter.data.users.length}`)
+
       this.ready = Promise.resolve()
+      this.isReady = true
+
+      return
     }
+
+    console.log('[DB] 🔄 MongoDB initialization starting...')
+    console.log(`[DB] 🌐 URI: ${process.env.MONGODB_URI?.substring(0, 30)}...`)
+
+    const mongoDb = new MongoDatabase(
+      process.env.MONGODB_URI!,
+      process.env.MONGODB_DB_NAME?.trim() || 'kinevents'
+    )
+
+    const mongoTimeoutMs = parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '30000', 10)
+    
+    this.ready = Promise.race([
+      mongoDb.ready,
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`MongoDB connection timeout (${mongoTimeoutMs}ms)`))
+        }, mongoTimeoutMs)
+      }),
+    ]).then(
+      async () => {
+        // CRITICAL: DO NOT copy JSON data into MongoDB.
+        // MongoDB has already loaded the real production database.
+        // Simply switch the active adapter reference.
+
+        console.log('[DB] ✓ MongoDB connected successfully')
+        console.log(`[DB] 👥 Users: ${mongoDb.data.users.length}`)
+        console.log(
+          '[DB] 📊 Collections loaded:',
+          {
+            users: mongoDb.data.users.length,
+            events: mongoDb.data.events.length,
+            accessRequests: mongoDb.data.accessRequests.length,
+            notifications: mongoDb.data.notifications.length,
+            content: mongoDb.data.content.length,
+          }
+        )
+
+        // CACHE MongoDB data to JSON file as fallback
+        // If MongoDB times out on next request, we have cached data
+        try {
+          jsonDb.data = mongoDb.data
+          jsonDb.write()
+          console.log('[DB] 💾 Cached MongoDB data to JSON file for fallback')
+        } catch (cacheError) {
+          console.warn('[DB] ⚠️  Failed to cache MongoDB data:', cacheError instanceof Error ? cacheError.message : cacheError)
+        }
+
+        this.activeAdapter = mongoDb
+        this.adapterType = 'mongo'
+        this.isReady = true
+
+        console.log('[DB] 🔀 Switched from JSON to MongoDB adapter')
+      },
+      async (error) => {
+        console.warn(
+          '[DB] ⚠️  MongoDB connection failed:',
+          error instanceof Error ? error.message : error
+        )
+        console.warn('[DB] 📌 Falling back to JSON database')
+
+        if (!allowJsonFallback) {
+          console.error('[DB] ❌ JSON fallback not allowed. Throwing error.')
+          throw error
+        }
+
+        this.isReady = true
+      }
+    )
+  }
+
+  /**
+   * Gets the active adapter type for diagnostics.
+   */
+  getAdapterType(): 'json' | 'mongo' {
+    return this.adapterType
+  }
+
+  /**
+   * Returns true if database is fully initialized.
+   */
+  getReadyState(): boolean {
+    return this.isReady
   }
 
   get data(): DbSchema {
-    return this._active.data
+    return this.activeAdapter.data
   }
 
   set data(value: DbSchema) {
-    this._active.data = value
+    this.activeAdapter.data = value
   }
 
   write() {
-    return this._active.write()
+    return this.activeAdapter.write()
   }
 }
 
+/**
+ * Singleton instance of ProxyDatabase.
+ * Exported as const to prevent accidental reassignment.
+ * All routes must import this instance, not create new ones.
+ */
 export const db = new ProxyDatabase()
+
 export const dbReady = db.ready
 
 export default db

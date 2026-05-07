@@ -21,7 +21,13 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     return
   }
 
-  const parseResult = promoteUserSchema.safeParse(req.body)
+  // Backwards-compat: accept `id` field from clients and map to `userId`
+  const body = { ...(req.body || {}) } as Record<string, unknown>
+  if (!body.userId && body.id && typeof body.id === 'string') {
+    body.userId = body.id
+  }
+
+  const parseResult = promoteUserSchema.safeParse(body)
   if (!parseResult.success) {
     res.status(400).json({ success: false, message: 'Validation failed', details: parseResult.error.flatten() })
     return

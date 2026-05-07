@@ -97,7 +97,13 @@ export function withAuth(
       }
 
       await handler(requestWithUser, res)
-    } catch {
+      } catch (err) {
+      // Log verification failures for debugging token issues in deployed environments
+      try {
+        const prefix = token?.toString?.().slice?.(0, 20) || 'no-token'
+        console.warn('[AUTH] Token verification failed. tokenPrefix=', prefix, 'error=', err instanceof Error ? err.message : err)
+      } catch (ignore) {}
+
       res.status(401).json({ success: false, message: 'Invalid or expired token' })
     }
   }

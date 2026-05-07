@@ -19,6 +19,7 @@ import notificationSendHandler from '../../api/notifications/send'
 import userByIdHandler from '../../api/users/[id]'
 import usersHandler from '../../api/users/index'
 import promoteUserHandler from '../../api/users/promote'
+import debugDbHandler from '../../api/debug/db'
 import { dbReady } from '../config/db'
 import { env } from '../config/env'
 import { corsMiddleware } from '../middleware/cors'
@@ -80,6 +81,7 @@ const routes = [
   { method: 'all', path: '/api/admin/create-admin', handler: createAdminHandler },
   { method: 'all', path: '/api/admin/dashboard', handler: adminDashboardHandler },
   { method: 'all', path: '/api/admin/content', handler: adminContentHandler },
+    { method: 'all', path: '/api/debug/db', handler: debugDbHandler },
 ] as const
 
 for (const route of routes) {
