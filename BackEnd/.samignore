@@ -1,0 +1,14 @@
+node_modules/.cache
+node_modules/typescript
+node_modules/ts-node
+node_modules/ts-jest
+node_modules/jest
+node_modules/@types
+node_modules/supertest
+node_modules/serverless
+node_modules/serverless-offline
+data/
+.aws-sam/
+tests/
+*.test.ts
+*.md

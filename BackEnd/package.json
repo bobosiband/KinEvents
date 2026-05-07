@@ -10,26 +10,26 @@
     "dev": "ts-node src/local/server.ts",
     "build": "tsc",
     "sam:build": "sam build",
-    "local": "sam local start-api --port 3001",
-    "deploy": "bash -lc 'set -a; source ./.env; set +a; npm run build && sam deploy --parameter-overrides MongoDbUri=\"$MONGODB_URI\" MongoDbName=\"$MONGODB_DB_NAME\"'",
-    "test": "jest",
+    "local": "sam local start-api --port 3000",
+    "deploy": "bash -lc 'set -a; source ./.env; set +a; npm run deploy:run'",
+    "deploy:run": "npm run build && npm run deploy:clean-pkg && sam deploy --parameter-overrides MongoDbUri=\"$MONGODB_URI\" MongoDbName=\"$MONGODB_DB_NAME\" --force-upload",
+    "deploy:clean-pkg": "rm -rf .lambda-pkg && mkdir .lambda-pkg && cp -r dist .lambda-pkg/dist && cp package.json package-lock.json .lambda-pkg/ && cd .lambda-pkg && npm ci --omit=dev",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --runInBand",
     "ci": "npm run build && npm test -- --runInBand"
   },
   "dependencies": {
-    "@vercel/node": "^4.0.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.2.0",
     "serverless-http": "^4.0.0",
-    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@vercel/node": "^4.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "^9.0.7",
@@ -44,6 +44,7 @@
     "supertest": "^7.1.1",
     "ts-jest": "^29.3.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "swagger-jsdoc": "^6.2.8"
   }
 }

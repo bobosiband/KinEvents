@@ -30,7 +30,15 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: dist/src/lambda.handler
-      CodeUri: .
+      CodeUri: .lambda-pkg/
+      Environment:
+        Variables:
+          NODE_ENV: production
+          JWT_SECRET: !Ref JwtSecret
+          SENDGRID_API_KEY: !Ref SendgridApiKey
+          APP_URL: !Ref AppUrl
+          MONGODB_URI: !Ref MongoDbUri
+          MONGODB_DB_NAME: !Ref MongoDbName
       Events:
         ApiProxy:
           Type: Api
@@ -42,14 +50,6 @@ Resources:
           Properties:
             Path: /
             Method: ANY
-      Environment:
-        Variables:
-          NODE_ENV: production
-          JWT_SECRET: !Ref JwtSecret
-          SENDGRID_API_KEY: !Ref SendgridApiKey
-          APP_URL: !Ref AppUrl
-          MONGODB_URI: !Ref MongoDbUri
-          MONGODB_DB_NAME: !Ref MongoDbName
 
 Outputs:
   ApiUrl:

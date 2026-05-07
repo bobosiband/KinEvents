@@ -142,41 +142,64 @@ class MongoDatabase implements DatabaseAdapter {
 }
 
 const useMongoDatabase = process.env.NODE_ENV !== 'test' && Boolean(process.env.MONGODB_URI?.trim())
-const allowJsonFallback = process.env.NODE_ENV === 'development' || Boolean(process.env.LOCAL_DB_PATH?.trim()) || process.env.AWS_SAM_LOCAL === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) || Boolean(process.env.AWS_REGION)
+const allowJsonFallback =
+  process.env.NODE_ENV === 'development' ||
+  Boolean(process.env.LOCAL_DB_PATH?.trim()) ||
+  process.env.AWS_SAM_LOCAL === 'true' ||
+  Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+  Boolean(process.env.AWS_REGION)
 
-// Initialize database synchronously to avoid export timing issues
-let database: DatabaseAdapter = new JsonDatabase(getJsonDbFilePath()).read()
-let readyPromise: Promise<void> = Promise.resolve()
+// Proxy wrapper that delegates to an active adapter which can be swapped
+class ProxyDatabase implements DatabaseAdapter {
+  private _active: DatabaseAdapter
+  readonly ready: Promise<void>
 
-if (useMongoDatabase) {
-  // Try MongoDB; fall back to JSON if it times out
-  const mongoDb = new MongoDatabase(process.env.MONGODB_URI!, process.env.MONGODB_DB_NAME?.trim() || 'kinevents')
-  
-  readyPromise = Promise.race([
-    mongoDb.ready,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout')), 28000))
-  ]).then(
-    () => {
+  constructor() {
+    // start with JSON DB snapshot
+    this._active = new JsonDatabase(getJsonDbFilePath()).read()
+
+    if (useMongoDatabase) {
+      const mongoDb = new MongoDatabase(process.env.MONGODB_URI!, process.env.MONGODB_DB_NAME?.trim() || 'kinevents')
+
+      this.ready = Promise.race([
+        mongoDb.ready,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout')), 28000)),
+      ]).then(
+        () => {
+          // eslint-disable-next-line no-console
+          console.log('[DB] MongoDB connected successfully')
+          // copy any data that was written to the JSON DB while Mongo was connecting
+          mongoDb.data = this._active.data
+          this._active = mongoDb
+        },
+        (err) => {
+          if (!allowJsonFallback) throw err
+          // eslint-disable-next-line no-console
+          console.warn('[DB] MongoDB failed, using JSON database:', err.message)
+          // _active already points to JsonDatabase, nothing to do
+        }
+      )
+    } else {
       // eslint-disable-next-line no-console
-      console.log('[DB] MongoDB connected successfully')
-      database = mongoDb
-    },
-    (err) => {
-      if (!allowJsonFallback) {
-        throw err
-      }
-
-      // eslint-disable-next-line no-console
-      console.warn('[DB] MongoDB connection failed, using JSON database:', err.message)
-      database = new JsonDatabase(getJsonDbFilePath()).read()
+      console.log('[DB] Using JSON database')
+      this.ready = Promise.resolve()
     }
-  )
-} else {
-  // eslint-disable-next-line no-console
-  console.log('[DB] MongoDB disabled or not configured, using JSON database')
+  }
+
+  get data(): DbSchema {
+    return this._active.data
+  }
+
+  set data(value: DbSchema) {
+    this._active.data = value
+  }
+
+  write() {
+    return this._active.write()
+  }
 }
 
-export const db = database
-export const dbReady = readyPromise
+export const db = new ProxyDatabase()
+export const dbReady = db.ready
 
 export default db
