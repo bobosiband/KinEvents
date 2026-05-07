@@ -22,7 +22,7 @@ function getJsonDbFilePath() {
     return resolve(process.env.LOCAL_DB_PATH)
   }
 
-  if (process.env.AWS_SAM_LOCAL === 'true') {
+  if (process.env.AWS_SAM_LOCAL === 'true' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     return resolve('/tmp', 'kinevents', 'db.json')
   }
 
@@ -142,7 +142,7 @@ class MongoDatabase implements DatabaseAdapter {
 }
 
 const useMongoDatabase = process.env.NODE_ENV !== 'test' && Boolean(process.env.MONGODB_URI?.trim())
-const allowJsonFallback = process.env.NODE_ENV === 'development' || Boolean(process.env.LOCAL_DB_PATH?.trim()) || process.env.AWS_SAM_LOCAL === 'true'
+const allowJsonFallback = process.env.NODE_ENV === 'development' || Boolean(process.env.LOCAL_DB_PATH?.trim()) || process.env.AWS_SAM_LOCAL === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) || Boolean(process.env.AWS_REGION)
 
 // Initialize database synchronously to avoid export timing issues
 let database: DatabaseAdapter = new JsonDatabase(getJsonDbFilePath()).read()
@@ -154,9 +154,11 @@ if (useMongoDatabase) {
   
   readyPromise = Promise.race([
     mongoDb.ready,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout')), 5000))
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('MongoDB connection timeout')), 28000))
   ]).then(
     () => {
+      // eslint-disable-next-line no-console
+      console.log('[DB] MongoDB connected successfully')
       database = mongoDb
     },
     (err) => {
@@ -165,10 +167,13 @@ if (useMongoDatabase) {
       }
 
       // eslint-disable-next-line no-console
-      console.warn('MongoDB connection failed, using JSON database:', err.message)
+      console.warn('[DB] MongoDB connection failed, using JSON database:', err.message)
       database = new JsonDatabase(getJsonDbFilePath()).read()
     }
   )
+} else {
+  // eslint-disable-next-line no-console
+  console.log('[DB] MongoDB disabled or not configured, using JSON database')
 }
 
 export const db = database

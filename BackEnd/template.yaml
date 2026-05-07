@@ -5,8 +5,8 @@ Description: KinEvents backend (AWS SAM)
 Globals:
   Function:
     Runtime: nodejs22.x
-    Timeout: 10
-    MemorySize: 128
+    Timeout: 30
+    MemorySize: 1024
 
 Parameters:
   JwtSecret:

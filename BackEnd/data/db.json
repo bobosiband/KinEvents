@@ -1,19 +1,50 @@
 {
-  "users": [],
-  "events": [],
-  "accessRequests": [],
-  "notifications": [
+  "users": [
     {
-      "id": "ea69f4e9-9799-4d38-8747-ebd64348e2eb",
-      "type": "event_created",
-      "recipientId": "recipient-1",
-      "payload": {
-        "eventId": "evt-1"
+      "id": "b36f9d99-17d5-480e-af08-b40b648dc3b1",
+      "name": "Alice Local",
+      "email": "alice.local@example.com",
+      "role": "member",
+      "accessStatus": "approved",
+      "capabilities": [],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": [
+          "email"
+        ]
       },
-      "status": "failed",
-      "createdAt": "2026-05-07T06:11:09.698Z",
-      "sentAt": "2026-05-07T06:11:09.698Z"
+      "createdAt": "2026-05-07T06:37:13.373Z",
+      "updatedAt": "2026-05-07T06:37:13.373Z"
+    },
+    {
+      "id": "98e21046-d4e2-49b3-845d-f808e4a9239d",
+      "name": "Bob Local",
+      "email": "bob.local@example.com",
+      "role": "admin",
+      "accessStatus": "approved",
+      "capabilities": [],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": [
+          "email"
+        ]
+      },
+      "createdAt": "2026-05-07T06:37:13.373Z",
+      "updatedAt": "2026-05-07T06:37:13.373Z"
     }
   ],
+  "events": [],
+  "accessRequests": [
+    {
+      "id": "b4cec33e-2c43-4678-a54f-7210ddd154f9",
+      "name": "Existing Updated",
+      "email": "existing@example.com",
+      "status": "approved",
+      "requestedAt": "2026-05-07T06:24:24.645Z",
+      "resolvedAt": "2026-05-07T06:24:24.645Z",
+      "resolvedBy": "system"
+    }
+  ],
+  "notifications": [],
   "content": []
 }
