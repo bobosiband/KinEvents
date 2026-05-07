@@ -17,7 +17,17 @@ export interface DbSchema {
   content: IContentBlock[]
 }
 
-const dbFilePath = resolve(process.cwd(), 'data', 'db.json')
+function getJsonDbFilePath() {
+  if (process.env.LOCAL_DB_PATH?.trim()) {
+    return resolve(process.env.LOCAL_DB_PATH)
+  }
+
+  if (process.env.AWS_SAM_LOCAL === 'true') {
+    return resolve('/tmp', 'kinevents', 'db.json')
+  }
+
+  return resolve(process.cwd(), 'data', 'db.json')
+}
 
 const defaultData: DbSchema = {
   users: [],
@@ -29,7 +39,7 @@ const defaultData: DbSchema = {
 
 const collectionNames: Array<keyof DbSchema> = ['users', 'events', 'accessRequests', 'notifications', 'content']
 
-mkdirSync(dirname(dbFilePath), { recursive: true })
+mkdirSync(dirname(getJsonDbFilePath()), { recursive: true })
 
 type DatabaseAdapter = {
   data: DbSchema
@@ -41,14 +51,16 @@ class JsonDatabase {
   data: DbSchema = { ...defaultData }
   readonly ready = Promise.resolve()
 
+  constructor(private readonly filePath: string) {}
+
   read() {
-    if (!existsSync(dbFilePath)) {
+    if (!existsSync(this.filePath)) {
       this.write()
       return this
     }
 
     try {
-      const fileContents = readFileSync(dbFilePath, 'utf8')
+      const fileContents = readFileSync(this.filePath, 'utf8')
       const parsedData = fileContents.trim() ? (JSON.parse(fileContents) as Partial<DbSchema>) : {}
 
       this.data = {
@@ -64,7 +76,8 @@ class JsonDatabase {
   }
 
   write(): void {
-    writeFileSync(dbFilePath, `${JSON.stringify(this.data, null, 2)}\n`)
+    mkdirSync(dirname(this.filePath), { recursive: true })
+    writeFileSync(this.filePath, `${JSON.stringify(this.data, null, 2)}\n`)
   }
 }
 
@@ -129,9 +142,10 @@ class MongoDatabase implements DatabaseAdapter {
 }
 
 const useMongoDatabase = process.env.NODE_ENV !== 'test' && Boolean(process.env.MONGODB_URI?.trim())
+const allowJsonFallback = process.env.NODE_ENV === 'development' || Boolean(process.env.LOCAL_DB_PATH?.trim()) || process.env.AWS_SAM_LOCAL === 'true'
 
 // Initialize database synchronously to avoid export timing issues
-let database: DatabaseAdapter = new JsonDatabase().read()
+let database: DatabaseAdapter = new JsonDatabase(getJsonDbFilePath()).read()
 let readyPromise: Promise<void> = Promise.resolve()
 
 if (useMongoDatabase) {
@@ -146,9 +160,13 @@ if (useMongoDatabase) {
       database = mongoDb
     },
     (err) => {
+      if (!allowJsonFallback) {
+        throw err
+      }
+
       // eslint-disable-next-line no-console
       console.warn('MongoDB connection failed, using JSON database:', err.message)
-      database = new JsonDatabase().read()
+      database = new JsonDatabase(getJsonDbFilePath()).read()
     }
   )
 }

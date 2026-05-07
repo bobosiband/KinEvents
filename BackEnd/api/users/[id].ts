@@ -21,12 +21,16 @@ const updateUserSchema = z.object({
 async function handler(req: RequestWithUser, res: VercelResponse) {
   const queryId = req.query?.id
   const paramsId = (req as unknown as { params?: Record<string, unknown> }).params?.id
-  const id = typeof queryId === 'string' ? queryId : typeof paramsId === 'string' ? paramsId : undefined
+  // Prefer route params over query string for the id to avoid accidental mismatches
+  const id = typeof paramsId === 'string' ? paramsId : typeof queryId === 'string' ? queryId : undefined
 
   if (!id) {
     res.status(400).json({ success: false, message: 'Invalid user ID' })
     return
   }
+
+  const currentUser = req.user
+
 
   if (req.method === 'GET') {
     const user = userRepository.findById(id)
@@ -36,6 +40,11 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
     res.status(200).json({ success: true, data: user })
   } else if (req.method === 'PUT' || req.method === 'PATCH') {
+    // Only admins or the user themselves may update the user record
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.id !== id)) {
+      res.status(403).json({ success: false, message: 'Insufficient permissions' })
+      return
+    }
     const parseResult = updateUserSchema.safeParse(req.body)
     if (!parseResult.success) {
       res.status(400).json({ success: false, message: 'Validation failed', details: parseResult.error.flatten() })
@@ -62,11 +71,18 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
     res.status(200).json({ success: true, data: updatedUser })
   } else if (req.method === 'DELETE') {
+    // Only admins or the user themselves may delete the user record
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.id !== id)) {
+      res.status(403).json({ success: false, message: 'Insufficient permissions' })
+      return
+    }
+
     const deleted = await userRepository.remove(id)
     if (!deleted) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
+
     res.status(200).json({ success: true, message: 'User deleted successfully' })
   } else {
     res.status(405).json({ success: false, message: 'Method not allowed' })

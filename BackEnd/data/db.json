@@ -1,115 +1,18 @@
 {
-  "users": [
-    {
-      "id": "5407b069-0270-4574-b4b4-72fba12cccb8",
-      "name": "bongani",
-      "email": "bobosibanda35@gmail.com",
-      "role": "admin",
-      "accessStatus": "approved",
-      "capabilities": [
-        "create_event",
-        "edit_any_event",
-        "delete_any_event",
-        "edit_locked_event",
-        "manage_users",
-        "edit_content"
-      ],
-      "notificationPrefs": {
-        "level": "all",
-        "channels": [
-          "email"
-        ]
-      },
-      "createdAt": "2026-05-06T14:28:23.593Z",
-      "updatedAt": "2026-05-06T17:43:07.505Z",
-      "birthday": "2026-05-14"
-    },
-    {
-      "id": "a95fea7f-d336-4c5b-aa47-92a4c382bf9f",
-      "name": "testUser",
-      "email": "user@example.com",
-      "role": "member",
-      "accessStatus": "approved",
-      "capabilities": [],
-      "notificationPrefs": {
-        "level": "all",
-        "channels": [
-          "email"
-        ]
-      },
-      "createdAt": "2026-05-06T14:31:29.872Z",
-      "updatedAt": "2026-05-06T14:31:29.872Z"
-    },
-    {
-      "id": "3437d171-f978-4d62-8e5e-0b675f3b82b8",
-      "name": "Alice Local",
-      "email": "alice.local@example.com",
-      "role": "member",
-      "accessStatus": "approved",
-      "capabilities": [],
-      "notificationPrefs": {
-        "level": "all",
-        "channels": [
-          "email"
-        ]
-      },
-      "createdAt": "2026-05-06T21:30:23.763Z",
-      "updatedAt": "2026-05-06T21:30:23.763Z"
-    },
-    {
-      "id": "39f35039-14bb-4761-83a0-23e61c0e02b2",
-      "name": "Bob Local",
-      "email": "bob.local@example.com",
-      "role": "admin",
-      "accessStatus": "approved",
-      "capabilities": [],
-      "notificationPrefs": {
-        "level": "all",
-        "channels": [
-          "email"
-        ]
-      },
-      "createdAt": "2026-05-06T21:30:23.763Z",
-      "updatedAt": "2026-05-06T21:30:23.763Z"
-    }
-  ],
-  "events": [
-    {
-      "id": "c541a953-36a0-43d5-a19c-4c07864b14e0",
-      "title": "Bonganis BirthDay",
-      "description": "The man the legend the might",
-      "date": "2026-05-06",
-      "type": "birthday",
-      "locked": true,
-      "createdBy": "5407b069-0270-4574-b4b4-72fba12cccb8",
-      "rsvps": {},
-      "createdAt": "2026-05-06T14:59:18.387Z",
-      "updatedAt": "2026-05-06T15:12:48.883Z",
-      "location": "online",
-      "onlineLink": "famlogs.vercel.app",
-      "imageUrl": "some thing"
-    }
-  ],
-  "accessRequests": [
-    {
-      "id": "d919e4ea-c9d1-4f7e-8eef-189ceca8eb13",
-      "name": "testUser",
-      "email": "user@example.com",
-      "message": "Please add me its your cousin from somewhere else",
-      "status": "approved",
-      "requestedAt": "2026-05-06T14:30:30.566Z",
-      "resolvedAt": "2026-05-06T14:31:29.871Z",
-      "resolvedBy": "system"
-    }
-  ],
+  "users": [],
+  "events": [],
+  "accessRequests": [],
   "notifications": [
     {
-      "id": "55c0bdd0-78a8-4837-87e4-f5900aac6c68",
-      "type": "birthday_today",
-      "recipientId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "payload": {},
-      "status": "pending",
-      "createdAt": "2026-05-06T16:08:14.812Z"
+      "id": "ea69f4e9-9799-4d38-8747-ebd64348e2eb",
+      "type": "event_created",
+      "recipientId": "recipient-1",
+      "payload": {
+        "eventId": "evt-1"
+      },
+      "status": "failed",
+      "createdAt": "2026-05-07T06:11:09.698Z",
+      "sentAt": "2026-05-07T06:11:09.698Z"
     }
   ],
   "content": []

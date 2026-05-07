@@ -2,6 +2,7 @@ import { withAuth } from '../src/middleware/withAuth'
 import jwt from 'jsonwebtoken'
 import type { IUser } from '../src/interfaces/user.interface'
 import type { VercelResponse } from '@vercel/node'
+import { corsMiddleware } from '../src/middleware/cors'
 
 // Mock user for testing
 const mockUser: IUser = {
@@ -258,6 +259,53 @@ describe('withAuth middleware', () => {
       // Should fail because of extra space
       expect(mockResponse.status).toHaveBeenCalledWith(401)
     })
+  })
+})
+
+describe('corsMiddleware', () => {
+  it('should set CORS headers and end OPTIONS requests', () => {
+    const mockRequest = {
+      method: 'OPTIONS',
+      headers: {
+        origin: 'http://localhost:5173',
+      },
+    } as any
+
+    const mockResponse = {
+      setHeader: jest.fn(),
+      status: jest.fn().mockReturnThis(),
+      end: jest.fn(),
+    } as unknown as VercelResponse
+
+    const next = jest.fn()
+
+    corsMiddleware(mockRequest, mockResponse as any, next)
+
+    expect(mockResponse.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', 'http://localhost:5173')
+    expect(mockResponse.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS')
+    expect(mockResponse.status).toHaveBeenCalledWith(204)
+    expect(mockResponse.end).toHaveBeenCalled()
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('should continue for non-preflight requests', () => {
+    const mockRequest = {
+      method: 'GET',
+      headers: {},
+    } as any
+
+    const mockResponse = {
+      setHeader: jest.fn(),
+      status: jest.fn().mockReturnThis(),
+      end: jest.fn(),
+    } as unknown as VercelResponse
+
+    const next = jest.fn()
+
+    corsMiddleware(mockRequest, mockResponse as any, next)
+
+    expect(mockResponse.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*')
+    expect(next).toHaveBeenCalled()
   })
 })
 

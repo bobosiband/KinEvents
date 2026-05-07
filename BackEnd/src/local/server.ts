@@ -21,6 +21,7 @@ import usersHandler from '../../api/users/index'
 import promoteUserHandler from '../../api/users/promote'
 import { dbReady } from '../config/db'
 import { env } from '../config/env'
+import { corsMiddleware } from '../middleware/cors'
 
 type VercelHandler = (req: VercelRequest, res: VercelResponse) => void | Promise<void>
 
@@ -42,6 +43,7 @@ function toVercelHandler(handler: VercelHandler) {
 const app = express()
 
 app.use(express.json())
+app.use(corsMiddleware)
 
 app.use((req, res, next) => {
   const startedAt = Date.now()
