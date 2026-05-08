@@ -91,8 +91,8 @@ export async function initData(): Promise<void> {
   if (!client) {
     try {
       client = new MongoClient(mongoUri, {
-        serverSelectionTimeoutMS: 45000,
-        connectTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 8000,
       })
     } catch (err) {
       console.error('[DB] Invalid MONGODB_URI, falling back to in-memory store', err)
