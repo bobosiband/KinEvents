@@ -3,8 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../../src/config/env'
-import { dbReady } from '../../src/config/db'
-import { userRepository } from '../../src/repositories/user.repository'
+import { getData } from '../../src/config/db'
 
 const loginSchema = z.object({
   email: z.preprocess(
@@ -36,20 +35,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // CRITICAL: Wait for database initialization to complete.
-    // This ensures MongoDB is loaded before querying users.
-    // Timeout after 10 seconds to prevent hanging.
-    console.log('[LOGIN] Waiting for database to be ready...')
-
-    await Promise.race([
-      dbReady,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Database initialization timeout')), 10000)
-      ),
-    ])
-
-    console.log('[LOGIN] Database is ready')
-
     const parseResult = loginSchema.safeParse(req.body)
     if (!parseResult.success) {
       console.warn('[LOGIN] Validation failed:', parseResult.error.flatten().fieldErrors)
@@ -64,8 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const inputEmail = normalizeEmail(parseResult.data.email)
     console.log(`[LOGIN] Looking up user with email: ${inputEmail}`)
 
-    // Query the database
-    const user = userRepository.findByEmail(inputEmail)
+    const user = getData().users.find((item) => item.email.trim().toLowerCase() === inputEmail)
 
     if (!user) {
       console.warn(`[LOGIN] User not found: ${inputEmail}`)

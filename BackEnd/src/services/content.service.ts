@@ -1,42 +1,33 @@
 import { randomUUID } from 'crypto'
 
+import { getData, persistData } from '../config/db'
 import type { ContentBlockKey, IContentBlock } from '../interfaces/content.interface'
-import { contentRepository } from '../repositories/content.repository'
 
 export class ContentService {
-  /**
-   * Returns every stored content block.
-    * @returns All content blocks.
-   */
   async listContent(): Promise<IContentBlock[]> {
-    return contentRepository.findAll()
+    return getData().content
   }
 
-  /**
-   * Looks up a content block by key.
-    * @param key Content block key.
-    * @returns The matching content block, or undefined when no match exists.
-   */
   async getContent(key: ContentBlockKey): Promise<IContentBlock | undefined> {
-    return contentRepository.findByKey(key)
+    return getData().content.find((contentBlock) => contentBlock.key === key)
   }
 
-  /**
-   * Creates or updates a content block.
-    * @param key Content block key.
-    * @param value Content value.
-    * @param updatedBy Identifier for the editor.
-    * @returns The stored content block.
-   */
   async upsertContent(key: ContentBlockKey, value: string, updatedBy: string): Promise<IContentBlock> {
-    const contentBlock: IContentBlock = {
+    const db = getData()
+    const existing = db.content.find((contentBlock) => contentBlock.key === key)
+    const block: IContentBlock = {
       key,
       value,
       updatedAt: new Date().toISOString(),
       updatedBy: updatedBy || randomUUID(),
     }
-
-    return contentRepository.upsert(contentBlock)
+    if (existing) {
+      Object.assign(existing, block)
+    } else {
+      db.content.push(block)
+    }
+    await persistData()
+    return block
   }
 }
 

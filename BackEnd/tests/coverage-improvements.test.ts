@@ -1,11 +1,9 @@
 import { randomUUID } from 'crypto'
 
-import { accessRequestRepository } from '../src/repositories/accessRequest.repository'
-import { contentRepository } from '../src/repositories/content.repository'
-import { notificationRepository } from '../src/repositories/notification.repository'
-import { userRepository } from '../src/repositories/user.repository'
+import { getData } from '../src/config/db'
 import { authService } from '../src/services/auth.service'
 import { birthdayService } from '../src/services/birthday.service'
+import { contentService } from '../src/services/content.service'
 import { eventService } from '../src/services/event.service'
 import { notificationService } from '../src/services/notification.service'
 import { resetDb } from './helpers/db.helper'
@@ -15,54 +13,42 @@ describe('Coverage Improvements', () => {
     resetDb()
   })
 
-  it('covers content repository upsert/find/remove branches', async () => {
-    const first = await contentRepository.upsert({
-      key: 'announcement',
-      value: 'hello',
-      updatedAt: new Date().toISOString(),
-      updatedBy: 'system',
-    })
+  it('covers content service upsert and lookup branches', async () => {
+    const created = await contentService.upsertContent('announcement', 'hello', 'system')
+    expect(created.value).toBe('hello')
+    expect(await contentService.getContent('announcement')).toBeDefined()
 
-    expect(first.value).toBe('hello')
-    expect(contentRepository.findByKey('announcement')?.value).toBe('hello')
-
-    const replaced = await contentRepository.upsert({
-      key: 'announcement',
-      value: 'updated',
-      updatedAt: new Date().toISOString(),
-      updatedBy: 'admin',
-    })
-
+    const replaced = await contentService.upsertContent('announcement', 'updated', 'admin')
     expect(replaced.value).toBe('updated')
-    expect(contentRepository.findAll()).toHaveLength(1)
-    expect(await contentRepository.removeByKey('homepage_title')).toBe(false)
-    expect(await contentRepository.removeByKey('announcement')).toBe(true)
+    expect(getData().content).toHaveLength(1)
   })
 
-  it('covers access request repository queries', async () => {
+  it('covers access request service query branches', async () => {
     const request = await authService.requestAccess({
       name: 'Case User',
       email: 'Case@Test.com',
       message: 'request',
     })
 
-    expect(accessRequestRepository.findByEmail('case@test.com')?.id).toBe(request.id)
-    expect(accessRequestRepository.findByStatus('pending')).toHaveLength(1)
-    expect(accessRequestRepository.findByStatus('approved')).toHaveLength(0)
+    const accessRequests = getData().accessRequests
+    expect(accessRequests.find((item) => item.email.toLowerCase() === 'case@test.com')?.id).toBe(request.id)
+    expect(accessRequests.filter((item) => item.status === 'pending')).toHaveLength(1)
+    expect(accessRequests.filter((item) => item.status === 'approved')).toHaveLength(0)
   })
 
   it('covers auth service existing-user approval and list methods', async () => {
-    const existingUser = await userRepository.insert({
+    const existingUser = {
       id: randomUUID(),
       name: 'Existing',
       email: 'existing@example.com',
-      role: 'member',
-      accessStatus: 'pending',
+      role: 'member' as const,
+      accessStatus: 'pending' as const,
       capabilities: [],
-      notificationPrefs: { level: 'all', channels: ['email'] },
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    })
+    }
+    getData().users.push(existingUser)
 
     const request = await authService.requestAccess({
       name: 'Existing Updated',
@@ -82,27 +68,27 @@ describe('Coverage Improvements', () => {
   })
 
   it('covers birthday service parsing and generation branches', async () => {
-    await userRepository.insert({
+    getData().users.push({
       id: randomUUID(),
       name: 'Valid Birthday User',
       email: 'valid@example.com',
-      role: 'member',
-      accessStatus: 'approved',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
       capabilities: [],
-      notificationPrefs: { level: 'all', channels: ['email'] },
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
       birthday: '2001-11-03',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })
 
-    await userRepository.insert({
+    getData().users.push({
       id: randomUUID(),
       name: 'Invalid Birthday User',
       email: 'invalid@example.com',
-      role: 'member',
-      accessStatus: 'approved',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
       capabilities: [],
-      notificationPrefs: { level: 'all', channels: ['email'] },
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
       birthday: 'invalidformat',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -125,12 +111,12 @@ describe('Coverage Improvements', () => {
       status: 'pending',
     })
 
-    expect(notificationRepository.findByRecipientId('recipient-1')).toHaveLength(1)
-    expect(notificationRepository.findByStatus('pending')).toHaveLength(1)
+    expect(getData().notifications.filter((item) => item.recipientId === 'recipient-1')).toHaveLength(1)
+    expect(getData().notifications.filter((item) => item.status === 'pending')).toHaveLength(1)
 
     const sent = await notificationService.markAsSent(notification.id)
     expect(sent?.status).toBe('sent')
-    expect(notificationRepository.findByStatus('sent')).toHaveLength(1)
+    expect(getData().notifications.filter((item) => item.status === 'sent')).toHaveLength(1)
 
     const failed = await notificationService.markAsFailed(notification.id)
     expect(failed?.status).toBe('failed')

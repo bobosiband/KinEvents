@@ -20,16 +20,17 @@ import userByIdHandler from '../../api/users/[id]'
 import usersHandler from '../../api/users/index'
 import promoteUserHandler from '../../api/users/promote'
 import debugDbHandler from '../../api/debug/db'
-import { dbReady } from '../config/db'
+import { initData, getData, setData, persistData } from '../config/db'
+import type { IUser } from '../interfaces/user.interface'
 import { env } from '../config/env'
 import { corsMiddleware } from '../middleware/cors'
+import { randomUUID } from 'crypto'
 
 type VercelHandler = (req: VercelRequest, res: VercelResponse) => void | Promise<void>
 
 function toVercelHandler(handler: VercelHandler) {
   return async (req: Request, res: Response) => {
     try {
-      await dbReady
       await handler(req as unknown as VercelRequest, res as unknown as VercelResponse)
     } catch (error) {
       console.error(error)
@@ -91,7 +92,35 @@ for (const route of routes) {
 const port = env.PORT
 
 async function startServer() {
-  await dbReady
+  await initData()
+
+  // If running locally (not production) and datastore is empty, seed a test user
+  try {
+    const current = getData()
+    if ((current.users?.length || 0) === 0 && process.env.NODE_ENV !== 'production') {
+      const now = new Date().toISOString()
+      const seeded: IUser[] = [
+        {
+          id: randomUUID(),
+          name: 'Local Admin',
+          email: 'admin.local@example.com',
+          role: 'admin',
+          accessStatus: 'approved',
+          birthday: undefined,
+          capabilities: ['manage_events', 'manage_users'],
+          notificationPrefs: { level: 'all', channels: ['email'] },
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]
+
+      setData({ ...current, users: seeded })
+      await persistData().catch((err) => console.error('[DB] persist seed error', err))
+      console.log('[DB] Seeded in-memory users:', seeded.map((u) => u.email).join(', '))
+    }
+  } catch (err) {
+    console.error('[DB] Error while seeding users', err)
+  }
 
   app.listen(port, () => {
     console.log('KinEvents backend local server')

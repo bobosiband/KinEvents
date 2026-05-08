@@ -4,8 +4,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../../src/config/env'
-import { userRepository } from '../../src/repositories/user.repository'
+import { getData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES } from '../../src/constants/roles'
+import type { IUser } from '../../src/interfaces/user.interface'
 
 const createAdminSchema = z.object({
   name: z.string().min(1),
@@ -37,35 +38,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Check if admin already exists
-    const existingAdmin = userRepository.findAll().find((u) => u.role === 'admin')
+    const db = getData()
+    const existingAdmin = db.users.find((user) => user.role === 'admin')
     if (existingAdmin) {
       res.status(400).json({ success: false, message: 'An admin user already exists' })
       return
     }
 
-    // Check if email already exists
-    const existingUser = userRepository.findByEmail(parseResult.data.email)
+    const normalizedEmail = parseResult.data.email.trim().toLowerCase()
+    const existingUser = db.users.find((user) => user.email.trim().toLowerCase() === normalizedEmail)
     if (existingUser) {
       res.status(400).json({ success: false, message: 'User with this email already exists' })
       return
     }
 
     const now = new Date().toISOString()
-    const admin = await userRepository.insert({
+    const admin: IUser = {
       id: randomUUID(),
       name: parseResult.data.name,
       email: parseResult.data.email,
       role: 'admin',
       accessStatus: 'approved',
-      capabilities: ROLE_CAPABILITIES.admin,
+      capabilities: [...ROLE_CAPABILITIES.admin],
       notificationPrefs: {
         level: 'all',
         channels: ['email'],
       },
       createdAt: now,
       updatedAt: now,
-    })
+    }
+    db.users.push(admin)
+    await persistData()
 
     const token = jwt.sign(admin, env.JWT_SECRET, { expiresIn: '7d' })
 

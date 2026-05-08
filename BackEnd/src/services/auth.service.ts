@@ -1,29 +1,9 @@
 import { randomUUID } from 'crypto'
 
+import { getData, persistData } from '../config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../constants/roles'
 import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IUser } from '../interfaces/user.interface'
-import { accessRequestRepository } from '../repositories/accessRequest.repository'
-import { userRepository } from '../repositories/user.repository'
-
-function createDefaultUser(name: string, email: string): IUser {
-  const now = new Date().toISOString()
-
-  return {
-    id: randomUUID(),
-    name,
-    email,
-    role: USER_ROLES.MEMBER,
-    accessStatus: 'approved',
-    capabilities: [...ROLE_CAPABILITIES.member],
-    notificationPrefs: {
-      level: 'all',
-      channels: ['email'],
-    },
-    createdAt: now,
-    updatedAt: now,
-  }
-}
 
 export interface RequestAccessInput {
   name: string
@@ -31,18 +11,17 @@ export interface RequestAccessInput {
   message?: string
 }
 
-export class AuthService {
-  /**
-   * Creates a new pending access request unless an identical pending request already exists.
-    * @param input Request data submitted by the user.
-    * @returns The existing or newly created access request.
-   */
-  async requestAccess(input: RequestAccessInput): Promise<IAccessRequest> {
-    const existingRequest = accessRequestRepository.findByEmail(input.email)
+function normalizeEmail(email: string): string {
+  return String(email || '').trim().toLowerCase()
+}
 
-    if (existingRequest && existingRequest.status === 'pending') {
-      return existingRequest
-    }
+export class AuthService {
+  async requestAccess(input: RequestAccessInput): Promise<IAccessRequest> {
+    const { accessRequests } = getData()
+    const existing = accessRequests.find(
+      (request) => normalizeEmail(request.email) === normalizeEmail(input.email) && request.status === 'pending'
+    )
+    if (existing) return existing
 
     const now = new Date().toISOString()
     const request: IAccessRequest = {
@@ -53,88 +32,70 @@ export class AuthService {
       status: 'pending',
       requestedAt: now,
     }
-
-    await accessRequestRepository.insert(request)
+    getData().accessRequests.push(request)
+    await persistData()
     return request
   }
 
-  /**
-   * Marks an access request approved and creates or updates the corresponding user.
-    * @param accessRequestId Access request identifier.
-    * @param resolvedBy Identifier for the admin or system actor that resolved it.
-    * @returns The updated request and user records.
-   */
   async approveAccess(accessRequestId: string, resolvedBy = 'system'): Promise<{ request: IAccessRequest; user: IUser }> {
-    const request = accessRequestRepository.findById(accessRequestId)
-
-    if (!request) {
-      throw new Error('Access request not found')
-    }
+    const db = getData()
+    const request = db.accessRequests.find((item) => item.id === accessRequestId)
+    if (!request) throw new Error('Access request not found')
 
     const now = new Date().toISOString()
-    const updatedRequest = await accessRequestRepository.update(accessRequestId, {
-      status: 'approved',
-      resolvedAt: now,
-      resolvedBy,
-    })
+    request.status = 'approved'
+    request.resolvedAt = now
+    request.resolvedBy = resolvedBy
 
-    if (!updatedRequest) {
-      throw new Error('Access request could not be approved')
+    const existingUser = db.users.find((user) => normalizeEmail(user.email) === normalizeEmail(request.email))
+    let user: IUser
+
+    if (existingUser) {
+      existingUser.name = request.name
+      existingUser.accessStatus = 'approved'
+      existingUser.role = USER_ROLES.MEMBER
+      existingUser.capabilities = [...ROLE_CAPABILITIES.member]
+      existingUser.updatedAt = now
+      user = existingUser
+    } else {
+      user = {
+        id: randomUUID(),
+        name: request.name,
+        email: request.email,
+        role: USER_ROLES.MEMBER,
+        accessStatus: 'approved',
+        capabilities: [...ROLE_CAPABILITIES.member],
+        notificationPrefs: { level: 'all', channels: ['email'] },
+        createdAt: now,
+        updatedAt: now,
+      }
+      db.users.push(user)
     }
 
-    const existingUser = userRepository.findByEmail(request.email)
-    const user = existingUser
-      ? await userRepository.update(existingUser.id, {
-          name: request.name,
-          accessStatus: 'approved',
-          role: USER_ROLES.MEMBER,
-          capabilities: [...ROLE_CAPABILITIES.member],
-          updatedAt: now,
-        })
-      : await userRepository.insert(createDefaultUser(request.name, request.email))
-
-    if (!user) {
-      throw new Error('User could not be created or updated')
-    }
-
-    return { request: updatedRequest, user }
+    await persistData()
+    return { request, user }
   }
 
-  /**
-   * Marks an access request as rejected.
-    * @param accessRequestId Access request identifier.
-    * @param resolvedBy Identifier for the admin or system actor that resolved it.
-    * @returns The rejected access request.
-   */
   async revokeAccess(accessRequestId: string, resolvedBy = 'system'): Promise<IAccessRequest> {
+    const db = getData()
+    const request = db.accessRequests.find((item) => item.id === accessRequestId)
+    if (!request) throw new Error('Access request not found')
+
     const now = new Date().toISOString()
-    const updatedRequest = await accessRequestRepository.update(accessRequestId, {
-      status: 'rejected',
-      resolvedAt: now,
-      resolvedBy,
-    })
+    request.status = 'rejected'
+    request.resolvedAt = now
+    request.resolvedBy = resolvedBy
 
-    if (!updatedRequest) {
-      throw new Error('Access request not found')
-    }
-
-    return updatedRequest
+    await persistData()
+    return request
   }
 
-  /**
-   * Returns every stored access request.
-    * @returns All access requests.
-   */
   async listAccessRequests(): Promise<IAccessRequest[]> {
-    return accessRequestRepository.findAll()
+    return getData().accessRequests
   }
 
-  /**
-   * Returns every user whose access has been approved.
-    * @returns All approved users.
-   */
   async listApprovedUsers(): Promise<IUser[]> {
-    return userRepository.findByAccessStatus('approved')
+    return getData().users.filter((user) => user.accessStatus === 'approved')
   }
 }
 

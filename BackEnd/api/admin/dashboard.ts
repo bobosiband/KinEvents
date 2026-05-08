@@ -1,9 +1,7 @@
 import type { VercelResponse } from '@vercel/node'
 
-import { authService } from '../../src/services/auth.service'
 import { eventService } from '../../src/services/event.service'
-import { userRepository } from '../../src/repositories/user.repository'
-import { accessRequestRepository } from '../../src/repositories/accessRequest.repository'
+import { getData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 /**
@@ -18,8 +16,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const allUsers = userRepository.findAll()
-    const allAccessRequests = accessRequestRepository.findAll()
+    const { users: allUsers, accessRequests: allAccessRequests } = getData()
     const allEvents = await eventService.listEvents()
 
     const dashboard = {

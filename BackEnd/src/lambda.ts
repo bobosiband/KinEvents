@@ -1,10 +1,14 @@
 import serverless from 'serverless-http'
 import { app } from './local/server'
-import { dbReady } from './config/db'
+import { initData } from './config/db'
 
 const appHandler = serverless(app)
+let initialized = false
 
 export const handler = async (...args: Parameters<typeof appHandler>) => {
-	await dbReady
+	if (!initialized) {
+		await initData()
+		initialized = true
+	}
 	return appHandler(...args)
 }

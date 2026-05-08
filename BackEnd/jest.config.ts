@@ -8,9 +8,6 @@ const jestConfig: Config = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  transformIgnorePatterns: [
-    'node_modules/lowdb',
-  ],
   collectCoverageFrom: ['src/**/*.ts', 'api/**/*.ts'],
   coveragePathIgnorePatterns: ['/node_modules/'],
 }

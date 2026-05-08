@@ -1,18 +1,16 @@
-import { db, type DbSchema } from '../../src/config/db'
+import { setData, type DbSchema } from '../../src/config/db'
 
 /**
  * Resets the database to an empty test state.
  */
 export function resetDb(): void {
-  db.data = {
+  setData({
     users: [],
     events: [],
     accessRequests: [],
     notifications: [],
     content: [],
-  }
-
-  db.write()
+  })
 }
 
 /**
@@ -20,13 +18,11 @@ export function resetDb(): void {
  * @param partialData Partial database payload to merge into the test state.
  */
 export function seedDb(partialData: Partial<DbSchema>): void {
-  db.data = {
+  setData({
     users: partialData.users ?? [],
     events: partialData.events ?? [],
     accessRequests: partialData.accessRequests ?? [],
     notifications: partialData.notifications ?? [],
     content: partialData.content ?? [],
-  }
-
-  db.write()
+  })
 }

@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto'
 
+import { getData, persistData } from '../config/db'
 import { EVENT_TYPES } from '../constants/events'
 import type { IEvent, RSVPStatus } from '../interfaces/event.interface'
-import { eventRepository } from '../repositories/event.repository'
 
 export interface CreateEventInput {
   title: string
@@ -16,28 +16,14 @@ export interface CreateEventInput {
 }
 
 export class EventService {
-  /**
-   * Returns every stored event.
-    * @returns All events.
-   */
   async listEvents(): Promise<IEvent[]> {
-    return eventRepository.findAll()
+    return getData().events
   }
 
-  /**
-   * Looks up a single event by id.
-    * @param id Event identifier.
-    * @returns The matching event, or undefined when no match exists.
-   */
   async getEvent(id: string): Promise<IEvent | undefined> {
-    return eventRepository.findById(id)
+    return getData().events.find((event) => event.id === id)
   }
 
-  /**
-   * Creates a new event record.
-    * @param input Event payload.
-    * @returns The created event.
-   */
   async createEvent(input: CreateEventInput): Promise<IEvent> {
     const now = new Date().toISOString()
     const event: IEvent = {
@@ -55,59 +41,35 @@ export class EventService {
       createdAt: now,
       updatedAt: now,
     }
-
-    return eventRepository.insert(event)
+    getData().events.push(event)
+    await persistData()
+    return event
   }
 
-  /**
-   * Applies a partial update to an event.
-    * @param id Event identifier.
-    * @param patch Fields to update.
-    * @returns The updated event, or null when no event exists.
-   */
   async updateEvent(id: string, patch: Partial<Omit<IEvent, 'id' | 'createdAt' | 'createdBy'>>): Promise<IEvent | null> {
-    return eventRepository.update(id, {
-      ...patch,
-      updatedAt: new Date().toISOString(),
-    })
+    const event = getData().events.find((item) => item.id === id)
+    if (!event) return null
+    Object.assign(event, patch, { updatedAt: new Date().toISOString() })
+    await persistData()
+    return event
   }
 
-  /**
-   * Deletes an event by id.
-    * @param id Event identifier.
-    * @returns True when an event was removed, otherwise false.
-   */
   async deleteEvent(id: string): Promise<boolean> {
-    return eventRepository.remove(id)
+    const db = getData()
+    const index = db.events.findIndex((event) => event.id === id)
+    if (index < 0) return false
+    db.events.splice(index, 1)
+    await persistData()
+    return true
   }
 
-  /**
-   * Stores an RSVP response for a user on a specific event.
-    * @param eventId Event identifier.
-    * @param userId User identifier.
-    * @param status RSVP response value.
-    * @returns The updated event.
-   */
   async setRsvp(eventId: string, userId: string, status: RSVPStatus): Promise<IEvent> {
-    const event = eventRepository.findById(eventId)
-
-    if (!event) {
-      throw new Error('Event not found')
-    }
-
-    const updatedEvent = await eventRepository.update(eventId, {
-      rsvps: {
-        ...event.rsvps,
-        [userId]: status,
-      },
-      updatedAt: new Date().toISOString(),
-    })
-
-    if (!updatedEvent) {
-      throw new Error('Event RSVP could not be updated')
-    }
-
-    return updatedEvent
+    const event = getData().events.find((item) => item.id === eventId)
+    if (!event) throw new Error('Event not found')
+    event.rsvps[userId] = status
+    event.updatedAt = new Date().toISOString()
+    await persistData()
+    return event
   }
 }
 

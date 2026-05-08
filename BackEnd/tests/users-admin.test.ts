@@ -1,14 +1,14 @@
-import { userRepository } from '../src/repositories/user.repository'
-import { eventRepository } from '../src/repositories/event.repository'
-import { accessRequestRepository } from '../src/repositories/accessRequest.repository'
 import { randomUUID } from 'crypto'
 import { ROLE_CAPABILITIES } from '../src/constants/roles'
+import { getData } from '../src/config/db'
+import { resetDb } from './helpers/db.helper'
 
 
 describe('User Routes', () => {
   let testUser: any
 
   beforeEach(async () => {
+    resetDb()
     testUser = {
       id: randomUUID(),
       name: 'Test Admin',
@@ -20,18 +20,12 @@ describe('User Routes', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    await userRepository.insert(testUser)
-  })
-
-  afterEach(async () => {
-    for (const user of userRepository.findAll()) {
-      await userRepository.remove(user.id)
-    }
+    getData().users.push(testUser)
   })
 
   describe('GET /api/users', () => {
     it('should return list of approved users', async () => {
-      const users = userRepository.findByAccessStatus('approved')
+      const users = getData().users.filter((user) => user.accessStatus === 'approved')
       expect(Array.isArray(users)).toBe(true)
       expect(users.length).toBeGreaterThan(0)
     })
@@ -39,37 +33,38 @@ describe('User Routes', () => {
 
   describe('GET /api/users/:id', () => {
     it('should retrieve a user by id', async () => {
-      const user = userRepository.findById(testUser.id)
+      const user = getData().users.find((item) => item.id === testUser.id)
       expect(user?.id).toBe(testUser.id)
       expect(user?.email).toBe(testUser.email)
     })
 
     it('should return 404 for non-existent user', async () => {
-      const user = userRepository.findById('00000000-0000-0000-0000-000000000000')
+      const user = getData().users.find((item) => item.id === '00000000-0000-0000-0000-000000000000')
       expect(user).toBeUndefined()
     })
   })
 
   describe('PATCH /api/users/:id', () => {
     it('should update user profile', async () => {
-      const updated = await userRepository.update(testUser.id, {
-        name: 'Updated Name',
-        birthday: '1990-01-15',
-      })
+      const user = getData().users.find((item) => item.id === testUser.id)
+      if (!user) throw new Error('Missing test user')
+      Object.assign(user, { name: 'Updated Name', birthday: '1990-01-15' })
 
-      expect(updated?.name).toBe('Updated Name')
-      expect(updated?.birthday).toBe('1990-01-15')
+      expect(user.name).toBe('Updated Name')
+      expect(user.birthday).toBe('1990-01-15')
     })
 
     it('should update notification preferences', async () => {
-      const updated = await userRepository.update(testUser.id, {
+      const user = getData().users.find((item) => item.id === testUser.id)
+      if (!user) throw new Error('Missing test user')
+      Object.assign(user, {
         notificationPrefs: {
           level: 'important',
           channels: ['push'],
         },
       })
 
-      expect(updated?.notificationPrefs.level).toBe('important')
+      expect(user.notificationPrefs.level).toBe('important')
     })
   })
 
@@ -86,12 +81,13 @@ describe('User Routes', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      await userRepository.insert(memberUser)
+      getData().users.push(memberUser)
 
-      const deleted = await userRepository.remove(memberUser.id)
-      expect(deleted).toBe(true)
+      const index = getData().users.findIndex((item) => item.id === memberUser.id)
+      if (index >= 0) getData().users.splice(index, 1)
+      expect(index >= 0).toBe(true)
 
-      const retrieved = userRepository.findById(memberUser.id)
+      const retrieved = getData().users.find((item) => item.id === memberUser.id)
       expect(retrieved).toBeUndefined()
     })
   })
@@ -109,15 +105,17 @@ describe('User Routes', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      await userRepository.insert(memberUser)
+      getData().users.push(memberUser)
 
-      const promoted = await userRepository.update(memberUser.id, {
+      const user = getData().users.find((item) => item.id === memberUser.id)
+      if (!user) throw new Error('Missing member user')
+      Object.assign(user, {
         role: 'manager',
         capabilities: ROLE_CAPABILITIES.manager,
       })
 
-      expect(promoted?.role).toBe('manager')
-      expect(promoted?.capabilities).toContain('create_event')
+      expect(user.role).toBe('manager')
+      expect(user.capabilities).toContain('create_event')
     })
 
     it('should promote user to admin', async () => {
@@ -132,15 +130,17 @@ describe('User Routes', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      await userRepository.insert(memberUser)
+      getData().users.push(memberUser)
 
-      const promoted = await userRepository.update(memberUser.id, {
+      const user = getData().users.find((item) => item.id === memberUser.id)
+      if (!user) throw new Error('Missing member user')
+      Object.assign(user, {
         role: 'admin',
         capabilities: ROLE_CAPABILITIES.admin,
       })
 
-      expect(promoted?.role).toBe('admin')
-      expect(promoted?.capabilities).toContain('manage_users')
+      expect(user.role).toBe('admin')
+      expect(user.capabilities).toContain('manage_users')
     })
 
   })
@@ -150,6 +150,7 @@ describe('Admin Routes', () => {
   let testUser: any
 
   beforeEach(async () => {
+    resetDb()
     testUser = {
       id: randomUUID(),
       name: 'Test Admin',
@@ -161,24 +162,12 @@ describe('Admin Routes', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    await userRepository.insert(testUser)
-  })
-
-  afterEach(async () => {
-    for (const user of userRepository.findAll()) {
-      await userRepository.remove(user.id)
-    }
-    for (const event of eventRepository.findAll()) {
-      await eventRepository.remove(event.id)
-    }
-    for (const req of accessRequestRepository.findAll()) {
-      await accessRequestRepository.remove(req.id)
-    }
+    getData().users.push(testUser)
   })
 
   describe('GET /api/admin/dashboard', () => {
     it('should count user statistics', () => {
-      const allUsers = userRepository.findAll()
+      const allUsers = getData().users
       expect(allUsers.length).toBeGreaterThanOrEqual(1)
       expect(allUsers.filter((u) => u.role === 'admin').length).toBeGreaterThanOrEqual(1)
     })

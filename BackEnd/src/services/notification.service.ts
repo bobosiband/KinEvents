@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 
+import { getData, persistData } from '../config/db'
 import type { NotificationStatus, NotificationType, INotification } from '../interfaces/notification.interface'
-import { notificationRepository } from '../repositories/notification.repository'
 
 export interface CreateNotificationInput {
   type: NotificationType
@@ -11,19 +11,10 @@ export interface CreateNotificationInput {
 }
 
 export class NotificationService {
-  /**
-   * Returns every stored notification.
-    * @returns All notifications.
-   */
   async listNotifications(): Promise<INotification[]> {
-    return notificationRepository.findAll()
+    return getData().notifications
   }
 
-  /**
-   * Creates a new notification record.
-    * @param input Notification payload.
-    * @returns The created notification.
-   */
   async createNotification(input: CreateNotificationInput): Promise<INotification> {
     const notification: INotification = {
       id: randomUUID(),
@@ -33,31 +24,26 @@ export class NotificationService {
       status: input.status ?? 'pending',
       createdAt: new Date().toISOString(),
     }
-
-    return notificationRepository.insert(notification)
+    getData().notifications.push(notification)
+    await persistData()
+    return notification
   }
 
-  /**
-   * Marks a notification as sent.
-    * @param id Notification identifier.
-    * @returns The updated notification, or null when no notification exists.
-   */
   async markAsSent(id: string): Promise<INotification | null> {
-    return notificationRepository.update(id, {
-      status: 'sent',
-      sentAt: new Date().toISOString(),
-    })
+    const notification = getData().notifications.find((item) => item.id === id)
+    if (!notification) return null
+    notification.status = 'sent'
+    notification.sentAt = new Date().toISOString()
+    await persistData()
+    return notification
   }
 
-  /**
-   * Marks a notification as failed.
-    * @param id Notification identifier.
-    * @returns The updated notification, or null when no notification exists.
-   */
   async markAsFailed(id: string): Promise<INotification | null> {
-    return notificationRepository.update(id, {
-      status: 'failed',
-    })
+    const notification = getData().notifications.find((item) => item.id === id)
+    if (!notification) return null
+    notification.status = 'failed'
+    await persistData()
+    return notification
   }
 }
 

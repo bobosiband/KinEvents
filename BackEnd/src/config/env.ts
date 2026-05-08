@@ -1,7 +1,11 @@
 import dotenv from 'dotenv'
 import { z } from 'zod'
 
-dotenv.config()
+// Only load `.env` if core env vars are missing. This prevents a local
+// `.env` from overriding explicit SAM/local env-vars or CI settings.
+if (!process.env.NODE_ENV && !process.env.MONGODB_URI && !process.env.JWT_SECRET) {
+  dotenv.config()
+}
 
 const requiredVariables = ['NODE_ENV', 'JWT_SECRET', 'SENDGRID_API_KEY', 'APP_URL'] as const
 

@@ -1,17 +1,11 @@
 import { randomUUID } from 'crypto'
 
-import { eventRepository } from '../src/repositories/event.repository'
-import { userRepository } from '../src/repositories/user.repository'
 import { eventService } from '../src/services/event.service'
+import { resetDb } from './helpers/db.helper'
 
 describe('Event Routes', () => {
-  afterEach(async () => {
-    for (const user of userRepository.findAll()) {
-      await userRepository.remove(user.id)
-    }
-    for (const event of eventRepository.findAll()) {
-      await eventRepository.remove(event.id)
-    }
+  beforeEach(() => {
+    resetDb()
   })
 
   describe('GET /api/events', () => {

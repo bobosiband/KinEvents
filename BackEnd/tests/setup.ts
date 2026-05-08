@@ -1,1 +1,6 @@
 process.env.NODE_ENV ??= 'test'
+process.env.JWT_SECRET ??= 'test-secret-key-for-testing-purposes-only'
+process.env.SENDGRID_API_KEY ??= 'test-sendgrid-key'
+process.env.APP_URL ??= 'http://localhost:3001'
+process.env.MONGODB_URI ??= 'mongodb://localhost:27017/kinevents-test'
+process.env.MONGODB_DB_NAME ??= 'kinevents-test'

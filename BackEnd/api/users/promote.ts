@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
 
-import { userRepository } from '../../src/repositories/user.repository'
+import { getData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../../src/constants/roles'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
@@ -34,26 +34,21 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const user = userRepository.findById(parseResult.data.userId)
+    const db = getData()
+    const user = db.users.find((item) => item.id === parseResult.data.userId)
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
 
-    const updatedUser = await userRepository.update(parseResult.data.userId, {
-      role: parseResult.data.role,
-      capabilities: ROLE_CAPABILITIES[parseResult.data.role],
-      updatedAt: new Date().toISOString(),
-    })
-
-    if (!updatedUser) {
-      res.status(400).json({ success: false, message: 'Could not update user role' })
-      return
-    }
+    user.role = parseResult.data.role
+    user.capabilities = [...ROLE_CAPABILITIES[parseResult.data.role]]
+    user.updatedAt = new Date().toISOString()
+    await persistData()
 
     res.status(200).json({
       success: true,
-      data: updatedUser,
+      data: user,
       message: `User promoted to ${parseResult.data.role}`,
     })
   } catch (error) {

@@ -1,16 +1,9 @@
-import { userRepository } from '../src/repositories/user.repository'
-import { accessRequestRepository } from '../src/repositories/accessRequest.repository'
 import { authService } from '../src/services/auth.service'
+import { resetDb } from './helpers/db.helper'
 
 describe('Authentication Routes', () => {
-  afterEach(async () => {
-    // Clear repositories after each test
-    for (const user of userRepository.findAll()) {
-      await userRepository.remove(user.id)
-    }
-    for (const req of accessRequestRepository.findAll()) {
-      await accessRequestRepository.remove(req.id)
-    }
+  beforeEach(() => {
+    resetDb()
   })
 
   describe('POST /api/auth/request-access', () => {
@@ -32,7 +25,7 @@ describe('Authentication Routes', () => {
       })
 
 
-      const allRequests = accessRequestRepository.findAll()
+      const allRequests = (await authService.listAccessRequests())
       expect(allRequests.filter((r) => r.email === 'john@example.com')).toHaveLength(1)
     })
   })

@@ -39,38 +39,9 @@ export function withAuth(
     const token = authorizationHeader.slice('Bearer '.length)
 
     try {
-      // Try multiple secrets to accommodate test timing where test tokens
-      // may be created with a fallback secret before dotenv/env is loaded.
-      const triedSecrets: string[] = []
-      let decoded: any
-      const tryVerify = (secret: string) => jwt.verify(token, secret)
-
-      try {
-        if (process.env.JWT_SECRET) {
-          try {
-            decoded = tryVerify(process.env.JWT_SECRET)
-          } catch {
-            // continue to fallbacks
-          }
-        }
-
-        if (!decoded) {
-          try {
-            decoded = tryVerify('test-secret')
-          } catch {
-            // continue
-          }
-        }
-
-        if (!decoded) {
-          decoded = tryVerify(env.JWT_SECRET)
-        }
-      } catch (err) {
-        throw err
-      }
+      const decoded = jwt.verify(token, env.JWT_SECRET) as IUser
 
       const requestWithUser = req as RequestWithUser
-      // Build a sanitized IUser object to avoid JWT metadata (iat/exp) leaking into `req.user`
       const user = {
         id: decoded.id,
         name: decoded.name,
@@ -97,7 +68,7 @@ export function withAuth(
       }
 
       await handler(requestWithUser, res)
-      } catch (err) {
+    } catch (err) {
       // Log verification failures for debugging token issues in deployed environments
       try {
         const prefix = token?.toString?.().slice?.(0, 20) || 'no-token'

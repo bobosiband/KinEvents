@@ -2,7 +2,8 @@ import jwt from 'jsonwebtoken'
 import type { IUser } from '../src/interfaces/user.interface'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'test-secret'
+// Ensure JWT_SECRET is available (set in setup.ts)
+const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-testing-purposes-only'
 
 // Mock users
 const mockMember: IUser = {

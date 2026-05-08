@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
 
-import { userRepository } from '../../src/repositories/user.repository'
+import { getData, persistData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const updateUserSchema = z.object({
@@ -33,7 +33,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
 
   if (req.method === 'GET') {
-    const user = userRepository.findById(id)
+    const user = getData().users.find((item) => item.id === id)
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
@@ -55,21 +55,23 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     if (parseResult.data.name) updateData.name = parseResult.data.name
     if (parseResult.data.birthday) updateData.birthday = parseResult.data.birthday
     if (parseResult.data.notificationPrefs) {
-      const existing = userRepository.findById(id)
+      const existing = getData().users.find((item) => item.id === id)
       updateData.notificationPrefs = {
         level: parseResult.data.notificationPrefs.level ?? existing?.notificationPrefs.level,
         channels: parseResult.data.notificationPrefs.channels ?? existing?.notificationPrefs.channels,
       }
     }
 
-    const updatedUser = await userRepository.update(id, updateData)
-
-    if (!updatedUser) {
+    const user = getData().users.find((item) => item.id === id)
+    if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
 
-    res.status(200).json({ success: true, data: updatedUser })
+    Object.assign(user, updateData)
+    await persistData()
+
+    res.status(200).json({ success: true, data: user })
   } else if (req.method === 'DELETE') {
     // Only admins or the user themselves may delete the user record
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.id !== id)) {
@@ -77,11 +79,15 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
-    const deleted = await userRepository.remove(id)
-    if (!deleted) {
+    const db = getData()
+    const index = db.users.findIndex((item) => item.id === id)
+    if (index < 0) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
+
+    db.users.splice(index, 1)
+    await persistData()
 
     res.status(200).json({ success: true, message: 'User deleted successfully' })
   } else {
