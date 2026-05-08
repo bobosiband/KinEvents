@@ -27,6 +27,11 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     return
   }
 
+  if (req.user!.role !== 'admin' && req.user!.id !== parseResult.data.userId) {
+    res.status(403).json({ success: false, message: 'You can only RSVP for yourself' })
+    return
+  }
+
   try {
     const event = await eventService.setRsvp(parseResult.data.eventId, parseResult.data.userId, parseResult.data.status)
     res.status(200).json({

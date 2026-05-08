@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getData } from '../../src/config/db'
+import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return
@@ -32,4 +33,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     },
     message: 'Database state retrieved successfully',
   })
+}
+
+const protectedHandler = withAuth(handler, 'admin')
+
+export default function debugDbHandler(req: VercelRequest, res: VercelResponse) {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(404).json({ success: false, message: 'Not found' })
+    return
+  }
+
+  return protectedHandler(req, res)
 }

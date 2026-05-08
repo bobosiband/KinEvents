@@ -16,6 +16,7 @@
     "deploy:clean-pkg": "rm -rf .lambda-pkg && mkdir .lambda-pkg && cp -r dist data .lambda-pkg/ && cp package.json package-lock.json .lambda-pkg/ && cd .lambda-pkg && npm ci --omit=dev",
     "deploy:package": "cd .lambda-pkg && zip -r ../.lambda-pkg.zip . -q && cd ..",
     "deploy:upload": "aws lambda update-function-code --function-name kinevents-backend-KinEventsFunction-VYEGgUmx4oGJ --zip-file fileb://.lambda-pkg.zip --publish --region us-east-1",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --runInBand",
     "test:integration": "jest tests/integration.real-user.test.ts --runInBand",
