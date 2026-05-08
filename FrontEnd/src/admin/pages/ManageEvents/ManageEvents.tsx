@@ -1,0 +1,76 @@
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import { DataTable, type Column } from '@/admin/components/DataTable/DataTable'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { EventForm } from '@/features/events/components/EventForm/EventForm'
+import { useDeleteEvent, useUpdateEvent } from '@/features/events/hooks/useCreateEvent'
+import { useEvents } from '@/features/events/hooks/useEvents'
+import { useGenerateBirthdays } from '@/features/birthdays/hooks/useBirthdays'
+import type { Event, EventPayload } from '@/features/events/types/event.types'
+import styles from './ManageEvents.module.css'
+
+const columns: Column<Event>[] = [
+  { key: 'title', header: 'Name' },
+  { key: 'type', header: 'Type' },
+  { key: 'date', header: 'Date', render: row => new Date(row.date).toLocaleDateString() },
+  { key: 'locked', header: 'Locked' },
+  { key: 'rsvps', header: 'Attendees', render: row => String(Object.values(row.rsvps).filter(status => status === 'yes').length) },
+]
+
+export function ManageEvents() {
+  const events = useEvents()
+  const remove = useDeleteEvent()
+  const generate = useGenerateBirthdays()
+  const [editing, setEditing] = useState<Event | undefined>()
+  const update = useUpdateEvent(editing?.id || '')
+
+  const submit = (payload: EventPayload) => {
+    update.mutate(payload, {
+      onSuccess: () => {
+        toast.success('Event saved')
+        setEditing(undefined)
+      },
+      onError: err => toast.error(err instanceof Error ? err.message : 'Failed to save event'),
+    })
+  }
+
+  return (
+    <div className={styles.page}>
+      <header>
+        <h1>Manage Events</h1>
+        <Button
+          onClick={() =>
+            generate.mutate(undefined, {
+              onSuccess: () => toast.success('Birthday events generated'),
+              onError: err => toast.error(err instanceof Error ? err.message : 'Failed to generate'),
+            })
+          }
+        >
+          Generate Birthdays
+        </Button>
+      </header>
+      <DataTable
+        columns={columns}
+        data={events.data || []}
+        loading={events.isLoading}
+        emptyMessage="No events found."
+        actions={[
+          { label: 'Edit', onClick: setEditing },
+          {
+            label: 'Delete',
+            tone: 'danger',
+            onClick: event =>
+              remove.mutate(event.id, {
+                onSuccess: () => toast.success('Event deleted'),
+                onError: err => toast.error(err instanceof Error ? err.message : 'Failed to delete'),
+              }),
+          },
+        ]}
+      />
+      <Modal title="Edit Event" open={Boolean(editing)} onClose={() => setEditing(undefined)}>
+        {editing ? <EventForm event={editing} loading={update.isPending} onSubmit={submit} /> : null}
+      </Modal>
+    </div>
+  )
+}

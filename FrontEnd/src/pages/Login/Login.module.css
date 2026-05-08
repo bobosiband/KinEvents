@@ -1,0 +1,26 @@
+.card {
+  width: min(100%, 420px);
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xl);
+}
+
+.logo {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.card form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.card a {
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+}

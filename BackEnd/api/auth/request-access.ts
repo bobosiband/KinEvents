@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 import { authService } from '../../src/services/auth.service'
+import { withAuth } from '../../src/middleware/withAuth'
 
 const requestAccessSchema = z.object({
   name: z.string().min(1),
@@ -15,6 +16,13 @@ const requestAccessSchema = z.object({
  * @param res Vercel response object.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'GET') {
+    return withAuth(async (_authReq, authRes) => {
+      const accessRequests = await authService.listAccessRequests()
+      authRes.status(200).json({ success: true, data: accessRequests })
+    }, 'admin')(req, res)
+  }
+
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
     return

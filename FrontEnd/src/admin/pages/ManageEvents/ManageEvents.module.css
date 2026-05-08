@@ -1,0 +1,11 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.page header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}

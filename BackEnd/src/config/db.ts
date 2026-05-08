@@ -51,21 +51,7 @@ function getSeedData(): DbSchema {
     }
   }
 
-  return normalizeDataShape({
-    users: [
-      {
-        id: '99b13223-b3b1-4e9e-b5d3-54e769f34fab',
-        name: 'Bob Local',
-        email: 'bobosibanda35@gmail.com',
-        role: 'admin',
-        accessStatus: 'approved',
-        capabilities: [],
-        notificationPrefs: { level: 'all', channels: ['email'] },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
-  })
+  return normalizeDataShape()
 }
 
 function normalizeDataShape(saved: Partial<DbSchema> = {}): DbSchema {
@@ -83,7 +69,12 @@ export async function initData(): Promise<void> {
   mongoUri = process.env.MONGODB_URI?.trim()
 
   if (isTestMode || !mongoUri) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('MONGODB_URI is required in production')
+    }
+
     console.log('[DB] Test mode or no MongoDB URI - using in-memory data store')
+    data = getSeedData()
     return
   }
 
@@ -97,6 +88,9 @@ export async function initData(): Promise<void> {
     } catch (err) {
       console.error('[DB] Invalid MONGODB_URI, falling back to in-memory store', err)
       client = null
+      if (process.env.NODE_ENV === 'production') {
+        throw err
+      }
       return
     }
   }
@@ -107,9 +101,14 @@ export async function initData(): Promise<void> {
       isConnected = true
       console.log('[DB] MongoDB connected')
     } catch (error) {
+      client = null
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[DB] MongoDB connect failed in production', error)
+        throw error
+      }
+
       console.warn('[DB] MongoDB connect failed, using seed data fallback', error)
       data = getSeedData()
-      client = null
       return
     }
   }

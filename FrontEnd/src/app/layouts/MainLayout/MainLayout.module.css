@@ -1,0 +1,17 @@
+.shell {
+  min-height: 100vh;
+  max-width: var(--max-width-app);
+  margin: 0 auto;
+  background: var(--color-bg);
+}
+
+.content {
+  min-height: calc(100vh - var(--nav-height));
+  padding: var(--space-4) var(--space-4) calc(var(--bottom-nav-height) + var(--space-6));
+}
+
+@media (min-width: 760px) {
+  .content {
+    padding: var(--space-6);
+  }
+}

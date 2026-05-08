@@ -1,0 +1,32 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.greeting {
+  padding: var(--space-6);
+  background: var(--gradient-hero);
+  color: var(--color-text-inverse);
+}
+
+.greeting span {
+  font-weight: var(--font-weight-medium);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.strip {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.quick {
+  position: fixed;
+  right: max(var(--space-4), calc((100vw - var(--max-width-app)) / 2 + var(--space-4)));
+  bottom: calc(var(--bottom-nav-height) + var(--space-4));
+}

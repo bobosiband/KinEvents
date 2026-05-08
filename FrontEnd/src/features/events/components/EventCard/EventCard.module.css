@@ -1,0 +1,38 @@
+.card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left-width: var(--space-1);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-primary);
+  text-align: left;
+  animation: fadeIn 250ms ease;
+}
+
+.custom {
+  border-left-color: var(--color-primary);
+}
+
+.birthday {
+  border-left-color: var(--color-accent);
+}
+
+.compact {
+  min-width: 260px;
+}
+
+.card h3 {
+  margin-top: var(--space-2);
+}
+
+.card p,
+.card span,
+.card strong {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}

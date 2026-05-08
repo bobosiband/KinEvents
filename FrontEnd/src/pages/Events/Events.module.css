@@ -1,0 +1,36 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.tabs button {
+  min-height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  text-transform: capitalize;
+}
+
+.tabs .active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-ghost);
+  color: var(--color-primary);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.fab {
+  position: fixed;
+  right: max(var(--space-4), calc((100vw - var(--max-width-app)) / 2 + var(--space-4)));
+  bottom: calc(var(--bottom-nav-height) + var(--space-4));
+}

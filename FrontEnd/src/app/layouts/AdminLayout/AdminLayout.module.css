@@ -1,0 +1,22 @@
+.adminShell {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.panel {
+  min-height: 100vh;
+}
+
+.content {
+  padding: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .panel {
+    margin-left: var(--admin-sidebar-width);
+  }
+
+  .content {
+    padding: var(--space-6);
+  }
+}

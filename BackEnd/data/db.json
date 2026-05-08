@@ -1,20 +1,5 @@
 {
-  "users": [
-    {
-      "id": "99b13223-b3b1-4e9e-b5d3-54e769f34fab",
-      "name": "Bob Local",
-      "email": "bobosibanda35@gmail.com",
-      "role": "admin",
-      "accessStatus": "approved",
-      "capabilities": [],
-      "notificationPrefs": {
-        "level": "all",
-        "channels": ["email"]
-      },
-      "createdAt": "2026-05-06T21:33:07.265Z",
-      "updatedAt": "2026-05-06T21:33:07.265Z"
-    }
-  ],
+  "users": [],
   "events": [],
   "accessRequests": [],
   "notifications": [],
