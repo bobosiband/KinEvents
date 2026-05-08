@@ -43,7 +43,15 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     this.items.push(item)
 
     const writeResult = db.write()
-    return writeResult instanceof Promise ? writeResult.then(() => item) : item
+    if (writeResult instanceof Promise) {
+      return writeResult.then(() => {
+        console.log(`[DB] Persisted ${String(this.collectionName)} after insert`)
+        return item
+      })
+    }
+
+    console.log(`[DB] Persisted ${String(this.collectionName)} after insert`)
+    return item
   }
 
   /**
@@ -62,7 +70,15 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     Object.assign(item, patch)
 
     const writeResult = db.write()
-    return writeResult instanceof Promise ? writeResult.then(() => item) : item
+    if (writeResult instanceof Promise) {
+      return writeResult.then(() => {
+        console.log(`[DB] Persisted ${String(this.collectionName)} after update`)
+        return item
+      })
+    }
+
+    console.log(`[DB] Persisted ${String(this.collectionName)} after update`)
+    return item
   }
 
   /**
@@ -80,6 +96,14 @@ export abstract class BaseRepository<TKey extends keyof DbSchema, TItem extends 
     this.items.splice(index, 1)
 
     const writeResult = db.write()
-    return writeResult instanceof Promise ? writeResult.then(() => true) : true
+    if (writeResult instanceof Promise) {
+      return writeResult.then(() => {
+        console.log(`[DB] Persisted ${String(this.collectionName)} after delete`)
+        return true
+      })
+    }
+
+    console.log(`[DB] Persisted ${String(this.collectionName)} after delete`)
+    return true
   }
 }

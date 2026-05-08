@@ -1,0 +1,61 @@
+{
+    "FunctionName": "kinevents-backend-KinEventsFunction-VYEGgUmx4oGJ",
+    "FunctionArn": "arn:aws:lambda:us-east-1:331145994151:function:kinevents-backend-KinEventsFunction-VYEGgUmx4oGJ",
+    "Runtime": "nodejs22.x",
+    "Role": "arn:aws:iam::331145994151:role/kinevents-backend-KinEventsFunctionRole-Eo8E1K5Jl4BZ",
+    "Handler": "dist/src/lambda.handler",
+    "CodeSize": 7136350,
+    "Description": "",
+    "Timeout": 30,
+    "MemorySize": 1024,
+    "LastModified": "2026-05-08T05:19:53.000+0000",
+    "CodeSha256": "Yjh9WK36XjriFZYPIrheTnLfICtTKnZVKRohF3Ac8ME=",
+    "Version": "$LATEST",
+    "VpcConfig": {
+        "SubnetIds": [
+            "subnet-0288c8b6b4cdeaec1",
+            "subnet-081517a43fe4c07ef"
+        ],
+        "SecurityGroupIds": [
+            "sg-07d6a5462ec8f1168"
+        ],
+        "VpcId": "vpc-0c72547f2d6906e2c",
+        "Ipv6AllowedForDualStack": false
+    },
+    "Environment": {
+        "Variables": {
+            "JWT_SECRET": "6a0fe51513ce4afaf6452153140b9b673dfadce0905173c0608965537c04ebb4",
+            "SENDGRID_API_KEY": "dummy-sendgrid-key",
+            "MONGODB_URI": "mongodb+srv://bobosibanda35_db_user:udYo0FNETvETuRpG@database.wnsx0tq.mongodb.net/?appName=dataBase",
+            "NODE_ENV": "production",
+            "APP_URL": "https://your-lambda-url.amazonaws.com",
+            "MONGODB_DB_NAME": "kinevents"
+        }
+    },
+    "TracingConfig": {
+        "Mode": "PassThrough"
+    },
+    "RevisionId": "b45d4915-fad3-4e6c-8949-897f7c9af3a4",
+    "State": "Active",
+    "LastUpdateStatus": "InProgress",
+    "LastUpdateStatusReason": "The function is being created.",
+    "LastUpdateStatusReasonCode": "Creating",
+    "PackageType": "Zip",
+    "Architectures": [
+        "x86_64"
+    ],
+    "EphemeralStorage": {
+        "Size": 512
+    },
+    "SnapStart": {
+        "ApplyOn": "None",
+        "OptimizationStatus": "Off"
+    },
+    "RuntimeVersionConfig": {
+        "RuntimeVersionArn": "arn:aws:lambda:us-east-1::runtime:ab6b11703de54c7e23d588024a17ddfc191cdfd59fda97876f938c3c51e3eaa5"
+    },
+    "LoggingConfig": {
+        "LogFormat": "Text",
+        "LogGroup": "/aws/lambda/kinevents-backend-KinEventsFunction-VYEGgUmx4oGJ"
+    }
+}

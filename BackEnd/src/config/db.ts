@@ -231,11 +231,6 @@ const useMongoDatabase =
   process.env.NODE_ENV !== 'test' &&
   Boolean(process.env.MONGODB_URI?.trim())
 
-const allowJsonFallback =
-  process.env.NODE_ENV === 'development' ||
-  Boolean(process.env.LOCAL_DB_PATH?.trim()) ||
-  process.env.AWS_SAM_LOCAL === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME)
-
 class ProxyDatabase implements DatabaseAdapter {
   private activeAdapter: DatabaseAdapter
   private adapterType: 'json' | 'mongo' = 'json'
@@ -244,12 +239,12 @@ class ProxyDatabase implements DatabaseAdapter {
   readonly ready: Promise<void>
 
   constructor() {
-    const jsonDb = new JsonDatabase(getJsonDbFilePath()).read()
-
-    this.activeAdapter = jsonDb
-    this.adapterType = 'json'
-
     if (!useMongoDatabase) {
+      const jsonDb = new JsonDatabase(getJsonDbFilePath()).read()
+
+      this.activeAdapter = jsonDb
+      this.adapterType = 'json'
+
       console.log('[DB] ✓ Using JSON database only')
       console.log(`[DB] 📁 Path: ${getJsonDbFilePath()}`)
       console.log(`[DB] 👥 Users: ${this.activeAdapter.data.users.length}`)
@@ -268,63 +263,31 @@ class ProxyDatabase implements DatabaseAdapter {
       process.env.MONGODB_DB_NAME?.trim() || 'kinevents'
     )
 
-    const mongoTimeoutMs = parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '30000', 10)
-    
-    this.ready = Promise.race([
-      mongoDb.ready,
-      new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`MongoDB connection timeout (${mongoTimeoutMs}ms)`))
-        }, mongoTimeoutMs)
-      }),
-    ]).then(
-      async () => {
-        // CRITICAL: DO NOT copy JSON data into MongoDB.
-        // MongoDB has already loaded the real production database.
-        // Simply switch the active adapter reference.
+    this.activeAdapter = mongoDb
+    this.adapterType = 'mongo'
 
+    this.ready = mongoDb.ready.then(
+      () => {
         console.log('[DB] ✓ MongoDB connected successfully')
         console.log(`[DB] 👥 Users: ${mongoDb.data.users.length}`)
-        console.log(
-          '[DB] 📊 Collections loaded:',
-          {
-            users: mongoDb.data.users.length,
-            events: mongoDb.data.events.length,
-            accessRequests: mongoDb.data.accessRequests.length,
-            notifications: mongoDb.data.notifications.length,
-            content: mongoDb.data.content.length,
-          }
-        )
+        console.log('[DB] 📊 Collections loaded:', {
+          users: mongoDb.data.users.length,
+          events: mongoDb.data.events.length,
+          accessRequests: mongoDb.data.accessRequests.length,
+          notifications: mongoDb.data.notifications.length,
+          content: mongoDb.data.content.length,
+        })
 
-        // CACHE MongoDB data to JSON file as fallback
-        // If MongoDB times out on next request, we have cached data
-        try {
-          jsonDb.data = mongoDb.data
-          jsonDb.write()
-          console.log('[DB] 💾 Cached MongoDB data to JSON file for fallback')
-        } catch (cacheError) {
-          console.warn('[DB] ⚠️  Failed to cache MongoDB data:', cacheError instanceof Error ? cacheError.message : cacheError)
-        }
-
-        this.activeAdapter = mongoDb
-        this.adapterType = 'mongo'
         this.isReady = true
-
-        console.log('[DB] 🔀 Switched from JSON to MongoDB adapter')
+        console.log('[DB] 🔀 Using MongoDB adapter')
       },
       async (error) => {
         console.warn(
           '[DB] ⚠️  MongoDB connection failed:',
           error instanceof Error ? error.message : error
         )
-        console.warn('[DB] 📌 Falling back to JSON database')
-
-        if (!allowJsonFallback) {
-          console.error('[DB] ❌ JSON fallback not allowed. Throwing error.')
-          throw error
-        }
-
-        this.isReady = true
+        console.error('[DB] ❌ MongoDB is required in this environment; refusing to fall back to JSON')
+        throw error
       }
     )
   }
