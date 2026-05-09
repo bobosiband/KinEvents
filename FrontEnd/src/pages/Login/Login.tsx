@@ -23,7 +23,8 @@ export function Login() {
     mutation.mutate({ email }, {
       onSuccess: data => {
         setAuth(data.user, data.token)
-        navigate(data.user.role === 'admin' ? '/admin' : '/')
+        navigate(data.user.role === 'admin' ? '/admin' : '/notifications')
+
       },
       onError: (loginError: any) => {
         const message = loginError?.response?.data?.message || loginError?.message || 'Login failed'

@@ -1,81 +1,138 @@
+/* ==================== AVATAR ==================== */
+
 .avatar {
-  display: inline-grid;
-  place-items: center;
-  color: var(--color-text-inverse);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.xs { width: 24px; height: 24px; font-size: var(--font-size-sm); }
-.sm { width: 32px; height: 32px; font-size: var(--font-size-base); }
-.md { width: 44px; height: 44px; font-size: var(--font-size-lg); }
-.lg { width: 64px; height: 64px; font-size: var(--font-size-2xl); }
-.xl { width: 96px; height: 96px; font-size: var(--font-size-3xl); }
-
-.img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-.initials { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
-
-.online {
   position: relative;
-}
-.online::after {
-  content: '';
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 9999px;
-  background: var(--color-success);
-  box-shadow: 0 0 0 2px var(--color-surface);
-}
-.avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
   overflow: hidden;
-  border: 2px solid var(--color-surface);
-  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
   color: var(--color-text-inverse);
   font-weight: var(--font-weight-bold);
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.sm {
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-surface);
+  flex-shrink: 0;
+  
+  /* Default size: medium */
   width: 32px;
   height: 32px;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
+}
+
+/* ==================== SIZES ==================== */
+
+.sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+  border-width: 1px;
 }
 
 .md {
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   font-size: var(--font-size-sm);
 }
 
 .lg {
-  width: 56px;
-  height: 56px;
-  font-size: var(--font-size-md);
+  width: 40px;
+  height: 40px;
+  font-size: var(--font-size-base);
+  border-width: 2px;
 }
 
-.xl {
-  width: 84px;
-  height: 84px;
-  font-size: var(--font-size-xl);
+/* ==================== CONTENT ==================== */
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.palette0 { background: var(--gradient-primary); }
-.palette1 { background: var(--gradient-accent); }
-.palette2 { background: var(--color-success); }
-.palette3 { background: var(--color-warning); }
-.palette4 { background: var(--color-primary-dark); }
-.palette5 { background: var(--color-accent-light); }
+.initials {
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==================== STATUS INDICATOR ==================== */
+
+.withStatus {
+  border-color: var(--color-surface);
+}
+
+.statusIndicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-surface);
+  background: var(--color-success);
+}
+
+.sm .statusIndicator {
+  width: 6px;
+  height: 6px;
+  bottom: -1px;
+  right: -1px;
+  border-width: 1px;
+}
+
+.lg .statusIndicator {
+  width: 12px;
+  height: 12px;
+  bottom: 0;
+  right: 0;
+}
+
+.offline {
+  background: var(--color-neutral);
+}
+
+.away {
+  background: var(--color-gold);
+}
+
+.online {
+  background: var(--color-success);
+  animation: pulse var(--transition-slow) ease-in-out infinite;
+}
+
+/* ==================== DARK MODE ==================== */
+
+[data-theme="dark"] {
+  .avatar {
+    border-color: var(--color-surface);
+  }
+
+  .statusIndicator {
+    border-color: var(--color-surface);
+  }
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .avatar {
+    min-width: auto;
+  }
+}

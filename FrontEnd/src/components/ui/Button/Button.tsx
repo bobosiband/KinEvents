@@ -1,23 +1,25 @@
 import React from 'react'
 import styles from './Button.module.css'
+import type { ButtonProps } from './Button.types'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
-type Size = 'sm' | 'md' | 'lg'
-
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant
-  size?: Size
-  loading?: boolean
-  fullWidth?: boolean
-  icon?: React.ReactNode
-  iconPosition?: 'left' | 'right'
-}
-
+/**
+ * Button Component
+ * 
+ * Flexible button with multiple variants, sizes, and states.
+ * 
+ * @example
+ * <Button variant="primary" size="medium">Click me</Button>
+ * <Button variant="secondary" isLoading>Loading...</Button>
+ * <Button variant="ghost" icon={<Icon />} size="small" />
+ */
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'primary',
     size = 'md',
-    loading = false,
+    isLoading = false,
+    // Legacy prop alias (some pages use `loading`)
+    loading,
+
     fullWidth = false,
     icon,
     iconPosition = 'left',
@@ -28,33 +30,48 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   },
   ref
 ) {
+  // Build className string
   const classes = [
-    styles.btn,
-    styles[variant],
-    styles[size],
+    styles.button,
+    styles[variant as keyof typeof styles],
+    styles[size as keyof typeof styles],
     fullWidth ? styles.fullWidth : null,
-    disabled || loading ? styles.disabled : null,
+    isLoading ? styles.loading : null,
     className || null,
   ]
     .filter(Boolean)
     .join(' ')
 
   return (
-    <button ref={ref} className={classes} disabled={disabled || loading} {...rest}>
-      {loading ? (
-        <span className={styles.icon} aria-hidden>
-          <span className={styles.spinner} />
+    <button 
+      ref={ref} 
+      className={classes} 
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      {...rest}
+    >
+      {isLoading ? (
+        <span className={styles.spinner} aria-hidden="true" />
+      ) : null}
+
+      {!isLoading && icon && iconPosition === 'left' ? (
+        <span className={styles.icon} aria-hidden="true">
+          {icon}
         </span>
       ) : null}
 
-      {!loading && icon && iconPosition === 'left' ? <span className={styles.icon}>{icon}</span> : null}
-
       {children}
 
-      {!loading && icon && iconPosition === 'right' ? <span className={styles.icon}>{icon}</span> : null}
+      {!isLoading && icon && iconPosition === 'right' ? (
+        <span className={styles.icon} aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
     </button>
   )
 })
+
+Button.displayName = 'Button'
 
 export default Button
 

@@ -1,36 +1,79 @@
 import React from 'react'
 import styles from './Card.module.css'
 
-export type CardVariant = 'default' | 'elevated' | 'ghost' | 'bordered'
+export type CardVariant = 'elevated' | 'flat' | 'interactive' | 'ghost' | 'bordered'
+
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant
+  padding?: 'small' | 'medium' | 'large'
+  clickable?: boolean
+  href?: string
   onClick?: React.MouseEventHandler<HTMLElement>
   disabled?: boolean
+  className?: string
 }
 
-export const Card: React.FC<CardProps> = ({ variant = 'default', onClick, disabled = false, children, className, ...rest }) => {
-  const clickable = typeof onClick === 'function'
-  const base = [styles.card, className || '']
-  if (variant === 'elevated') base.push(styles.elevated)
-  if (variant === 'ghost') base.push(styles.ghost)
-  if (variant === 'bordered') base.push(styles.bordered)
-  if (clickable) base.push(styles.clickable)
-  if (disabled) base.push(styles.disabled)
+/**
+ * Card Component
+ * 
+ * Flexible card component for displaying content with optional elevation and hover effects.
+ * 
+ * @example
+ * <Card variant="elevated" padding="medium">
+ *   <h3>Card Title</h3>
+ *   <p>Card content</p>
+ * </Card>
+ */
+export const Card: React.FC<CardProps> = ({ 
+  variant = 'elevated',
+  padding = 'medium',
+  clickable,
+  onClick, 
+  disabled = false, 
+  children, 
+  className,
+  href,
+  ...rest 
+}) => {
+  const isClickable = clickable || typeof onClick === 'function' || !!href
+  
+  const classNames = [
+    styles.card,
+    styles[variant as keyof typeof styles],
+    styles[`padding-${padding}` as keyof typeof styles],
+    isClickable ? styles.clickable : null,
+    disabled ? styles.disabled : null,
+    className || '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
-  const classNames = base.filter(Boolean).join(' ')
-
-  if (clickable) {
+  if (href) {
     return (
-      <button type="button" className={classNames} onClick={onClick as React.MouseEventHandler<HTMLButtonElement>} disabled={disabled} {...(rest as any)}>
-        <span className={styles.content}>{children}</span>
+      <a href={href} className={classNames} {...(rest as any)}>
+        {children}
+      </a>
+    )
+  }
+
+  if (isClickable) {
+    return (
+      <button 
+        type="button" 
+        className={classNames} 
+        onClick={onClick as React.MouseEventHandler<HTMLButtonElement>} 
+        disabled={disabled} 
+        {...(rest as any)}
+      >
+        {children}
       </button>
     )
   }
 
   return (
     <div className={classNames} {...rest}>
-      <div className={styles.content}>{children}</div>
+      {children}
     </div>
   )
 }

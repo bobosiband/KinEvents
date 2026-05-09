@@ -1,0 +1,205 @@
+/* ==================== DEMO CONTAINER ==================== */
+
+.demoContainer {
+  padding: var(--space-8);
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--color-bg);
+  min-height: 100vh;
+}
+
+.demoContainer h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+  color: var(--color-text-primary);
+}
+
+/* ==================== SECTIONS ==================== */
+
+.section {
+  margin-bottom: var(--space-10);
+}
+
+.section h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-4);
+  color: var(--color-text-primary);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--space-3);
+}
+
+/* ==================== CONTENT LAYOUT ==================== */
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.paginationContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.dropdownRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.dropdownHint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.itemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.item {
+  padding: var(--space-4);
+  background: var(--color-primary-ghost);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ==================== MOBILE PREVIEW ==================== */
+
+.mobilePreview {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+}
+
+.deviceFrame {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.phoneScreen {
+  position: relative;
+  background: var(--color-surface);
+  border: 8px solid #333;
+  border-radius: 20px;
+  overflow: hidden;
+  aspect-ratio: 9 / 20;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.screenContent {
+  flex: 1;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding-bottom: 60px;
+}
+
+/* ==================== DESKTOP PREVIEW ==================== */
+
+.desktopPreview {
+  padding: var(--space-4);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.layoutFrame {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 400px;
+}
+
+.layoutContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.mainContent {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+  color: var(--color-text-secondary);
+}
+
+/* ==================== FEATURES LIST ==================== */
+
+.featuresList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.feature {
+  padding: var(--space-4);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-primary);
+}
+
+.feature h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-2) 0;
+  color: var(--color-text-primary);
+}
+
+.feature p {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-normal);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .demoContainer {
+    padding: var(--space-4);
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .dropdownRow {
+    align-items: flex-start;
+  }
+
+  .featuresList {
+    grid-template-columns: 1fr;
+  }
+
+  .layoutFrame {
+    height: 300px;
+  }
+}

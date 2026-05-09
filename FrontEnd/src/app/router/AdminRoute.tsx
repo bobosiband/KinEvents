@@ -15,7 +15,8 @@ export function AdminRoute() {
   }, [isAuthenticated, isAdmin])
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (!isAdmin) return <Navigate to="/" replace />
+  if (!isAdmin) return <Navigate to="/notifications" replace />
+
 
   return <Outlet />
 }

@@ -1,13 +1,25 @@
 import React from 'react'
 import styles from './Avatar.module.css'
 
-type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+type Size = 'sm' | 'md' | 'lg' | 'xl'
 
-export interface AvatarProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+type Status = 'online' | 'offline' | 'away'
+
+export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   name?: string
   src?: string
   size?: Size
+  status?: Status
+
+  /**
+   * Legacy prop alias used by some pages.
+   * When true, maps to status="online".
+   */
   showOnline?: boolean
+
+  alt?: string
+
+  className?: string
 }
 
 const PALETTES = [
@@ -20,10 +32,10 @@ const PALETTES = [
 ]
 
 function nameToInitials(name?: string) {
-  if (!name) return ''
+  if (!name) return '?'
   const parts = name.trim().split(/\s+/)
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return (parts[0][0] + (parts[parts.length - 1][0] || '')).toUpperCase()
 }
 
 function pickPalette(name?: string) {
@@ -33,17 +45,72 @@ function pickPalette(name?: string) {
   return PALETTES[sum % PALETTES.length]
 }
 
-export const Avatar: React.FC<AvatarProps> = ({ name, src, size = 'md', showOnline = false, alt, ...rest }) => {
-  const cls = [styles.avatar, styles[size], showOnline ? styles.online : ''].filter(Boolean).join(' ')
+/**
+ * Avatar Component
+ * 
+ * Displays user avatar with image, initials fallback, and optional status indicator.
+ * 
+ * @example
+ * <Avatar name="John Doe" src="/avatar.jpg" />
+ * <Avatar name="Jane Doe" size="lg" status="online" />
+ */
+export const Avatar: React.FC<AvatarProps> = ({ 
+  name, 
+  src, 
+  size = 'md', 
+  status,
+  showOnline,
+  alt, 
+  className,
+  ...rest 
+}) => {
   const initials = nameToInitials(name)
   const bg = pickPalette(name)
 
+  const resolvedStatus = showOnline ? 'online' : status
+
+  const classes = [
+    styles.avatar,
+    styles[size],
+    resolvedStatus ? styles.withStatus : null,
+
+    className || '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className={cls} style={{ background: src ? undefined : bg }} aria-label={name || 'Avatar'}>
-      {src ? <img src={src} alt={alt ?? name ?? 'avatar'} className={styles.img} {...rest} /> : <div className={styles.initials}>{initials}</div>}
+    <div 
+      className={classes} 
+      style={{ background: src ? undefined : bg }}
+      {...rest}
+    >
+      {src ? (
+        <img 
+          src={src} 
+          alt={alt ?? name ?? 'User avatar'} 
+          className={styles.image}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = 'none'
+          }}
+        />
+      ) : (
+        <span className={styles.initials}>{initials}</span>
+      )}
+
+      {resolvedStatus && (
+
+        <span
+          className={`${styles.statusIndicator} ${styles[resolvedStatus]}`}
+          aria-label={`Status: ${resolvedStatus}`}
+
+        />
+      )}
     </div>
   )
 }
+
+Avatar.displayName = 'Avatar'
 
 export default Avatar
 

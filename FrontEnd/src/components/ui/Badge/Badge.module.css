@@ -1,58 +1,151 @@
+/* ==================== BADGE ==================== */
+
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: calc(var(--space-1)) calc(var(--space-3));
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
-
-.primary { background: var(--color-primary-ghost); color: var(--color-primary); }
-.accent { background: var(--color-accent-ghost); color: var(--color-accent); }
-.gold { background: var(--color-gold-ghost); color: var(--color-gold); }
-.success { background: var(--color-success-ghost); color: var(--color-success); }
-.danger { background: var(--color-danger-ghost); color: var(--color-danger); }
-.neutral { background: rgba(139,143,168,0.12); color: var(--color-neutral); }
-
-.pill { padding-left: calc(var(--space-3)); padding-right: calc(var(--space-3)); }
-.icon { display:inline-flex; align-items:center; }
-.badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-full);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  
+  font-family: var(--font-family-body);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  
+  user-select: none;
+  white-space: nowrap;
+  
+  transition: all var(--transition-normal);
 }
 
+/* ==================== VARIANTS ==================== */
+
+/* Primary - Coral red */
 .primary {
   background: var(--color-primary-ghost);
   color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
-.accent {
+.primary:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* Secondary - Teal */
+.secondary {
   background: var(--color-accent-ghost);
   color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
+.secondary:hover {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+/* Success - Green */
 .success {
-  background: var(--color-success-ghost);
+  background: rgba(6, 214, 160, 0.1);
   color: var(--color-success);
+  border-color: var(--color-success);
 }
 
-.warning {
-  background: var(--color-warning-ghost);
-  color: var(--color-warning);
+.success:hover {
+  background: var(--color-success);
+  color: var(--color-text-inverse);
 }
 
+/* Danger - Red */
 .danger {
-  background: var(--color-danger-ghost);
+  background: rgba(239, 71, 111, 0.1);
   color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
-.neutral {
-  background: var(--color-surface-raised);
-  color: var(--color-text-secondary);
+.danger:hover {
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+/* Warning - Gold */
+.warning {
+  background: var(--color-gold-ghost);
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+}
+
+.warning:hover {
+  background: var(--color-gold);
+  color: var(--color-text-inverse);
+}
+
+/* ==================== SIZES ==================== */
+
+.sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.md {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+}
+
+.lg {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+/* ==================== DISMISSIBLE ==================== */
+
+.dismissible {
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.dismissible:hover {
+  transform: scale(0.98);
+}
+
+.dismissButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity var(--transition-normal);
+}
+
+.dismissButton:hover {
+  opacity: 1;
+}
+
+/* ==================== DARK MODE ==================== */
+
+[data-theme="dark"] {
+  .badge {
+    border-color: transparent;
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .badge {
+    font-size: var(--font-size-xs);
+  }
 }
