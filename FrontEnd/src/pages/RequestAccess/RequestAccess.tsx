@@ -44,6 +44,7 @@ export function RequestAccess() {
         </label>
         <Button type="submit" loading={mutation.isPending} fullWidth>Send Request</Button>
       </form>
+      <Link to="/landing">Back to overview</Link>
       <Link to="/login">Back to Login</Link>
     </section>
   )

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import { EventForm } from '@/features/events/components/EventForm/EventForm'
 import { useCreateEvent } from '@/features/events/hooks/useCreateEvent'
 import type { EventPayload } from '@/features/events/types/event.types'
@@ -27,7 +28,11 @@ export function CreateEvent() {
 
   return (
     <div className={styles.page}>
-      <h1>Create Event</h1>
+      <Card className={styles.hero} variant="elevated">
+        <Badge tone="gold" pill>Create event</Badge>
+        <h1>Create a new family moment</h1>
+        <p>Use the shared form to add dates, links, and images without leaving the flow.</p>
+      </Card>
       <Card>
         <EventForm loading={mutation.isPending} onSubmit={submit} />
       </Card>

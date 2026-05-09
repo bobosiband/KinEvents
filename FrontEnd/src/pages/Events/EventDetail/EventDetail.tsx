@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { Divider } from '@/components/ui/Divider'
 import { ErrorMessage } from '@/components/feedback/ErrorMessage/ErrorMessage'
 import { Loader } from '@/components/feedback/Loader/Loader'
 import { Modal } from '@/components/ui/Modal'
@@ -58,35 +60,43 @@ export function EventDetail() {
 
   return (
     <article className={styles.page}>
-      <header className={styles.hero}>
-        <Badge tone={event.data.type === 'birthday' ? 'accent' : 'primary'}>{event.data.type}</Badge>
+      <Card className={styles.hero} variant="elevated">
+        <Badge tone={event.data.type === 'birthday' ? 'accent' : 'primary'} pill>{event.data.type}</Badge>
         <h1>{event.data.title}</h1>
-        {canEdit ? (
-          <div>
-            <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
-              Edit
-            </Button>
-            <Button size="sm" variant="danger" onClick={handleDelete} loading={deleteEvent.isPending}>
-              Delete
-            </Button>
-          </div>
-        ) : null}
-      </header>
-      <section className={styles.chips}>
-        <span>{format(new Date(event.data.date), 'PPP')}</span>
-        <span>{format(new Date(event.data.date), 'p')}</span>
-        {event.data.location ? <span>{event.data.location}</span> : null}
-      </section>
-      <p className={styles.description}>{event.data.description}</p>
-      <section className={styles.rsvp}>
+        <div className={styles.actions}>
+          {canEdit ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+                Edit
+              </Button>
+              <Button size="sm" variant="danger" onClick={handleDelete} loading={deleteEvent.isPending}>
+                Delete
+              </Button>
+            </>
+          ) : null}
+        </div>
+      </Card>
+
+      <Card className={styles.details}>
+        <section className={styles.chips}>
+          <span>{format(new Date(event.data.date), 'PPP')}</span>
+          <span>{format(new Date(event.data.date), 'p')}</span>
+          {event.data.location ? <span>{event.data.location}</span> : null}
+          {event.data.onlineLink ? <span>{event.data.onlineLink}</span> : null}
+        </section>
+        <Divider />
+        <p className={styles.description}>{event.data.description}</p>
+      </Card>
+
+      <Card className={styles.rsvp}>
         <h2>RSVP</h2>
-        <div>
+        <div className={styles.rsvpActions}>
           {(['yes', 'maybe', 'no'] as RSVPStatus[]).map(status => (
             <RsvpButton key={status} value={status} active={current === status} loading={rsvp.isPending} onSelect={rsvp.mutate} />
           ))}
         </div>
         <p>{attendees} family members going</p>
-      </section>
+      </Card>
 
       <Modal title="Edit Event" open={editing} onClose={() => setEditing(false)}>
         {event.data ? <EventForm event={event.data} loading={updateEvent.isPending} onSubmit={handleUpdate} /> : null}

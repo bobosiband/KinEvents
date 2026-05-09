@@ -1,5 +1,5 @@
 body {
-  font-family: var(--font-family);
+  font-family: var(--font-family-body);
   font-size: var(--font-size-base);
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
@@ -12,16 +12,19 @@ h1, h2, h3, p {
 h1 {
   font-size: var(--font-size-3xl);
   line-height: var(--line-height-tight);
+  font-family: var(--font-family-display);
 }
 
 h2 {
   font-size: var(--font-size-xl);
   line-height: var(--line-height-tight);
+  font-family: var(--font-family-display);
 }
 
 h3 {
   font-size: var(--font-size-lg);
   line-height: var(--line-height-tight);
+  font-family: var(--font-family-display);
 }
 
 a {

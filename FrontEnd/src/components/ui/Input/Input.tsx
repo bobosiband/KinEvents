@@ -1,30 +1,55 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import styles from './Input.module.css'
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string
-  error?: string
-  hint?: string
-  leftIcon?: ReactNode
-  rightIcon?: ReactNode
+  error?: string | null
+  hint?: string | null
+  leftIcon?: React.ReactNode
+  rightIcon?: React.ReactNode
   fullWidth?: boolean
 }
 
-export function Input({ label, error, hint, leftIcon, rightIcon, fullWidth = false, id, className = '', ...props }: InputProps) {
-  const generatedId = useId()
-  const inputId = id || generatedId
-  const classNames = [styles.field, fullWidth ? styles.fullWidth : '', error ? styles.invalid : '', className].join(' ')
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(props, ref) {
+  const { label, error = null, hint = null, leftIcon, rightIcon, fullWidth = false, value, defaultValue, onChange, type = 'text', ...rest } = props
+  const [focused, setFocused] = useState(false)
+  const internalRef = useRef<HTMLInputElement | null>(null)
+  const inputRef = (ref as React.RefObject<HTMLInputElement>) || internalRef
+
+  const isFilled = (): boolean => {
+    const currentVal = (inputRef && inputRef.current && inputRef.current.value) ?? value ?? defaultValue
+    return Boolean(currentVal && String(currentVal).length > 0)
+  }
+
+  const [filled, setFilled] = useState<boolean>(Boolean(value ?? defaultValue))
+
+  useEffect(() => {
+    setFilled(isFilled())
+  }, [value, defaultValue])
 
   return (
-    <label className={classNames} htmlFor={inputId}>
-      <span className={styles.control}>
-        {leftIcon ? <span className={styles.icon}>{leftIcon}</span> : null}
-        <input id={inputId} placeholder=" " aria-invalid={Boolean(error)} {...props} />
-        <span className={styles.label}>{label}</span>
-        {rightIcon ? <span className={styles.icon}>{rightIcon}</span> : null}
-      </span>
-      {error ? <span className={styles.error}>{error}</span> : null}
-      {!error && hint ? <span className={styles.hint}>{hint}</span> : null}
-    </label>
+    <div className={`${styles.field} ${fullWidth ? styles.fullWidth : ''} ${filled ? styles.filled : ''} ${focused ? styles.focused : ''}`}>
+      <div className={`${styles.control} ${error ? styles.error : ''}`}>
+        {leftIcon ? <span className={styles.leftIcon}>{leftIcon}</span> : null}
+        <input
+          ref={inputRef as any}
+          className={styles.input}
+          type={type}
+          aria-invalid={Boolean(error)}
+          aria-label={label}
+          onFocus={() => setFocused(true)}
+          onBlur={() => { setFocused(false); setFilled(isFilled()) }}
+          value={value}
+          defaultValue={defaultValue}
+          onChange={onChange}
+          {...rest}
+        />
+        {rightIcon ? <span className={styles.rightIcon}>{rightIcon}</span> : null}
+        <label className={styles.label}>{label}</label>
+      </div>
+      {error ? <div role="alert" className={styles.hint} style={{ color: 'var(--color-danger)' }}>{error}</div> : hint ? <div className={styles.hint}>{hint}</div> : null}
+    </div>
   )
-}
+})
+
+export default Input

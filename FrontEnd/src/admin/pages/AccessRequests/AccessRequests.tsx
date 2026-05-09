@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { DataTable, type Column } from '@/admin/components/DataTable/DataTable'
 import { useAccessRequests, useApproveAccess, useRevokeAccess } from '@/features/auth/hooks/useRequestAccess'
+import { Input } from '@/components/ui/Input'
 import type { AccessRequest } from '@/features/auth/types/auth.types'
 import styles from './AccessRequests.module.css'
 
@@ -15,11 +17,21 @@ export function AccessRequests() {
   const accessRequests = useAccessRequests()
   const approve = useApproveAccess()
   const reject = useRevokeAccess()
-  const pending = (accessRequests.data || []).filter(request => request.status === 'pending')
+  const [query, setQuery] = useState('')
+  const pendingAll = (accessRequests.data || []).filter(request => request.status === 'pending')
+  const pending = pendingAll.filter(r => {
+    if (!query) return true
+    const q = query.toLowerCase()
+    return r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || (r.message || '').toLowerCase().includes(q)
+  })
 
   return (
     <div className={styles.page}>
       <h1>Access Requests</h1>
+      <div className={styles.controls}>
+        <Input label="Search" value={query} onChange={e => setQuery(e.target.value)} fullWidth />
+      </div>
+
       <DataTable
         columns={columns}
         data={pending}

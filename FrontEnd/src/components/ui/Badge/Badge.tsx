@@ -1,17 +1,23 @@
-import type { HTMLAttributes, ReactNode } from 'react'
+import React from 'react'
 import styles from './Badge.module.css'
 
-type BadgeTone = 'primary' | 'accent' | 'success' | 'warning' | 'danger' | 'neutral'
+type Tone = 'primary' | 'accent' | 'gold' | 'success' | 'danger' | 'neutral'
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  tone?: BadgeTone
-  children: ReactNode
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  tone?: Tone
+  pill?: boolean
+  icon?: React.ReactNode
 }
 
-export function Badge({ tone = 'neutral', children, className = '', ...props }: BadgeProps) {
+export const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', pill = false, icon, children, className, ...rest }) => {
+  const classes = [styles.badge, styles[tone] || '', pill ? styles.pill : '', className || ''].filter(Boolean).join(' ')
   return (
-    <span className={`${styles.badge} ${styles[tone]} ${className}`} {...props}>
-      {children}
+    <span className={classes} {...rest}>
+      {icon ? <span className={styles.icon}>{icon}</span> : null}
+      <span>{children}</span>
     </span>
   )
 }
+
+export default Badge
+

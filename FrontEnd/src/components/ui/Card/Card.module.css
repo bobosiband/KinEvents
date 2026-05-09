@@ -1,4 +1,29 @@
 .card {
+  background: var(--gradient-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-xs);
+  border: 1px solid transparent;
+  transition: transform var(--transition-fast), box-shadow var(--transition-normal), border-color var(--transition-fast);
+  color: var(--color-text-primary);
+}
+
+.clickable {
+  cursor: pointer;
+}
+.clickable:hover:not(.disabled) {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.elevated { box-shadow: var(--shadow-md); }
+.ghost { background: transparent; box-shadow: none; }
+.bordered { border: 1px solid var(--color-border); }
+
+.content { display: block; }
+
+.disabled { opacity: 0.6; pointer-events: none; }
+.card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--gradient-card);

@@ -1,6 +1,29 @@
 .backdrop {
   position: fixed;
   inset: 0;
+  background: rgba(0,0,0,0.28);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  max-width: min(92vw, var(--max-width-wide));
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn 220ms ease;
+}
+
+.title { font-size: var(--font-size-xl); margin-bottom: var(--space-3); font-family: var(--font-family-display); }
+.content { margin-bottom: var(--space-4); }
+.close { position: absolute; top: var(--space-4); right: var(--space-4); }
+.backdrop {
+  position: fixed;
+  inset: 0;
   z-index: 50;
   display: grid;
   place-items: center;

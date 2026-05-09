@@ -13,6 +13,7 @@ import { EventDetail } from '@/pages/Events/EventDetail/EventDetail'
 import { Events } from '@/pages/Events/Events'
 import { Home } from '@/pages/Home/Home'
 import { Login } from '@/pages/Login/Login'
+import { Landing } from '@/pages/Landing/Landing'
 import { NotFound } from '@/pages/NotFound/NotFound'
 import { Notifications } from '@/pages/Notifications/Notifications'
 import { Profile } from '@/pages/Profile/Profile'
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     errorElement: <RouteError />,
     children: [
+      { path: '/', element: <Landing /> },
       { path: '/login', element: <Login /> },
       { path: '/request-access', element: <RequestAccess /> },
     ],

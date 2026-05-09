@@ -6,7 +6,7 @@
   width: min(100%, var(--max-width-app));
   height: var(--bottom-nav-height);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   transform: translateX(-50%);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);

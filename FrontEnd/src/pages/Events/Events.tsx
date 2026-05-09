@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/feedback/EmptyState/EmptyState'
+import { Loader } from '@/components/feedback/Loader/Loader'
 import { Input } from '@/components/ui/Input'
 import { EventCard } from '@/features/events/components/EventCard/EventCard'
 import { useEvents } from '@/features/events/hooks/useEvents'
@@ -20,12 +23,19 @@ export function Events() {
 
   return (
     <div className={styles.page}>
-      <Input label="Search events" value={search} onChange={event => setSearch(event.target.value)} fullWidth />
-      <div className={styles.tabs}>
-        {(['all', 'birthday', 'custom'] as Filter[]).map(item => (
-          <button key={item} type="button" className={filter === item ? styles.active : ''} onClick={() => setFilter(item)}>{item}</button>
-        ))}
-      </div>
+      <Card className={styles.hero} variant="elevated">
+        <Badge tone="accent" pill>Events</Badge>
+        <h1>Browse family plans</h1>
+        <p>Search, filter, and jump into any event detail without losing context.</p>
+        <Input label="Search events" value={search} onChange={event => setSearch(event.target.value)} fullWidth />
+        <div className={styles.tabs}>
+          {(['all', 'birthday', 'custom'] as Filter[]).map(item => (
+            <button key={item} type="button" className={filter === item ? styles.active : ''} onClick={() => setFilter(item)}>{item}</button>
+          ))}
+        </div>
+      </Card>
+
+      {isLoading ? <Loader /> : null}
       <div className={styles.list}>
         {data.map(event => <EventCard key={event.id} event={event} onClick={() => navigate(`/events/${event.id}`)} />)}
       </div>

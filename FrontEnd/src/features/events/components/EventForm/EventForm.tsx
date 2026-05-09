@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import type { Event, EventPayload, EventType } from '../../types/event.types'
 import styles from './EventForm.module.css'
 
@@ -15,6 +17,8 @@ export function EventForm({ event, loading = false, onSubmit }: EventFormProps) 
   const [description, setDescription] = useState(event?.description || '')
   const [date, setDate] = useState(event?.date.slice(0, 16) || '')
   const [location, setLocation] = useState(event?.location || '')
+  const [onlineLink, setOnlineLink] = useState(event?.onlineLink || '')
+  const [imageUrl, setImageUrl] = useState(event?.imageUrl || '')
   const [type, setType] = useState<EventType>(event?.type || 'custom')
   const [error, setError] = useState('')
 
@@ -25,25 +29,34 @@ export function EventForm({ event, loading = false, onSubmit }: EventFormProps) 
       return
     }
     setError('')
-    onSubmit({ title, description, date: new Date(date).toISOString(), location, type })
+    onSubmit({
+      title,
+      description,
+      date: new Date(date).toISOString(),
+      location,
+      onlineLink,
+      imageUrl,
+      type,
+    })
   }
 
   return (
     <form className={styles.form} onSubmit={submit}>
       <Input label="Title" value={title} onChange={eventChange => setTitle(eventChange.target.value)} fullWidth />
-      <label className={styles.label}>
-        <span>Description</span>
-        <textarea value={description} onChange={eventChange => setDescription(eventChange.target.value)} />
-      </label>
+      <Textarea label="Description" value={description} onChange={eventChange => setDescription(eventChange.target.value)} rows={5} fullWidth />
       <Input label="Date and time" type="datetime-local" value={date} onChange={eventChange => setDate(eventChange.target.value)} fullWidth />
       <Input label="Location" value={location} onChange={eventChange => setLocation(eventChange.target.value)} fullWidth />
-      <label className={styles.label}>
-        <span>Type</span>
-        <select value={type} onChange={eventChange => setType(eventChange.target.value as EventType)}>
-          <option value="custom">Custom</option>
-          <option value="birthday">Birthday</option>
-        </select>
-      </label>
+      <Input label="Online link" value={onlineLink} onChange={eventChange => setOnlineLink(eventChange.target.value)} hint="Optional video or event link" fullWidth />
+      <Input label="Cover image URL" value={imageUrl} onChange={eventChange => setImageUrl(eventChange.target.value)} hint="Optional image URL for the event" fullWidth />
+      <Select
+        label="Type"
+        value={type}
+        onChange={eventChange => setType(eventChange.target.value as EventType)}
+        options={[
+          { label: 'Custom', value: 'custom' },
+          { label: 'Birthday', value: 'birthday' },
+        ]}
+      />
       {error ? <p className={styles.error}>{error}</p> : null}
       <Button type="submit" loading={loading} fullWidth>{event ? 'Save Event' : 'Create Event'}</Button>
     </form>

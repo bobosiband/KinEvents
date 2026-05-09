@@ -2,3 +2,13 @@
   display: grid;
   gap: var(--space-4);
 }
+
+.hero {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.hero p {
+  color: var(--color-text-secondary);
+}

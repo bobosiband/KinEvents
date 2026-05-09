@@ -1,7 +1,85 @@
 {
-  "users": [],
-  "events": [],
+  "users": [
+    {
+      "id": "user-001",
+      "name": "Bobo Sibanda",
+      "email": "bobosibanda35@gmail.com",
+      "role": "member",
+      "accessStatus": "approved",
+      "birthday": "1990-06-15",
+      "notificationPrefs": {
+        "level": "important",
+        "channels": ["email"]
+      },
+      "createdAt": "2026-05-09T00:00:00Z",
+      "updatedAt": "2026-05-09T00:00:00Z"
+    },
+    {
+      "id": "user-002",
+      "name": "Test User",
+      "email": "user@example.com",
+      "role": "member",
+      "accessStatus": "approved",
+      "birthday": "1985-03-22",
+      "notificationPrefs": {
+        "level": "important",
+        "channels": ["email"]
+      },
+      "createdAt": "2026-05-09T00:00:00Z",
+      "updatedAt": "2026-05-09T00:00:00Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "event-001",
+      "title": "Family Dinner",
+      "description": "Monthly family gathering at home",
+      "type": "custom",
+      "startDate": "2026-05-25T18:00:00Z",
+      "endDate": "2026-05-25T21:00:00Z",
+      "location": "Home",
+      "createdBy": "user-001",
+      "rsvps": [
+        {
+          "userId": "user-001",
+          "status": "yes"
+        }
+      ],
+      "createdAt": "2026-05-09T10:00:00Z",
+      "updatedAt": "2026-05-09T10:00:00Z"
+    },
+    {
+      "id": "event-002",
+      "title": "Sarah's Birthday",
+      "description": "Celebrating Sarah's birthday",
+      "type": "birthday",
+      "startDate": "2026-05-15T18:00:00Z",
+      "endDate": "2026-05-15T23:59:59Z",
+      "location": "Park",
+      "createdBy": "user-001",
+      "rsvps": [],
+      "createdAt": "2026-05-09T10:00:00Z",
+      "updatedAt": "2026-05-09T10:00:00Z"
+    }
+  ],
   "accessRequests": [],
-  "notifications": [],
-  "content": []
+  "notifications": [
+    {
+      "id": "notif-001",
+      "type": "event_created",
+      "title": "New Event: Family Dinner",
+      "message": "Family Dinner has been scheduled for May 25",
+      "recipientId": "user-002",
+      "read": false,
+      "createdAt": "2026-05-09T10:30:00Z"
+    }
+  ],
+  "content": [
+    {
+      "key": "announcement",
+      "value": "Welcome to KinEvents! Stay connected with your family.",
+      "updatedAt": "2026-05-09T00:00:00Z",
+      "updatedBy": "system"
+    }
+  ]
 }

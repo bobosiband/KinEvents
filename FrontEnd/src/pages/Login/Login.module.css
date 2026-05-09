@@ -1,26 +1,234 @@
-.card {
-  width: min(100%, 420px);
+.page {
+  min-height: 100vh;
   display: grid;
-  gap: var(--space-6);
-  padding: var(--space-8);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-xl);
+  background: var(--color-bg);
 }
 
-.logo {
-  color: var(--color-primary);
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .promoSection {
+    display: none;
+  }
+}
+
+/* Form Section */
+.formSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--color-surface);
+}
+
+.formContent {
+  width: 100%;
+  max-width: 460px;
+  display: grid;
+  gap: var(--space-8);
+}
+
+.branding {
+  display: grid;
+  gap: var(--space-2);
   text-align: center;
 }
 
-.card form {
+.brand {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.formHeader {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.formHeader h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+}
+
+.errorBanner {
+  padding: var(--space-4);
+  background: rgba(239, 71, 111, 0.1);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-lg);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+  font-size: var(--font-size-sm);
+}
+
+.link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.linkSecondary {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: 400;
+  transition: color var(--transition-fast);
+  font-size: var(--font-size-sm);
+}
+
+.linkSecondary:hover {
+  color: var(--color-text-primary);
+}
+
+/* Promo Section */
+.promoSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: linear-gradient(135deg, var(--gradient-hero));
+  color: white;
+}
+
+.promoContent {
+  max-width: 520px;
+  display: grid;
+  gap: var(--space-6);
+}
+
+.promoContent h2 {
+  margin: 0;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.promoContent p {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  opacity: 0.95;
+  line-height: 1.6;
+}
+
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: grid;
   gap: var(--space-4);
 }
 
-.card a {
+.features li {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.featureIcon {
+  font-size: 2rem;
+  display: block;
+  flex-shrink: 0;
+}
+
+.features strong {
+  display: block;
+  font-size: var(--font-size-md);
+  margin-bottom: var(--space-1);
+}
+
+.features p {
+  margin: 0;
+  opacity: 0.88;
+  font-size: var(--font-size-sm);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+}
+
+.stat {
   text-align: center;
-  font-weight: var(--font-weight-semibold);
+}
+
+.stat strong {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: var(--space-1);
+}
+
+.stat span {
+  display: block;
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .formSection {
+    padding: var(--space-4);
+  }
+
+  .formContent {
+    max-width: 100%;
+    gap: var(--space-6);
+  }
+
+  .brand {
+    font-size: 2rem;
+  }
+
+  .promoContent h2 {
+    font-size: 1.75rem;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
 }
