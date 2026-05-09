@@ -4,7 +4,6 @@ import { DataTable, type Column } from '@/admin/components/DataTable/DataTable'
 import { useAccessRequests, useApproveAccess, useRevokeAccess } from '@/features/auth/hooks/useRequestAccess'
 import { Input } from '@/components/ui/Input'
 import type { AccessRequest } from '@/features/auth/types/auth.types'
-import styles from './AccessRequests.module.css'
 
 const columns: Column<AccessRequest>[] = [
   { key: 'name', header: 'Name' },
@@ -26,9 +25,9 @@ export function AccessRequests() {
   })
 
   return (
-    <div className={styles.page}>
-      <h1>Access Requests</h1>
-      <div className={styles.controls}>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Access Requests</h1>
+      <div className="max-w-md">
         <Input label="Search" value={query} onChange={e => setQuery(e.target.value)} fullWidth />
       </div>
 

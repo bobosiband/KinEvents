@@ -5,7 +5,6 @@ import { Loader } from '@/components/feedback/Loader/Loader'
 import { Button } from '@/components/ui/Button'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { fromNow } from '@/utils/formatters'
-import styles from './Notifications.module.css'
 
 export function Notifications() {
   const { data = [], isLoading } = useNotifications()
@@ -25,9 +24,9 @@ export function Notifications() {
   if (isLoading) return <Loader />
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1>Notifications</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold">Notifications</h1>
         <div>
           <Button type="button" variant="ghost" size="sm" onClick={markAll} disabled={data.length === 0}>Mark all read</Button>
         </div>
@@ -35,15 +34,15 @@ export function Notifications() {
 
       {data.length === 0 ? <EmptyState title="No notifications" message="Family updates will appear here." /> : null}
       {data.filter(n => !readIds.includes(n.id)).map(notification => (
-        <article key={notification.id} className={styles.item}>
-          <div className={styles.itemHeader}>
-            <h2>{notification.type.split('_').join(' ')}</h2>
+        <article key={notification.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm space-y-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <h2 className="text-lg font-semibold capitalize">{notification.type.split('_').join(' ')}</h2>
             <div>
               <Button type="button" size="sm" variant="ghost" onClick={() => markRead(notification.id)}>Mark read</Button>
             </div>
           </div>
-          <p>{notification.payload.message || notification.payload.title || notification.status}</p>
-          <span>{fromNow(notification.createdAt)}</span>
+          <p className="text-sm text-muted-foreground">{notification.payload.message || notification.payload.title || notification.status}</p>
+          <span className="text-xs text-muted-foreground">{fromNow(notification.createdAt)}</span>
         </article>
       ))}
     </div>

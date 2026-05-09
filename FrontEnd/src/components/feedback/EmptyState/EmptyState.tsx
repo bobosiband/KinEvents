@@ -1,5 +1,4 @@
 import { Card } from '@/components/ui/Card'
-import styles from './EmptyState.module.css'
 
 interface EmptyStateProps {
   title: string
@@ -8,9 +7,9 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, message }: EmptyStateProps) {
   return (
-    <Card className={styles.empty}>
-      <h2>{title}</h2>
-      <p>{message}</p>
+    <Card className="text-center py-10" variant="flat">
+      <h2 className="text-lg font-semibold mb-1">{title}</h2>
+      <p className="text-sm text-muted-foreground">{message}</p>
     </Card>
   )
 }

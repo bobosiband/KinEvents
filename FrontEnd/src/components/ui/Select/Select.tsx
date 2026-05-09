@@ -1,5 +1,4 @@
 import React from 'react'
-import styles from './Select.module.css'
 
 export interface SelectOption {
   label: string
@@ -19,13 +18,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
   { label, options, error = null, hint = null, fullWidth = false, className, children, ...rest },
   ref
 ) {
-  const classes = [styles.control, error ? styles.error : '', className || ''].filter(Boolean).join(' ')
+  const classes = ['rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20', error ? 'border-destructive focus:border-destructive focus:ring-destructive/20' : '', className || ''].filter(Boolean).join(' ')
 
   return (
-    <label className={[styles.field, fullWidth ? styles.fullWidth : ''].filter(Boolean).join(' ')}>
-      <span className={styles.label}>{label}</span>
+    <label className={["space-y-2", fullWidth ? 'w-full' : ''].filter(Boolean).join(' ')}>
+      <span className="block text-sm font-medium">{label}</span>
       <span className={classes}>
-        <select ref={ref} className={styles.select} aria-invalid={Boolean(error)} {...rest}>
+        <select ref={ref} className="w-full bg-transparent outline-none" aria-invalid={Boolean(error)} {...rest}>
           {children}
           {options.map((option) => (
             <option key={option.value} value={option.value} disabled={option.disabled}>
@@ -34,7 +33,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
           ))}
         </select>
       </span>
-      {error ? <span className={styles.hint} role="alert" style={{ color: 'var(--color-danger)' }}>{error}</span> : hint ? <span className={styles.hint}>{hint}</span> : null}
+      {error ? <span className="text-xs text-destructive" role="alert">{error}</span> : hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
     </label>
   )
 })

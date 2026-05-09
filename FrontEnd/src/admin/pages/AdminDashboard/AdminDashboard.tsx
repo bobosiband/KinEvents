@@ -2,7 +2,6 @@ import { StatCard } from '@/admin/components/StatCard/StatCard'
 import { Loader } from '@/components/feedback/Loader/Loader'
 import { useAdminDashboard } from '@/admin/hooks/useAdmin'
 import { useBirthdays } from '@/features/birthdays/hooks/useBirthdays'
-import styles from './AdminDashboard.module.css'
 
 export function AdminDashboard() {
   const { data, isLoading } = useAdminDashboard()
@@ -16,17 +15,17 @@ export function AdminDashboard() {
   const upcomingBirthdays = birthdays.data?.length ?? 0
 
   return (
-    <div className={styles.page}>
-      <h1>Dashboard</h1>
-      <section className={styles.stats}>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Users" value={totalUsers} />
         <StatCard label="Pending Requests" value={pendingRequests} />
         <StatCard label="Total Events" value={totalEvents} />
         <StatCard label="Upcoming Birthdays" value={upcomingBirthdays} />
       </section>
-      <section className={styles.activity}>
-        <h2>Database Summary</h2>
-        <div className={styles.summaryGrid}>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Database Summary</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <p><strong>{data?.users.approved ?? 0}</strong> approved users</p>
           <p><strong>{data?.users.admins ?? 0}</strong> admins</p>
           <p><strong>{data?.events.birthdays ?? 0}</strong> birthday events</p>

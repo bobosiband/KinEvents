@@ -6,7 +6,6 @@ import { EventForm } from '@/features/events/components/EventForm/EventForm'
 import { useCreateEvent } from '@/features/events/hooks/useCreateEvent'
 import type { EventPayload } from '@/features/events/types/event.types'
 import { useAuth } from '@/hooks/useAuth'
-import styles from './CreateEvent.module.css'
 
 export function CreateEvent() {
   const navigate = useNavigate()
@@ -27,11 +26,11 @@ export function CreateEvent() {
   }
 
   return (
-    <div className={styles.page}>
-      <Card className={styles.hero} variant="elevated">
+    <div className="space-y-4">
+      <Card className="space-y-4" variant="elevated">
         <Badge tone="gold" pill>Create event</Badge>
-        <h1>Create a new family moment</h1>
-        <p>Use the shared form to add dates, links, and images without leaving the flow.</p>
+        <h1 className="text-3xl font-bold">Create a new family moment</h1>
+        <p className="text-sm text-muted-foreground">Use the shared form to add dates, links, and images without leaving the flow.</p>
       </Card>
       <Card>
         <EventForm loading={mutation.isPending} onSubmit={submit} />

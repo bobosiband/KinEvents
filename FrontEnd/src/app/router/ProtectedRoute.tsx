@@ -5,9 +5,10 @@ import { AuthLoading } from './AuthLoading'
 export function ProtectedRoute() {
   const location = useLocation()
   const isHydrated = useAuthStore(state => state.isHydrated)
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated())
+  const user = useAuthStore(state => state.user)
+  const token = useAuthStore(state => state.token)
+  const isAuthenticated = Boolean(user && token)
 
-  // Prevent redirect loops during zustand persist rehydration.
   if (!isHydrated) return <AuthLoading />
 
   if (!isAuthenticated) {

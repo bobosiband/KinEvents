@@ -17,7 +17,6 @@ import { useDeleteEvent, useUpdateEvent } from '@/features/events/hooks/useCreat
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import type { EventPayload, RSVPStatus } from '@/features/events/types/event.types'
-import styles from './EventDetail.module.css'
 
 export function EventDetail() {
   const navigate = useNavigate()
@@ -59,11 +58,11 @@ export function EventDetail() {
   }
 
   return (
-    <article className={styles.page}>
-      <Card className={styles.hero} variant="elevated">
+    <article className="space-y-4">
+      <Card className="space-y-4" variant="elevated">
         <Badge tone={event.data.type === 'birthday' ? 'accent' : 'primary'} pill>{event.data.type}</Badge>
-        <h1>{event.data.title}</h1>
-        <div className={styles.actions}>
+        <h1 className="text-3xl font-bold">{event.data.title}</h1>
+        <div className="flex flex-wrap gap-2">
           {canEdit ? (
             <>
               <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
@@ -77,25 +76,25 @@ export function EventDetail() {
         </div>
       </Card>
 
-      <Card className={styles.details}>
-        <section className={styles.chips}>
-          <span>{format(new Date(event.data.date), 'PPP')}</span>
-          <span>{format(new Date(event.data.date), 'p')}</span>
-          {event.data.location ? <span>{event.data.location}</span> : null}
-          {event.data.onlineLink ? <span>{event.data.onlineLink}</span> : null}
+      <Card className="space-y-4">
+        <section className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+          <span className="rounded-full bg-muted px-3 py-1">{format(new Date(event.data.date), 'PPP')}</span>
+          <span className="rounded-full bg-muted px-3 py-1">{format(new Date(event.data.date), 'p')}</span>
+          {event.data.location ? <span className="rounded-full bg-muted px-3 py-1">{event.data.location}</span> : null}
+          {event.data.onlineLink ? <span className="rounded-full bg-muted px-3 py-1">{event.data.onlineLink}</span> : null}
         </section>
         <Divider />
-        <p className={styles.description}>{event.data.description}</p>
+        <p className="text-sm leading-7 text-muted-foreground">{event.data.description}</p>
       </Card>
 
-      <Card className={styles.rsvp}>
-        <h2>RSVP</h2>
-        <div className={styles.rsvpActions}>
+      <Card className="space-y-4">
+        <h2 className="text-xl font-semibold">RSVP</h2>
+        <div className="flex flex-wrap gap-3">
           {(['yes', 'maybe', 'no'] as RSVPStatus[]).map(status => (
             <RsvpButton key={status} value={status} active={current === status} loading={rsvp.isPending} onSelect={rsvp.mutate} />
           ))}
         </div>
-        <p>{attendees} family members going</p>
+        <p className="text-sm text-muted-foreground">{attendees} family members going</p>
       </Card>
 
       <Modal title="Edit Event" open={editing} onClose={() => setEditing(false)}>

@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import styles from './Input.module.css'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string
@@ -27,13 +26,24 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
     setFilled(isFilled())
   }, [value, defaultValue])
 
+  const wrapperClass = [
+    fullWidth ? 'w-full' : '',
+    'space-y-1',
+  ].filter(Boolean).join(' ')
+
+  const controlClass = [
+    'relative rounded-xl border transition-all',
+    error ? 'border-destructive bg-destructive/5' : 'border-border bg-muted',
+    focused ? 'ring-2 ring-primary border-primary' : '',
+  ].filter(Boolean).join(' ')
+
   return (
-    <div className={`${styles.field} ${fullWidth ? styles.fullWidth : ''} ${filled ? styles.filled : ''} ${focused ? styles.focused : ''}`}>
-      <div className={`${styles.control} ${error ? styles.error : ''}`}>
-        {leftIcon ? <span className={styles.leftIcon}>{leftIcon}</span> : null}
+    <div className={wrapperClass}>
+      <div className={controlClass}>
+        {leftIcon ? <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{leftIcon}</span> : null}
         <input
           ref={inputRef as any}
-          className={styles.input}
+          className={`w-full rounded-xl bg-transparent py-3 pr-3 focus:outline-none ${leftIcon ? 'pl-10' : 'pl-3'} ${rightIcon ? 'pr-10' : ''}`}
           type={type}
           aria-invalid={Boolean(error)}
           aria-label={label}
@@ -44,10 +54,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
           onChange={onChange}
           {...rest}
         />
-        {rightIcon ? <span className={styles.rightIcon}>{rightIcon}</span> : null}
-        <label className={styles.label}>{label}</label>
+        {rightIcon ? <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{rightIcon}</span> : null}
+        <label className={`pointer-events-none absolute left-3 transition-all ${filled || focused ? 'top-1 text-[10px] text-muted-foreground' : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground'} ${leftIcon ? 'left-10' : ''}`}>
+          {label}
+        </label>
       </div>
-      {error ? <div role="alert" className={styles.hint} style={{ color: 'var(--color-danger)' }}>{error}</div> : hint ? <div className={styles.hint}>{hint}</div> : null}
+      {error ? <div role="alert" className="text-xs text-destructive">{error}</div> : hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
     </div>
   )
 })

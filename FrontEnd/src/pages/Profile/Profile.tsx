@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useProfile } from '@/features/users/hooks/useProfile'
 import type { NotificationChannel, NotificationLevel } from '@/features/auth/types/auth.types'
-import styles from './Profile.module.css'
 
 export function Profile() {
   const { user } = useAuth()
@@ -54,26 +53,26 @@ export function Profile() {
   }
 
   return (
-    <form className={styles.page} onSubmit={submit}>
-      <Card className={styles.header}>
+    <form className="space-y-4" onSubmit={submit}>
+      <Card className="space-y-3">
         <Avatar name={user.name} size="xl" />
-        <h1>{user.name}</h1>
-        <p>{user.email}</p>
+        <h1 className="text-2xl font-bold">{user.name}</h1>
+        <p className="text-sm text-muted-foreground">{user.email}</p>
         <Badge tone="primary">{user.role}</Badge>
       </Card>
       <Input label="Name" value={name} onChange={event => setName(event.target.value)} error={error} fullWidth />
       <Input label="Birthday" value={birthday} onChange={event => setBirthday(event.target.value)} error={error} hint="YYYY-MM-DD" fullWidth />
-      <label className={styles.label}>
-        <span>Notification level</span>
-        <select value={level} onChange={event => setLevel(event.target.value as NotificationLevel)}>
+      <label className="space-y-2 block">
+        <span className="text-sm font-medium">Notification level</span>
+        <select value={level} onChange={event => setLevel(event.target.value as NotificationLevel)} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
           <option value="all">All</option>
           <option value="important">Important</option>
           <option value="none">None</option>
         </select>
       </label>
-      <div className={styles.checks}>
+      <div className="flex flex-wrap gap-3">
         {(['email', 'push'] as NotificationChannel[]).map(channel => (
-          <label key={channel}>
+          <label key={channel} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
             <input type="checkbox" checked={channels.includes(channel)} onChange={() => toggleChannel(channel)} />
             <span>{channel}</span>
           </label>

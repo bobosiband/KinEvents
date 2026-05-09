@@ -1,5 +1,4 @@
 import React from 'react'
-import styles from './Button.module.css'
 import type { ButtonProps } from './Button.types'
 
 /**
@@ -30,40 +29,52 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   },
   ref
 ) {
-  // Build className string
+  const resolvedLoading = isLoading || loading
+
+  const sizeClass = size === 'small' || size === 'sm'
+    ? 'px-3 py-2 text-sm'
+    : size === 'large' || size === 'lg'
+      ? 'px-5 py-3.5 text-base'
+      : 'px-4 py-3 text-sm'
+
+  const variantClass = variant === 'secondary'
+    ? 'bg-card text-foreground border border-border shadow-md hover:shadow-lg'
+    : variant === 'ghost'
+      ? 'bg-transparent text-foreground hover:bg-muted shadow-none'
+      : variant === 'danger'
+        ? 'bg-destructive text-destructive-foreground shadow-lg hover:shadow-xl'
+        : 'bg-primary text-primary-foreground shadow-lg hover:shadow-xl'
+
   const classes = [
-    styles.button,
-    styles[variant as keyof typeof styles],
-    styles[size as keyof typeof styles],
-    fullWidth ? styles.fullWidth : null,
-    isLoading ? styles.loading : null,
-    className || null,
-  ]
-    .filter(Boolean)
-    .join(' ')
+    'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-shadow disabled:opacity-60 disabled:cursor-not-allowed',
+    sizeClass,
+    variantClass,
+    fullWidth ? 'w-full' : '',
+    className || '',
+  ].filter(Boolean).join(' ')
 
   return (
     <button 
       ref={ref} 
       className={classes} 
-      disabled={disabled || isLoading}
-      aria-busy={isLoading}
+      disabled={disabled || resolvedLoading}
+      aria-busy={resolvedLoading}
       {...rest}
     >
-      {isLoading ? (
-        <span className={styles.spinner} aria-hidden="true" />
+      {resolvedLoading ? (
+        <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" aria-hidden="true" />
       ) : null}
 
-      {!isLoading && icon && iconPosition === 'left' ? (
-        <span className={styles.icon} aria-hidden="true">
+      {!resolvedLoading && icon && iconPosition === 'left' ? (
+        <span aria-hidden="true">
           {icon}
         </span>
       ) : null}
 
       {children}
 
-      {!isLoading && icon && iconPosition === 'right' ? (
-        <span className={styles.icon} aria-hidden="true">
+      {!resolvedLoading && icon && iconPosition === 'right' ? (
+        <span aria-hidden="true">
           {icon}
         </span>
       ) : null}

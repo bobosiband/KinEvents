@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
-import styles from './NotFound.module.css'
 
 export function NotFound() {
   return (
-    <Card className={styles.card}>
-      <h1>Page not found</h1>
-      <Link to="/">Back home</Link>
+    <Card className="max-w-md mx-auto text-center space-y-4">
+      <h1 className="text-2xl font-bold">Page not found</h1>
+      <Link to="/" className="text-primary font-medium">Back home</Link>
     </Card>
   )
 }

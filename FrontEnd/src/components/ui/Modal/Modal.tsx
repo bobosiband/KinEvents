@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import styles from './Modal.module.css'
 
 export interface ModalProps {
   /**
@@ -138,17 +137,20 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>(function Modal
 
   if (!resolvedIsOpen) return null
 
+  const sizeClasses: Record<NonNullable<ModalProps['size']>, string> = {
+    sm: 'max-w-md',
+    md: 'max-w-xl',
+    lg: 'max-w-3xl',
+  }
 
   const modalClasses = [
-    styles.modal,
-    styles[size],
+    'relative w-[min(92vw,100%)] rounded-3xl border border-border bg-background p-6 shadow-2xl',
+    sizeClasses[size],
     className || '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  ].filter(Boolean).join(' ')
 
   return createPortal(
-    <div className={styles.backdrop} role="presentation">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 backdrop-blur-sm" role="presentation">
       <div
         ref={modalRef}
         className={modalClasses}
@@ -157,13 +159,13 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>(function Modal
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         {title && (
-          <div className={styles.header}>
-            <h2 id="modal-title" className={styles.title}>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <h2 id="modal-title" className="text-xl font-semibold">
               {title}
             </h2>
             <button
               type="button"
-              className={styles.closeButton}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
               onClick={onClose}
               aria-label="Close modal"
             >
@@ -172,9 +174,9 @@ export const Modal = React.forwardRef<HTMLDivElement, ModalProps>(function Modal
           </div>
         )}
 
-        <div className={styles.body}>{children}</div>
+        <div className="space-y-4">{children}</div>
 
-        {footer && <div className={styles.footer}>{footer}</div>}
+        {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
       </div>
     </div>,
     document.body

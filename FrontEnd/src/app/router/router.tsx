@@ -1,35 +1,44 @@
-import { createBrowserRouter } from 'react-router-dom'
-import { AdminDashboard } from '@/admin/pages/AdminDashboard/AdminDashboard'
-import { AccessRequests } from '@/admin/pages/AccessRequests/AccessRequests'
-import { ManageEvents } from '@/admin/pages/ManageEvents/ManageEvents'
-import { ManageUsers } from '@/admin/pages/ManageUsers/ManageUsers'
-import { SiteSettings } from '@/admin/pages/SiteSettings/SiteSettings'
-import { AdminLayout } from '@/app/layouts/AdminLayout/AdminLayout'
-import { AuthLayout } from '@/app/layouts/AuthLayout/AuthLayout'
-import { MainLayout } from '@/app/layouts/MainLayout/MainLayout'
-import { Birthdays } from '@/pages/Birthdays/Birthdays'
-import { CreateEvent } from '@/pages/Events/CreateEvent/CreateEvent'
-import { EventDetail } from '@/pages/Events/EventDetail/EventDetail'
-import { Events } from '@/pages/Events/Events'
-import { Home } from '@/pages/Home/Home'
-import { Login } from '@/pages/Login/Login'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 
-import { NotFound } from '@/pages/NotFound/NotFound'
-import { Notifications } from '@/pages/Notifications/Notifications'
-import { Profile } from '@/pages/Profile/Profile'
-import { RequestAccess } from '@/pages/RequestAccess/RequestAccess'
-import { Users } from '@/pages/Users/Users'
-import { RouteError } from '@/components/feedback/RouteError/RouteError'
+import { AuthLayout } from '@/layouts/AuthLayout'
+import { UserLayout } from '@/layouts/UserLayout'
+import { AdminLayout } from '@/layouts/AdminLayout'
+
 import { AdminRoute } from './AdminRoute'
 import { ProtectedRoute } from './ProtectedRoute'
+
+import { Landing } from '@/pages/public/Landing'
+import { Login } from '@/pages/public/Login'
+import { RequestAccess } from '@/pages/public/RequestAccess'
+import { PendingApproval } from '@/pages/public/PendingApproval'
+
+import { Home } from '@/pages/user/Home'
+import { Events } from '@/pages/user/Events'
+import { EventDetail } from '@/pages/user/EventDetail'
+import { CreateEvent } from '@/pages/user/CreateEvent'
+import { Birthdays } from '@/pages/user/Birthdays'
+import { Family } from '@/pages/user/Family'
+import { Notifications } from '@/pages/user/Notifications'
+import { Profile } from '@/pages/user/Profile'
+import { Messages } from '@/pages/user/Messages'
+
+import { AdminHome } from '@/pages/admin/AdminHome'
+import { ManageUsers } from '@/pages/admin/ManageUsers'
+import { ManageEvents } from '@/pages/admin/ManageEvents'
+import { AccessRequests } from '@/pages/admin/AccessRequests'
+import { Settings } from '@/pages/admin/Settings'
+
+import { RouteError } from '@/components/feedback/RouteError'
 
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     errorElement: <RouteError />,
     children: [
+      { index: true, element: <Landing /> },
       { path: '/login', element: <Login /> },
       { path: '/request-access', element: <RequestAccess /> },
+      { path: '/pending-approval', element: <PendingApproval /> },
     ],
   },
 
@@ -38,21 +47,24 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       {
-        element: <MainLayout />,
+        element: <UserLayout />,
         children: [
-          { path: '/', element: <Home /> },
-
+          { path: '/home', element: <Home /> },
           { path: '/events', element: <Events /> },
-          { path: '/events/:id', element: <EventDetail /> },
           { path: '/events/create', element: <CreateEvent /> },
+          { path: '/events/:id', element: <EventDetail /> },
           { path: '/birthdays', element: <Birthdays /> },
-          { path: '/users', element: <Users /> },
-          { path: '/profile', element: <Profile /> },
+          { path: '/family', element: <Family /> },
+          { path: '/messages', element: <Messages /> },
           { path: '/notifications', element: <Notifications /> },
+          { path: '/profile', element: <Profile /> },
+          { path: '/users', element: <Navigate to="/family" replace /> },
+          { path: '*', element: <Navigate to="/home" replace /> },
         ],
       },
     ],
   },
+
   {
     element: <AdminRoute />,
     errorElement: <RouteError />,
@@ -60,16 +72,15 @@ export const router = createBrowserRouter([
       {
         element: <AdminLayout />,
         children: [
-          { path: '/admin', element: <AdminDashboard /> },
+          { path: '/admin', element: <AdminHome /> },
           { path: '/admin/users', element: <ManageUsers /> },
           { path: '/admin/events', element: <ManageEvents /> },
           { path: '/admin/access-requests', element: <AccessRequests /> },
-          { path: '/admin/settings', element: <SiteSettings /> },
+          { path: '/admin/settings', element: <Settings /> },
         ],
       },
     ],
   },
-  { path: '*', element: <NotFound />, errorElement: <RouteError /> },
 ])
 
 

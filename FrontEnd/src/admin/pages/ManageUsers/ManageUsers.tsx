@@ -2,7 +2,6 @@ import toast from 'react-hot-toast'
 import { DataTable, type Column } from '@/admin/components/DataTable/DataTable'
 import { useDeleteUser, usePromoteUser, useUsers } from '@/features/users/hooks/useUsers'
 import type { User, UserRole } from '@/features/users/types/user.types'
-import styles from './ManageUsers.module.css'
 
 const columns: Column<User>[] = [
   { key: 'name', header: 'Name' },
@@ -19,8 +18,8 @@ export function ManageUsers() {
   const nextRole = (role: UserRole): UserRole => role === 'member' ? 'manager' : 'admin'
 
   return (
-    <div className={styles.page}>
-      <h1>Manage Users</h1>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Manage Users</h1>
       <DataTable
         columns={columns}
         data={users.data || []}

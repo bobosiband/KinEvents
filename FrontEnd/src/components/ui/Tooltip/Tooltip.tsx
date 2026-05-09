@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react'
-import styles from './Tooltip.module.css'
 
 export interface TooltipProps {
   content: React.ReactNode
@@ -20,9 +19,16 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, position = 'top', chi
   }
 
   return (
-    <span className={styles.tooltipWrap} onMouseEnter={onEnter} onMouseLeave={onLeave} onFocus={onEnter} onBlur={onLeave}>
+    <span className="relative inline-flex" onMouseEnter={onEnter} onMouseLeave={onLeave} onFocus={onEnter} onBlur={onLeave}>
       {children}
-      <span className={`${styles.tooltipBox} ${styles[position]} ${visible ? styles.visible : ''}`} role="tooltip">
+      <span className={[
+        'pointer-events-none absolute z-50 whitespace-nowrap rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-opacity duration-200',
+        position === 'top' ? 'bottom-full left-1/2 mb-2 -translate-x-1/2' : '',
+        position === 'bottom' ? 'left-1/2 top-full mt-2 -translate-x-1/2' : '',
+        position === 'left' ? 'right-full top-1/2 mr-2 -translate-y-1/2' : '',
+        position === 'right' ? 'left-full top-1/2 ml-2 -translate-y-1/2' : '',
+        visible ? 'opacity-100' : 'opacity-0',
+      ].filter(Boolean).join(' ')} role="tooltip">
         {content}
       </span>
     </span>

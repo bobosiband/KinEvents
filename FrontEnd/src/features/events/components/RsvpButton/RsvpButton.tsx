@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/Button'
 import type { RSVPStatus } from '../../types/event.types'
-import styles from './RsvpButton.module.css'
 
 interface RsvpButtonProps {
   value: RSVPStatus
@@ -17,7 +16,7 @@ const labels: Record<RSVPStatus, string> = {
 
 export function RsvpButton({ value, active = false, loading = false, onSelect }: RsvpButtonProps) {
   return (
-    <Button type="button" variant={active ? 'primary' : 'secondary'} loading={loading} className={styles.button} onClick={() => onSelect(value)}>
+    <Button type="button" variant={active ? 'primary' : 'secondary'} loading={loading} className="min-w-[110px]" onClick={() => onSelect(value)}>
       {labels[value]}
     </Button>
   )

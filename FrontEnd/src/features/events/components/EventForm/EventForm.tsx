@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import type { Event, EventPayload, EventType } from '../../types/event.types'
-import styles from './EventForm.module.css'
 
 interface EventFormProps {
   event?: Event
@@ -41,7 +40,7 @@ export function EventForm({ event, loading = false, onSubmit }: EventFormProps) 
   }
 
   return (
-    <form className={styles.form} onSubmit={submit}>
+    <form className="space-y-4" onSubmit={submit}>
       <Input label="Title" value={title} onChange={eventChange => setTitle(eventChange.target.value)} fullWidth />
       <Textarea label="Description" value={description} onChange={eventChange => setDescription(eventChange.target.value)} rows={5} fullWidth />
       <Input label="Date and time" type="datetime-local" value={date} onChange={eventChange => setDate(eventChange.target.value)} fullWidth />
@@ -57,7 +56,7 @@ export function EventForm({ event, loading = false, onSubmit }: EventFormProps) 
           { label: 'Birthday', value: 'birthday' },
         ]}
       />
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button type="submit" loading={loading} fullWidth>{event ? 'Save Event' : 'Create Event'}</Button>
     </form>
   )

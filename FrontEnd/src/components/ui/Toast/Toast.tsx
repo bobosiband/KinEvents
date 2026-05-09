@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import styles from './Toast.module.css'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
@@ -59,17 +58,24 @@ export const Toast: React.FC<ToastProps> = ({
   }
 
   return (
-    <div className={`${styles.toast} ${styles[type]} ${isExiting ? styles.exiting : ''}`}>
-      <div className={styles.content}>
-        <span className={styles.icon}>{getIcon(type)}</span>
-        <span className={styles.message}>{message}</span>
+    <div className={[
+      'relative overflow-hidden rounded-2xl border bg-card px-4 py-3 shadow-lg transition-all duration-300',
+      type === 'success' ? 'border-emerald-500/20' : '',
+      type === 'error' ? 'border-destructive/20' : '',
+      type === 'warning' ? 'border-amber-500/20' : '',
+      type === 'info' ? 'border-primary/20' : '',
+      isExiting ? 'translate-x-3 opacity-0' : '',
+    ].filter(Boolean).join(' ')}>
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 text-sm font-semibold">{getIcon(type)}</span>
+        <span className="flex-1 text-sm text-foreground">{message}</span>
       </div>
 
-      <div className={styles.actions}>
+      <div className="mt-3 flex items-center justify-end gap-2">
         {action && (
           <button
             type="button"
-            className={styles.actionButton}
+            className="rounded-xl px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/10"
             onClick={() => {
               action.onClick()
               handleDismiss()
@@ -80,7 +86,7 @@ export const Toast: React.FC<ToastProps> = ({
         )}
         <button
           type="button"
-          className={styles.closeButton}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition hover:bg-muted/80 hover:text-foreground"
           onClick={handleDismiss}
           aria-label="Close notification"
         >
@@ -88,7 +94,7 @@ export const Toast: React.FC<ToastProps> = ({
         </button>
       </div>
 
-      {duration > 0 && <div className={styles.progressBar} style={{ width: `${progress}%` }} />}
+      {duration > 0 && <div className="absolute bottom-0 left-0 h-1 bg-primary/40 transition-[width]" style={{ width: `${progress}%` }} />}
     </div>
   )
 }
@@ -103,7 +109,7 @@ interface ToastContainerProps {
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismiss }) => {
   return (
-    <div className={styles.container}>
+    <div className="fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3">
       {toasts.map(toast => (
         <Toast
           key={toast.id}

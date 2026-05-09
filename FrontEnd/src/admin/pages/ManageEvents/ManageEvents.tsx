@@ -8,7 +8,6 @@ import { useDeleteEvent, useUpdateEvent } from '@/features/events/hooks/useCreat
 import { useEvents } from '@/features/events/hooks/useEvents'
 import { useGenerateBirthdays } from '@/features/birthdays/hooks/useBirthdays'
 import type { Event, EventPayload } from '@/features/events/types/event.types'
-import styles from './ManageEvents.module.css'
 
 const columns: Column<Event>[] = [
   { key: 'title', header: 'Name' },
@@ -36,9 +35,9 @@ export function ManageEvents() {
   }
 
   return (
-    <div className={styles.page}>
-      <header>
-        <h1>Manage Events</h1>
+    <div className="space-y-4">
+      <header className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold">Manage Events</h1>
         <Button
           onClick={() =>
             generate.mutate(undefined, {

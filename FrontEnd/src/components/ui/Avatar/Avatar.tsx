@@ -1,5 +1,5 @@
 import React from 'react'
-import styles from './Avatar.module.css'
+import { getInitials, nameToColor } from '@/utils/avatarUtils'
 
 type Size = 'sm' | 'md' | 'lg' | 'xl'
 
@@ -22,29 +22,6 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string
 }
 
-const PALETTES = [
-  'var(--gradient-primary)',
-  'var(--gradient-accent)',
-  'var(--gradient-gold)',
-  'linear-gradient(135deg, var(--color-success) 0%, rgba(6,214,160,0.6) 100%)',
-  'linear-gradient(135deg, var(--color-neutral) 0%, rgba(139,143,168,0.8) 100%)',
-  'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%)',
-]
-
-function nameToInitials(name?: string) {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + (parts[parts.length - 1][0] || '')).toUpperCase()
-}
-
-function pickPalette(name?: string) {
-  if (!name) return PALETTES[0]
-  let sum = 0
-  for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i)
-  return PALETTES[sum % PALETTES.length]
-}
-
 /**
  * Avatar Component
  * 
@@ -64,20 +41,24 @@ export const Avatar: React.FC<AvatarProps> = ({
   className,
   ...rest 
 }) => {
-  const initials = nameToInitials(name)
-  const bg = pickPalette(name)
+  const initials = getInitials(name || '')
+  const bg = nameToColor(name || '')
 
   const resolvedStatus = showOnline ? 'online' : status
 
-  const classes = [
-    styles.avatar,
-    styles[size],
-    resolvedStatus ? styles.withStatus : null,
+  const sizeClass = size === 'sm'
+    ? 'w-8 h-8 text-xs'
+    : size === 'lg'
+      ? 'w-12 h-12 text-base'
+      : size === 'xl'
+        ? 'w-16 h-16 text-lg'
+        : 'w-10 h-10 text-sm'
 
+  const classes = [
+    'relative inline-flex items-center justify-center rounded-full text-white font-semibold overflow-hidden',
+    sizeClass,
     className || '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  ].filter(Boolean).join(' ')
 
   return (
     <div 
@@ -89,19 +70,19 @@ export const Avatar: React.FC<AvatarProps> = ({
         <img 
           src={src} 
           alt={alt ?? name ?? 'User avatar'} 
-          className={styles.image}
+          className="w-full h-full object-cover"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = 'none'
           }}
         />
       ) : (
-        <span className={styles.initials}>{initials}</span>
+        <span>{initials}</span>
       )}
 
       {resolvedStatus && (
 
         <span
-          className={`${styles.statusIndicator} ${styles[resolvedStatus]}`}
+          className={`absolute right-0 bottom-0 w-2.5 h-2.5 rounded-full border border-card ${resolvedStatus === 'online' ? 'bg-green-500' : resolvedStatus === 'away' ? 'bg-yellow-500' : 'bg-gray-400'}`}
           aria-label={`Status: ${resolvedStatus}`}
 
         />

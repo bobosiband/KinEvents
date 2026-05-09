@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { useSaveSiteContent, useSiteContent } from '@/admin/hooks/useAdmin'
-import styles from './SiteSettings.module.css'
 
 export function SiteSettings() {
   const { theme, toggleTheme } = useTheme()
@@ -40,19 +39,19 @@ export function SiteSettings() {
   }
 
   return (
-    <form className={styles.page} onSubmit={submit}>
-      <h1>Site Settings</h1>
-      <Card className={styles.card}>
+    <form className="space-y-4" onSubmit={submit}>
+      <h1 className="text-2xl font-bold">Site Settings</h1>
+      <Card className="space-y-4">
         <Input label="Homepage Title" value={homepageTitle} onChange={event => setHomepageTitle(event.target.value)} fullWidth />
         <Input label="Homepage Subtitle" value={homepageSubtitle} onChange={event => setHomepageSubtitle(event.target.value)} fullWidth />
-        <label className={styles.label}>
+        <label className="block space-y-2">
           <span>Announcement</span>
-          <textarea value={announcement} onChange={event => setAnnouncement(event.target.value)} />
+          <textarea value={announcement} onChange={event => setAnnouncement(event.target.value)} className="w-full min-h-[120px] rounded-xl bg-muted p-3 focus:outline-none focus:ring-2 focus:ring-primary" />
         </label>
         <Button type="submit" loading={save.isPending}>Save</Button>
       </Card>
-      <Card className={styles.card}>
-        <h2>Theme</h2>
+      <Card className="space-y-4">
+        <h2 className="text-lg font-semibold">Theme</h2>
         <Button type="button" variant="secondary" onClick={toggleTheme}>{theme === 'dark' ? 'Light' : 'Dark'} mode</Button>
       </Card>
     </form>

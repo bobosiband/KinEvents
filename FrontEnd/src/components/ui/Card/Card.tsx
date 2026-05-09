@@ -1,5 +1,4 @@
 import React from 'react'
-import styles from './Card.module.css'
 
 export type CardVariant = 'elevated' | 'flat' | 'interactive' | 'ghost' | 'bordered'
 
@@ -37,17 +36,31 @@ export const Card: React.FC<CardProps> = ({
   ...rest 
 }) => {
   const isClickable = clickable || typeof onClick === 'function' || !!href
-  
+
+  const variantClass = variant === 'flat'
+    ? 'bg-card border border-border'
+    : variant === 'interactive'
+      ? 'bg-card shadow-md hover:shadow-xl'
+      : variant === 'ghost'
+        ? 'bg-transparent border border-border/40'
+        : variant === 'bordered'
+          ? 'bg-card border border-border'
+          : 'bg-card shadow-md'
+
+  const paddingClass = padding === 'small'
+    ? 'p-3'
+    : padding === 'large'
+      ? 'p-6'
+      : 'p-4'
+
   const classNames = [
-    styles.card,
-    styles[variant as keyof typeof styles],
-    styles[`padding-${padding}` as keyof typeof styles],
-    isClickable ? styles.clickable : null,
-    disabled ? styles.disabled : null,
+    'rounded-2xl transition-all',
+    variantClass,
+    paddingClass,
+    isClickable ? 'cursor-pointer hover:-translate-y-0.5' : '',
+    disabled ? 'opacity-60 pointer-events-none' : '',
     className || '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  ].filter(Boolean).join(' ')
 
   if (href) {
     return (
