@@ -28,7 +28,7 @@ export function UserLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user } = useAuth()
   const { data: notifications = [] } = useNotifications()
-  const unreadCount = notifications.length
+  const unreadCount = notifications.filter(n => !n.isRead).length
 
   const navItemsWithBadge = USER_NAV_ITEMS.map(item =>
     item.path === '/notifications' ? { ...item, badge: unreadCount } : item

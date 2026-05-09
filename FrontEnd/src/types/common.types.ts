@@ -11,4 +11,6 @@ export interface NotificationItem {
   status: 'pending' | 'sent' | 'failed'
   createdAt: string
   sentAt?: string
+  readBy?: string[]
+  isRead?: boolean
 }
