@@ -11,12 +11,15 @@ import adminContentHandler from '../api/admin/content'
 import adminDashboardHandler from '../api/admin/dashboard'
 import createAdminHandler from '../api/admin/create-admin'
 import birthdayGenerateHandler from '../api/birthdays/generate'
+import birthdayRemindersHandler from '../api/birthdays/reminders'
 import birthdayUpcomingHandler from '../api/birthdays/upcoming'
 import eventByIdHandler from '../api/events/[id]'
 import eventsHandler from '../api/events/index'
 import eventRsvpHandler from '../api/events/rsvp'
 import notificationsHandler from '../api/notifications/index'
 import notificationSendHandler from '../api/notifications/send'
+import notificationReadHandler from '../api/notifications/[id]/read'
+import notificationByIdHandler from '../api/notifications/[id]'
 import userByIdHandler from '../api/users/[id]'
 import usersHandler from '../api/users/index'
 import promoteUserHandler from '../api/users/promote'
@@ -37,9 +40,12 @@ export const routes = [
   { method: 'all', path: '/api/events/rsvp', handler: eventRsvpHandler },
   { method: 'all', path: '/api/events/:id', handler: eventByIdHandler },
   { method: 'all', path: '/api/birthdays/upcoming', handler: birthdayUpcomingHandler },
+  { method: 'all', path: '/api/birthdays/reminders', handler: birthdayRemindersHandler },
   { method: 'all', path: '/api/birthdays/generate', handler: birthdayGenerateHandler },
   { method: 'all', path: '/api/notifications', handler: notificationsHandler },
   { method: 'all', path: '/api/notifications/send', handler: notificationSendHandler },
+  { method: 'all', path: '/api/notifications/:id/read', handler: notificationReadHandler },
+  { method: 'all', path: '/api/notifications/:id', handler: notificationByIdHandler },
   { method: 'all', path: '/api/admin/create-admin', handler: createAdminHandler },
   { method: 'all', path: '/api/admin/dashboard', handler: adminDashboardHandler },
   { method: 'all', path: '/api/admin/content', handler: adminContentHandler },

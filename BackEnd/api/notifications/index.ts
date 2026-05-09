@@ -9,7 +9,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     return
   }
 
-  const notifications = await notificationService.listNotifications()
+  const notifications = await notificationService.listNotifications(req.user?.id)
   const visibleNotifications =
     req.user?.role === 'admin'
       ? notifications

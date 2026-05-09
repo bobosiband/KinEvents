@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import { getData, persistData } from '../config/db'
 import { EVENT_TYPES } from '../constants/events'
 import type { IEvent, RSVPStatus } from '../interfaces/event.interface'
+import { notificationService } from './notification.service'
 
 export interface CreateEventInput {
   title: string
@@ -43,6 +44,18 @@ export class EventService {
     }
     getData().events.push(event)
     await persistData()
+
+    // Auto-trigger notification
+    await notificationService.createNotification({
+      type: 'event_created',
+      recipientId: event.createdBy,
+      payload: {
+        eventId: event.id,
+        title: event.title,
+        date: event.date,
+      },
+    })
+
     return event
   }
 
@@ -51,6 +64,18 @@ export class EventService {
     if (!event) return null
     Object.assign(event, patch, { updatedAt: new Date().toISOString() })
     await persistData()
+
+    // Auto-trigger notification
+    await notificationService.createNotification({
+      type: 'event_updated',
+      recipientId: event.createdBy,
+      payload: {
+        eventId: event.id,
+        title: event.title,
+        date: event.date,
+      },
+    })
+
     return event
   }
 

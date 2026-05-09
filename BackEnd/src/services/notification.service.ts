@@ -11,8 +11,18 @@ export interface CreateNotificationInput {
 }
 
 export class NotificationService {
-  async listNotifications(): Promise<INotification[]> {
-    return getData().notifications
+  async listNotifications(userId?: string): Promise<Array<INotification & { isRead?: boolean }>> {
+    const notifications = getData().notifications
+    
+    if (!userId) {
+      return notifications
+    }
+
+    // Attach isRead field for the given user
+    return notifications.map((notification) => ({
+      ...notification,
+      isRead: notification.readBy?.includes(userId) ?? false,
+    }))
   }
 
   async createNotification(input: CreateNotificationInput): Promise<INotification> {
@@ -26,6 +36,22 @@ export class NotificationService {
     }
     getData().notifications.push(notification)
     await persistData()
+    return notification
+  }
+
+  async markAsReadByUser(notificationId: string, userId: string): Promise<INotification | null> {
+    const notification = getData().notifications.find((item) => item.id === notificationId)
+    if (!notification) return null
+    
+    if (!notification.readBy) {
+      notification.readBy = []
+    }
+    
+    if (!notification.readBy.includes(userId)) {
+      notification.readBy.push(userId)
+      await persistData()
+    }
+    
     return notification
   }
 

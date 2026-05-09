@@ -17,4 +17,5 @@ export interface INotification {
   status: NotificationStatus
   createdAt: string
   sentAt?: string
+  readBy?: string[]
 }
