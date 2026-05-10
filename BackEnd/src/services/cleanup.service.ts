@@ -8,6 +8,7 @@ export class CleanupService {
     const db = getData()
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     const before = db.notifications.length
+    const previousNotifications = [...db.notifications]
 
     db.notifications = db.notifications.filter((n) => {
       if (!n.readAt) return true
@@ -16,7 +17,12 @@ export class CleanupService {
 
     const deleted = before - db.notifications.length
     if (deleted > 0) {
-      await persistData()
+      try {
+        await persistData()
+      } catch (error) {
+        db.notifications = previousNotifications
+        throw error
+      }
     }
 
     return deleted
@@ -30,6 +36,7 @@ export class CleanupService {
     const db = getData()
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const before = db.events.length
+    const previousEvents = [...db.events]
 
     db.events = db.events.filter((e) => {
       if (e.date > oneDayAgo) return true
@@ -39,7 +46,12 @@ export class CleanupService {
 
     const deleted = before - db.events.length
     if (deleted > 0) {
-      await persistData()
+      try {
+        await persistData()
+      } catch (error) {
+        db.events = previousEvents
+        throw error
+      }
     }
 
     return deleted

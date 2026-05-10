@@ -82,11 +82,23 @@ export class AuthService {
     if (!request) throw new Error('Access request not found')
 
     const now = new Date().toISOString()
+    const previousState = {
+      status: request.status,
+      resolvedAt: request.resolvedAt,
+      resolvedBy: request.resolvedBy,
+    }
+
     request.status = 'rejected'
     request.resolvedAt = now
     request.resolvedBy = resolvedBy
 
-    await persistData()
+    try {
+      await persistData()
+    } catch (error) {
+      Object.assign(request, previousState)
+      throw error
+    }
+
     return request
   }
 

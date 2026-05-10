@@ -102,8 +102,17 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
-    db.users.splice(index, 1)
-    await persistData()
+    const [removedUser] = db.users.splice(index, 1)
+
+    try {
+      console.log('[DB] Persisting after user deletion:', id)
+      await persistData()
+    } catch (persistError) {
+      db.users.splice(index, 0, removedUser)
+      console.error('[DELETE /api/users/:id] Failed to persist deletion:', persistError)
+      res.status(500).json({ success: false, message: 'Failed to persist user deletion' })
+      return
+    }
 
     res.status(200).json({ success: true, message: 'User deleted successfully' })
   } else {

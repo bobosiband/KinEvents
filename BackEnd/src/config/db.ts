@@ -102,13 +102,13 @@ export async function initData(): Promise<void> {
       console.log('[DB] MongoDB connected')
     } catch (error) {
       client = null
+      console.warn('[DB] MongoDB connect failed, using empty in-memory store', error)
+      data = normalizeDataShape()
+
       if (process.env.NODE_ENV === 'production') {
-        console.error('[DB] MongoDB connect failed in production', error)
         throw error
       }
 
-      console.warn('[DB] MongoDB connect failed, using seed data fallback', error)
-      data = getSeedData()
       return
     }
   }
@@ -164,7 +164,7 @@ export async function initData(): Promise<void> {
     console.error('[DB] Error while checking legacy collections', err)
   }
 
-  // If we found any legacy data, use it; otherwise initialize fresh document
+  // If we found any legacy data, use it; otherwise initialize fresh document.
   if (
     (migrated.users && migrated.users.length > 0) ||
     (migrated.events && migrated.events.length > 0) ||
@@ -180,11 +180,21 @@ export async function initData(): Promise<void> {
 
   data = normalizeDataShape()
   await collection.insertOne({ name: DOCUMENT_NAME, data })
-  console.log('[DB] No existing document - inserted fresh datastore')
+  console.log('[DB] No existing document - inserted fresh empty datastore')
 }
 
 export async function persistData(): Promise<void> {
-  if (isTestMode || !client) {
+  if (isTestMode) {
+    return
+  }
+
+  if (!client) {
+    console.error('[DB] persistData() called but MongoDB client is not connected - write skipped')
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database not connected - cannot persist data')
+    }
+
     return
   }
 

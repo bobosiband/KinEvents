@@ -84,8 +84,17 @@ export class EventService {
     const db = getData()
     const index = db.events.findIndex((event) => event.id === id)
     if (index < 0) return false
-    db.events.splice(index, 1)
-    await persistData()
+    const [removedEvent] = db.events.splice(index, 1)
+
+    try {
+      console.log('[DB] Persisting after event deletion:', id)
+      await persistData()
+    } catch (error) {
+      db.events.splice(index, 0, removedEvent)
+      console.error('[EventService] Failed to persist event deletion:', error)
+      throw error
+    }
+
     return true
   }
 

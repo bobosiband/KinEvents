@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken'
 import type { IUser } from '../src/interfaces/user.interface'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getData } from '../src/config/db'
+import { resetDb } from './helpers/db.helper'
 
 // Ensure JWT_SECRET is available (set in setup.ts)
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-testing-purposes-only'
@@ -51,6 +53,10 @@ const createMockResponse = (): VercelResponse => {
 }
 
 describe('API Handler Authentication & Authorization Tests', () => {
+  beforeEach(() => {
+    resetDb()
+  })
+
   describe('Events API Protection', () => {
     it('GET /api/events should require authentication', async () => {
       // Import the handler
@@ -320,6 +326,58 @@ describe('API Handler Authentication & Authorization Tests', () => {
       await userByIdHandler(req, res)
 
       expect(res.status).toHaveBeenCalledWith(400)
+    })
+
+    it('DELETE /api/users/:id should return 200 on success', async () => {
+      const userByIdHandler = require('../api/users/[id]').default
+      const token = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+      const deletedUser = {
+        id: '33333333-3333-3333-3333-333333333333',
+        name: 'Deleted User',
+        email: 'deleted@example.com',
+        role: 'member' as const,
+        accessStatus: 'approved' as const,
+        capabilities: [],
+        notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      getData().users.push(deletedUser)
+
+      const req = createMockRequest({
+        method: 'DELETE',
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        query: { id: deletedUser.id },
+      })
+
+      const res = createMockResponse()
+
+      await userByIdHandler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(200)
+      expect(getData().users.find((item) => item.id === deletedUser.id)).toBeUndefined()
+    })
+
+    it('DELETE /api/users/:id should return 404 for unknown user', async () => {
+      const userByIdHandler = require('../api/users/[id]').default
+      const token = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+
+      const req = createMockRequest({
+        method: 'DELETE',
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        query: { id: '00000000-0000-0000-0000-000000000000' },
+      })
+
+      const res = createMockResponse()
+
+      await userByIdHandler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(404)
     })
   })
 

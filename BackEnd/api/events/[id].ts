@@ -54,12 +54,17 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       res.status(400).json({ success: false, message: (error as Error).message })
     }
   } else if (req.method === 'DELETE') {
-    const deleted = await eventService.deleteEvent(id)
-    if (!deleted) {
-      res.status(404).json({ success: false, message: 'Event not found' })
-      return
+    try {
+      const deleted = await eventService.deleteEvent(id)
+      if (!deleted) {
+        res.status(404).json({ success: false, message: 'Event not found' })
+        return
+      }
+
+      res.status(200).json({ success: true, message: 'Event deleted successfully' })
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to persist event deletion' })
     }
-    res.status(200).json({ success: true, message: 'Event deleted successfully' })
   } else {
     res.status(405).json({ success: false, message: 'Method not allowed' })
   }

@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { ROLE_CAPABILITIES } from '../src/constants/roles'
 import { getData } from '../src/config/db'
-import { resetDb } from './helpers/db.helper'
+import { resetDb, seedDb } from './helpers/db.helper'
 
 
 describe('User Routes', () => {
@@ -89,6 +89,12 @@ describe('User Routes', () => {
 
       const retrieved = getData().users.find((item) => item.id === memberUser.id)
       expect(retrieved).toBeUndefined()
+
+      resetDb()
+      seedDb({ users: [testUser] })
+
+      const afterReset = getData().users.find((item) => item.id === memberUser.id)
+      expect(afterReset).toBeUndefined()
     })
   })
 
