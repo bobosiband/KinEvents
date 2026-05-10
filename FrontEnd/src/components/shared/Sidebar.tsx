@@ -104,13 +104,17 @@ function SidebarContent({ items, location, user, onClose }: {
 
       {user && (
         <div className="p-4 border-t border-border flex-shrink-0">
-          <div className="flex items-center gap-3 px-2">
+          <Link
+            to="/profile"
+            onClick={onClose}
+            className="flex items-center gap-3 px-2 rounded-xl hover:bg-muted transition-colors py-1"
+          >
             <Avatar name={user.name} size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user.role} · Profile</p>
             </div>
-          </div>
+          </Link>
         </div>
       )}
     </>

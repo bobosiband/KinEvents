@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, Link } from 'react-router-dom'
-import { Home, Calendar, Cake, Users, MessageCircle, Bell as BellIcon, Shield } from 'lucide-react'
+import { Home, Calendar, Cake, Users, MessageCircle, Bell as BellIcon, Shield, User } from 'lucide-react'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { BottomNav } from '@/components/shared/BottomNav'
 import { TopBar } from '@/components/shared/TopBar'
@@ -15,14 +15,15 @@ const USER_NAV_ITEMS = [
   { icon: Users, label: 'Family', path: '/family' },
   { icon: MessageCircle, label: 'Messages', path: '/messages' },
   { icon: BellIcon, label: 'Notifications', path: '/notifications' },
+  { icon: User, label: 'Profile', path: '/profile' },
 ]
 
 const USER_BOTTOM_NAV = [
   { icon: Home, label: 'Home', path: '/home' },
   { icon: Calendar, label: 'Events', path: '/events' },
   { icon: Cake, label: 'Birthdays', path: '/birthdays' },
-  { icon: Users, label: 'Family', path: '/family' },
   { icon: BellIcon, label: 'Alerts', path: '/notifications' },
+  { icon: User, label: 'Profile', path: '/profile' },
 ]
 
 export function UserLayout() {
