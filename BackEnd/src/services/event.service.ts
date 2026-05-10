@@ -5,6 +5,7 @@ import { EVENT_TYPES } from '../constants/events'
 import type { IEvent, RSVPStatus } from '../interfaces/event.interface'
 import type { INotification } from '../interfaces/notification.interface'
 import { notificationService } from './notification.service'
+import { emailDispatcher } from './email-dispatcher.service'
 
 export interface CreateEventInput {
   title: string
@@ -57,6 +58,15 @@ export class EventService {
       },
     })
 
+    // Send emails to all approved users (non-blocking)
+    try {
+      const allApprovedUsers = getData().users.filter((user) => user.accessStatus === 'approved')
+      await emailDispatcher.onEventCreated(event, allApprovedUsers)
+    } catch (error) {
+      console.error('[EventService] Email dispatch failed:', error)
+      // Don't throw - email failures don't affect the primary operation
+    }
+
     return event
   }
 
@@ -76,6 +86,19 @@ export class EventService {
         date: event.date,
       },
     })
+
+    // Send emails to users who have RSVP'd 'yes' (non-blocking)
+    try {
+      const rsvpYesUserIds = Object.entries(event.rsvps)
+        .filter(([, status]) => status === 'yes')
+        .map(([userId]) => userId)
+      const rsvpYesUsers = getData().users.filter((user) => rsvpYesUserIds.includes(user.id))
+      const changes = Object.keys(patch).filter((key) => key !== 'updatedAt')
+      await emailDispatcher.onEventUpdated(event, rsvpYesUsers, changes)
+    } catch (error) {
+      console.error('[EventService] Email dispatch failed:', error)
+      // Don't throw - email failures don't affect the primary operation
+    }
 
     return event
   }
@@ -116,6 +139,17 @@ export class EventService {
           status,
         },
       })
+    }
+
+    // Send RSVP confirmation email (non-blocking)
+    try {
+      const user = getData().users.find((u) => u.id === userId)
+      if (user) {
+        await emailDispatcher.onRsvpConfirmed(event, user, status)
+      }
+    } catch (error) {
+      console.error('[EventService] Email dispatch failed:', error)
+      // Don't throw - email failures don't affect the primary operation
     }
 
     return event

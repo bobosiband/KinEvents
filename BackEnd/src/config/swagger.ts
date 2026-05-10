@@ -1029,6 +1029,161 @@ const swaggerDocument: OpenAPIV3_0 = {
         },
       },
     },
+    '/api/admin/email-logs': {
+      get: {
+        tags: ['Admin'],
+        summary: 'Get email logs',
+        description: 'Retrieve email dispatch logs with optional filtering. Admin only.',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'recipientId',
+            in: 'query',
+            required: false,
+            schema: { type: 'string', format: 'uuid' },
+            description: 'Filter logs by recipient user ID',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Email logs retrieved',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', format: 'uuid' },
+                          templateName: { type: 'string' },
+                          recipientId: { type: 'string', format: 'uuid' },
+                          recipientEmail: { type: 'string', format: 'email' },
+                          subject: { type: 'string' },
+                          status: { type: 'string', enum: ['sent', 'failed', 'skipped'] },
+                          sentAt: { type: 'string', format: 'date-time' },
+                          error: { type: 'string' },
+                          retryCount: { type: 'integer' },
+                          createdAt: { type: 'string', format: 'date-time' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Admin required' },
+        },
+      },
+    },
+    '/api/admin/email-resend': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Resend a failed email',
+        description: 'Retry sending a failed email log entry. Admin only.',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['logEntryId'],
+                properties: {
+                  logEntryId: { type: 'string', format: 'uuid' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Email resend queued',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiSuccess' },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Admin required' },
+          '404': { description: 'Log entry not found' },
+        },
+      },
+    },
+    '/api/admin/email-test': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Send a test email',
+        description: 'Send a test email using a specified template (development only, disabled in production). Admin only.',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['templateName', 'recipientEmail'],
+                properties: {
+                  templateName: {
+                    type: 'string',
+                    enum: [
+                      'welcome',
+                      'access-approved',
+                      'access-rejected',
+                      'account-updated',
+                      'role-changed',
+                      'event-created',
+                      'event-updated',
+                      'event-cancelled',
+                      'event-reminder',
+                      'rsvp-confirmation',
+                      'birthday-today',
+                      'birthday-reminder',
+                      'announcement',
+                    ],
+                  },
+                  recipientEmail: { type: 'string', format: 'email' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Test email sent',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiSuccess' },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation failed',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiError' },
+              },
+            },
+          },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Admin required or production environment' },
+        },
+      },
+    },
   },
 }
 

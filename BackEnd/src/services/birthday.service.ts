@@ -5,6 +5,7 @@ import { EVENT_TYPES } from '../constants/events'
 import type { IEvent } from '../interfaces/event.interface'
 import type { IUser } from '../interfaces/user.interface'
 import { notificationService } from './notification.service'
+import { emailDispatcher } from './email-dispatcher.service'
 import type { INotification } from '../interfaces/notification.interface'
 
 export interface BirthdayPreview {
@@ -94,6 +95,7 @@ export class BirthdayService {
 
     // Get all users with birthdays
     const usersWithBirthdays = getData().users.filter((user) => Boolean(user.birthday))
+    const allUsers = getData().users
 
     for (const user of usersWithBirthdays) {
       const parts = extractMonthDay(user.birthday ?? '')
@@ -117,6 +119,25 @@ export class BirthdayService {
           },
         })
         created.push(notification)
+
+        // Send emails (non-blocking)
+        try {
+          if (daysUntilBirthday === 0) {
+            // Birthday today - send to the birthday user
+            await emailDispatcher.onBirthdayToday(user)
+          } else {
+            // Birthday reminder - send to all other approved users
+            const otherApprovedUsers = allUsers.filter(
+              (u) => u.id !== user.id && u.accessStatus === 'approved'
+            )
+            for (const notifyUser of otherApprovedUsers) {
+              await emailDispatcher.onBirthdayReminder(user, notifyUser, daysUntilBirthday)
+            }
+          }
+        } catch (error) {
+          console.error('[BirthdayService] Email dispatch failed:', error)
+          // Don't throw - email failures don't affect the primary operation
+        }
       }
     }
 

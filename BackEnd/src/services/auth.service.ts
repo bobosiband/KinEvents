@@ -4,6 +4,7 @@ import { getData, persistData } from '../config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../constants/roles'
 import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IUser } from '../interfaces/user.interface'
+import { emailDispatcher } from './email-dispatcher.service'
 
 export interface RequestAccessInput {
   name: string
@@ -45,9 +46,10 @@ export class AuthService {
 
   async approveAccess(accessRequestId: string, resolvedBy = 'system'): Promise<{ request: IAccessRequest; user: IUser }> {
     const db = getData()
-    const request = db.accessRequests.find((item) => item.id === accessRequestId)
-    if (!request) throw new Error('Access request not found')
+    const requestIndex = db.accessRequests.findIndex((item) => item.id === accessRequestId)
+    if (requestIndex < 0) throw new Error('Access request not found')
 
+    const request = db.accessRequests[requestIndex]
     const now = new Date().toISOString()
     request.status = 'approved'
     request.resolvedAt = now
@@ -55,6 +57,7 @@ export class AuthService {
 
     const existingUser = db.users.find((user) => normalizeEmail(user.email) === normalizeEmail(request.email))
     let user: IUser
+    const isNewUser = !existingUser
 
     if (existingUser) {
       existingUser.name = request.name
@@ -78,15 +81,32 @@ export class AuthService {
       db.users.push(user)
     }
 
+    // Move resolved request from active to history
+    db.accessRequests.splice(requestIndex, 1)
+    db.accessRequestHistory.push(request)
+
     await persistData()
+
+    // Send notification emails (non-blocking)
+    try {
+      await emailDispatcher.onAccessApproved(user)
+      if (isNewUser) {
+        await emailDispatcher.onWelcome(user)
+      }
+    } catch (error) {
+      console.error('[AuthService] Email dispatch failed:', error)
+      // Don't throw - email failures don't affect the primary operation
+    }
+
     return { request, user }
   }
 
   async revokeAccess(accessRequestId: string, resolvedBy = 'system'): Promise<IAccessRequest> {
     const db = getData()
-    const request = db.accessRequests.find((item) => item.id === accessRequestId)
-    if (!request) throw new Error('Access request not found')
+    const requestIndex = db.accessRequests.findIndex((item) => item.id === accessRequestId)
+    if (requestIndex < 0) throw new Error('Access request not found')
 
+    const request = db.accessRequests[requestIndex]
     const now = new Date().toISOString()
     const previousState = {
       status: request.status,
@@ -99,17 +119,33 @@ export class AuthService {
     request.resolvedBy = resolvedBy
 
     try {
+      // Move resolved request from active to history
+      db.accessRequests.splice(requestIndex, 1)
+      db.accessRequestHistory.push(request)
+
       await persistData()
     } catch (error) {
       Object.assign(request, previousState)
       throw error
     }
 
+    // Send notification email (non-blocking)
+    try {
+      await emailDispatcher.onAccessRejected(request)
+    } catch (error) {
+      console.error('[AuthService] Email dispatch failed:', error)
+      // Don't throw - email failures don't affect the primary operation
+    }
+
     return request
   }
 
   async listAccessRequests(): Promise<IAccessRequest[]> {
-    return getData().accessRequests
+    return getData().accessRequests.filter((request) => request.status === 'pending')
+  }
+
+  async listAccessRequestHistory(): Promise<IAccessRequest[]> {
+    return getData().accessRequestHistory
   }
 
   async listApprovedUsers(): Promise<IUser[]> {

@@ -61,4 +61,95 @@ describe('Authentication Routes', () => {
       expect(revoked.status).toBe('rejected')
     })
   })
+
+  describe('Access Request Archival', () => {
+    it('should move approved request to history and remove from pending', async () => {
+      const accessRequest = await authService.requestAccess({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+      })
+
+      await authService.approveAccess(accessRequest.id)
+
+      const pendingRequests = await authService.listAccessRequests()
+      const history = await authService.listAccessRequestHistory()
+
+      expect(pendingRequests.find((r) => r.id === accessRequest.id)).toBeUndefined()
+      expect(history.find((r) => r.id === accessRequest.id)).toBeDefined()
+    })
+
+    it('should move rejected request to history and remove from pending', async () => {
+      const accessRequest = await authService.requestAccess({
+        name: 'Bob Smith',
+        email: 'bob@example.com',
+      })
+
+      await authService.revokeAccess(accessRequest.id)
+
+      const pendingRequests = await authService.listAccessRequests()
+      const history = await authService.listAccessRequestHistory()
+
+      expect(pendingRequests.find((r) => r.id === accessRequest.id)).toBeUndefined()
+      expect(history.find((r) => r.id === accessRequest.id)).toBeDefined()
+    })
+
+    it('should preserve request data when archiving', async () => {
+      const accessRequest = await authService.requestAccess({
+        name: 'Charlie Jones',
+        email: 'charlie@example.com',
+      })
+
+      const originalId = accessRequest.id
+
+      await authService.approveAccess(accessRequest.id)
+
+      const history = await authService.listAccessRequestHistory()
+      const archivedRequest = history.find((r) => r.id === originalId)
+
+      expect(archivedRequest).toBeDefined()
+      expect(archivedRequest?.name).toBe('Charlie Jones')
+      expect(archivedRequest?.email).toBe('charlie@example.com')
+    })
+
+    it('should keep rejected requests in history', async () => {
+      const request1 = await authService.requestAccess({
+        name: 'User One',
+        email: 'one@example.com',
+      })
+
+      const request2 = await authService.requestAccess({
+        name: 'User Two',
+        email: 'two@example.com',
+      })
+
+      await authService.approveAccess(request1.id)
+      await authService.revokeAccess(request2.id)
+
+      const history = await authService.listAccessRequestHistory()
+
+      expect(history).toHaveLength(2)
+      expect(history.find((r) => r.id === request1.id)?.status).toBe('approved')
+      expect(history.find((r) => r.id === request2.id)?.status).toBe('rejected')
+    })
+
+    it('listAccessRequests should only return pending requests', async () => {
+      const req1 = await authService.requestAccess({
+        name: 'User One',
+        email: 'one@example.com',
+      })
+
+      const req2 = await authService.requestAccess({
+        name: 'User Two',
+        email: 'two@example.com',
+      })
+
+      await authService.approveAccess(req1.id)
+
+      const pending = await authService.listAccessRequests()
+
+      expect(pending.every((r) => r.status === 'pending')).toBe(true)
+      expect(pending).toHaveLength(1)
+      expect(pending[0].id).toBe(req2.id)
+    })
+  })
 })

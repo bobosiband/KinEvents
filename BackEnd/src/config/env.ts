@@ -23,6 +23,10 @@ const envSchema = z.object({
   APP_URL: z.string().url(),
   MONGODB_URI: z.string().min(1).optional(),
   MONGODB_DB_NAME: z.string().min(1).default('kinevents'),
+  EMAIL_USER: z.string().optional(),
+  EMAIL_PASS: z.string().optional(),
+  EMAIL_FROM_NAME: z.string().default('KinEvents'),
+  EMAIL_ENABLED: z.enum(['true', 'false']).default('true'),
 })
 
 export const env = envSchema.parse({
@@ -33,4 +37,8 @@ export const env = envSchema.parse({
   APP_URL: process.env.APP_URL,
   MONGODB_URI: process.env.MONGODB_URI,
   MONGODB_DB_NAME: process.env.MONGODB_DB_NAME,
+  EMAIL_USER: process.env.EMAIL_USER,
+  EMAIL_PASS: process.env.EMAIL_PASS,
+  EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
+  EMAIL_ENABLED: process.env.EMAIL_ENABLED,
 })

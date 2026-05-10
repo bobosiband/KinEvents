@@ -58,6 +58,15 @@ describe('Coverage Improvements', () => {
     const approved = await authService.approveAccess(request.id)
     expect(approved.user.id).toBe(existingUser.id)
     expect(approved.user.accessStatus).toBe('approved')
+    
+    // After approval, the request is archived, so it should be in history
+    expect((await authService.listAccessRequestHistory()).length).toBeGreaterThan(0)
+    
+    // Create another pending request so listAccessRequests is not empty
+    await authService.requestAccess({
+      name: 'Another User',
+      email: 'another@example.com',
+    })
     expect((await authService.listAccessRequests()).length).toBeGreaterThan(0)
     expect((await authService.listApprovedUsers()).length).toBeGreaterThan(0)
     await expect(authService.revokeAccess('missing-id')).rejects.toThrow('Access request not found')

@@ -8,8 +8,10 @@ export function resetDb(): void {
     users: [],
     events: [],
     accessRequests: [],
+    accessRequestHistory: [],
     notifications: [],
     content: [],
+    emailLogs: [],
   })
 }
 
@@ -22,7 +24,9 @@ export function seedDb(partialData: Partial<DbSchema>): void {
     users: partialData.users ?? [],
     events: partialData.events ?? [],
     accessRequests: partialData.accessRequests ?? [],
+    accessRequestHistory: partialData.accessRequestHistory ?? [],
     notifications: partialData.notifications ?? [],
     content: partialData.content ?? [],
+    emailLogs: partialData.emailLogs ?? [],
   })
 }
