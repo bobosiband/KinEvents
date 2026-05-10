@@ -1,9 +1,7 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
-import jwt from 'jsonwebtoken'
 
 import { getData, persistData } from '../../src/config/db'
-import { env } from '../../src/config/env'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const updateUserSchema = z.object({
@@ -33,7 +31,6 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   const currentUser = req.user
-
 
   if (req.method === 'GET') {
     const user = getData().users.find((item) => item.id === id)
@@ -86,8 +83,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     Object.assign(user, updateData)
     await persistData()
 
-    const freshToken = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
-    res.status(200).json({ success: true, data: { user, token: freshToken } })
+    res.status(200).json({ success: true, data: { user } })
   } else if (req.method === 'DELETE') {
     // Only admins or the user themselves may delete the user record
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.id !== id)) {

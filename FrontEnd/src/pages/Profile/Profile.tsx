@@ -68,9 +68,8 @@ export function Profile() {
       {
         onSuccess: (response) => {
           const updatedUser = response.user
-          const newToken = response.token ?? token
-          if (newToken) {
-            setAuth(updatedUser, newToken)
+          if (token) {
+            setAuth(updatedUser, token)
           }
           toast.success('Profile saved')
         },

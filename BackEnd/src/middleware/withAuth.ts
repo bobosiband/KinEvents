@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../config/env'
+import { getData } from '../config/db'
 import type { IUser, UserRole } from '../interfaces/user.interface'
 import { ROLE_CAPABILITIES } from '../constants/roles'
 
@@ -40,20 +41,20 @@ export function withAuth(
 
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as IUser
+      const liveUser = getData().users.find((user) => user.id === decoded.id)
+
+      if (!liveUser) {
+        res.status(401).json({ success: false, message: 'User no longer exists' })
+        return
+      }
+
+      if (liveUser.accessStatus !== 'approved') {
+        res.status(401).json({ success: false, message: 'User account is not approved' })
+        return
+      }
 
       const requestWithUser = req as RequestWithUser
-      const user = {
-        id: decoded.id,
-        name: decoded.name,
-        email: decoded.email,
-        role: decoded.role,
-        accessStatus: decoded.accessStatus,
-        birthday: decoded.birthday,
-        capabilities: decoded.capabilities || [],
-        notificationPrefs: decoded.notificationPrefs,
-        createdAt: decoded.createdAt,
-        updatedAt: decoded.updatedAt,
-      } as IUser
+      const user = liveUser
 
       requestWithUser.user = user
 

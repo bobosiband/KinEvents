@@ -29,7 +29,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
   try {
     const { request, user } = await authService.approveAccess(parseResult.data.accessRequestId)
-    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
+    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '1h' })
 
     res.status(200).json({
       success: true,

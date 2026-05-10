@@ -11,7 +11,6 @@ export interface ProfilePayload {
 
 export interface UpdateUserResponse {
   user: User
-  token?: string
 }
 
 export function getUsers(params?: { role?: string; status?: string }): Promise<User[]> {

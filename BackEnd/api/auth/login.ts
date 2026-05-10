@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 
 import { env } from '../../src/config/env'
 import { getData } from '../../src/config/db'
+import { authService } from '../../src/services/auth.service'
 
 const loginSchema = z.object({
   email: z.preprocess(
@@ -49,27 +50,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const inputEmail = normalizeEmail(parseResult.data.email)
     console.log(`[LOGIN] Looking up user with email: ${inputEmail}`)
 
-    const user = getData().users.find((item) => item.email.trim().toLowerCase() === inputEmail)
+    const existingUser = getData().users.find((item) => item.email.trim().toLowerCase() === inputEmail)
 
-    if (!user) {
+    if (!existingUser) {
       console.warn(`[LOGIN] User not found: ${inputEmail}`)
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
 
-    console.log(`[LOGIN] User found: ${user.id} (${user.email})`)
-
-    if (user.accessStatus !== 'approved') {
+    if (existingUser.accessStatus !== 'approved') {
       console.warn(
-        `[LOGIN] User not approved: ${user.id} (status: ${user.accessStatus})`
+        `[LOGIN] User not approved: ${existingUser.id} (status: ${existingUser.accessStatus})`
       )
       res.status(403).json({ success: false, message: 'User account is not approved' })
       return
     }
 
+    const user = authService.getApprovedUser(inputEmail) ?? existingUser
+
+    console.log(`[LOGIN] User found: ${user.id} (${user.email})`)
+
     console.log(`[LOGIN] User approved. Generating JWT token for ${user.id}`)
 
-    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
+    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '1h' })
 
     console.log(`[LOGIN] ✓ Login successful for ${user.id}`)
 

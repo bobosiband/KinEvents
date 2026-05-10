@@ -108,9 +108,8 @@ export function Birthdays() {
       { birthday: birthdayDraft, notificationPrefs: user.notificationPrefs },
       {
         onSuccess: (response) => {
-          const nextToken = response.token ?? token
-          if (nextToken) {
-            setAuth(response.user, nextToken)
+          if (token) {
+            setAuth(response.user, token)
           }
           queryClient.invalidateQueries({ queryKey: ['birthdays'] })
           queryClient.invalidateQueries({ queryKey: ['users'] })

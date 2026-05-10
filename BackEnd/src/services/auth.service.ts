@@ -16,6 +16,12 @@ function normalizeEmail(email: string): string {
 }
 
 export class AuthService {
+  getApprovedUser(email: string): IUser | null {
+    return getData().users.find(
+      (user) => normalizeEmail(user.email) === normalizeEmail(email) && user.accessStatus === 'approved'
+    ) ?? null
+  }
+
   async requestAccess(input: RequestAccessInput): Promise<IAccessRequest> {
     const { accessRequests } = getData()
     const existing = accessRequests.find(

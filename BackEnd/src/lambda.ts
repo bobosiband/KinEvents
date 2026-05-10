@@ -3,12 +3,15 @@ import { app } from './app'
 import { initData } from './config/db'
 
 const appHandler = serverless(app)
-let initialized = false
+let initPromise: Promise<void> | null = null
 
 export const handler = async (...args: Parameters<typeof appHandler>) => {
-	if (!initialized) {
-		await initData()
-		initialized = true
+	if (!initPromise) {
+		initPromise = initData().catch((err) => {
+			initPromise = null
+			throw err
+		})
 	}
+	await initPromise
 	return appHandler(...args)
 }

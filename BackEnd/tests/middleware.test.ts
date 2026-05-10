@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import type { IUser } from '../src/interfaces/user.interface'
 import type { VercelResponse } from '@vercel/node'
 import { corsMiddleware } from '../src/middleware/cors'
+import { resetDb, seedDb } from './helpers/db.helper'
 
 // Mock user for testing
 const mockUser: IUser = {
@@ -27,10 +28,15 @@ const mockAdmin: IUser = {
 describe('withAuth middleware', () => {
   const JWT_SECRET = process.env.JWT_SECRET || 'test-secret'
 
+  beforeEach(() => {
+    resetDb()
+  })
+
   describe('authentication', () => {
     it('should call handler with user if valid token provided', async () => {
       const token = jwt.sign(mockUser, JWT_SECRET, { expiresIn: '7d' })
       const mockHandler = jest.fn()
+      seedDb({ users: [mockUser] })
 
       const wrappedHandler = withAuth(mockHandler)
 
@@ -51,6 +57,34 @@ describe('withAuth middleware', () => {
       const callArgs = mockHandler.mock.calls[0]
       expect(callArgs[0].user).toEqual(mockUser)
       expect(mockResponse.status).not.toHaveBeenCalled()
+    })
+
+    it('should reject a valid JWT for a user that no longer exists in the DB', async () => {
+      const ghostUser = { ...mockUser, id: 'deleted-user-id' }
+      const token = jwt.sign(ghostUser, JWT_SECRET, { expiresIn: '1h' })
+      const mockHandler = jest.fn()
+
+      const wrappedHandler = withAuth(mockHandler)
+
+      const mockRequest = {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      } as any
+
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as VercelResponse
+
+      await wrappedHandler(mockRequest, mockResponse)
+
+      expect(mockHandler).not.toHaveBeenCalled()
+      expect(mockResponse.status).toHaveBeenCalledWith(401)
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        message: 'User no longer exists',
+      })
     })
 
     it('should reject request without authorization header', async () => {
@@ -127,6 +161,7 @@ describe('withAuth middleware', () => {
     it('should allow request when user has required role', async () => {
       const token = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
       const mockHandler = jest.fn()
+      seedDb({ users: [mockAdmin] })
       const wrappedHandler = withAuth(mockHandler, 'admin')
 
       const mockRequest = {
@@ -149,6 +184,7 @@ describe('withAuth middleware', () => {
     it('should deny request when user lacks required role', async () => {
       const token = jwt.sign(mockUser, JWT_SECRET, { expiresIn: '7d' })
       const mockHandler = jest.fn()
+      seedDb({ users: [mockUser] })
       const wrappedHandler = withAuth(mockHandler, 'admin')
 
       const mockRequest = {
@@ -172,9 +208,33 @@ describe('withAuth middleware', () => {
       })
     })
 
+    it('should use the live role from the DB instead of the JWT payload', async () => {
+      const staleAdminToken = jwt.sign({ ...mockUser, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' })
+      const mockHandler = jest.fn()
+      seedDb({ users: [{ ...mockUser, role: 'member' }] })
+      const wrappedHandler = withAuth(mockHandler, 'admin')
+
+      const mockRequest = {
+        headers: {
+          authorization: `Bearer ${staleAdminToken}`,
+        },
+      } as any
+
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as VercelResponse
+
+      await wrappedHandler(mockRequest, mockResponse)
+
+      expect(mockHandler).not.toHaveBeenCalled()
+      expect(mockResponse.status).toHaveBeenCalledWith(403)
+    })
+
     it('should support multiple authorization requirements', async () => {
       const token = jwt.sign(mockUser, JWT_SECRET, { expiresIn: '7d' })
       const mockHandler = jest.fn()
+      seedDb({ users: [mockUser] })
       const wrappedHandler = withAuth(mockHandler, ['admin', 'member'])
 
       const mockRequest = {
@@ -218,6 +278,7 @@ describe('withAuth middleware', () => {
     it('should correctly extract token from Bearer header', async () => {
       const token = jwt.sign(mockUser, JWT_SECRET, { expiresIn: '7d' })
       const mockHandler = jest.fn()
+      seedDb({ users: [mockUser] })
       const wrappedHandler = withAuth(mockHandler)
 
       const mockRequest = {

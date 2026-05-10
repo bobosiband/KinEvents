@@ -37,6 +37,7 @@ let data: DbSchema = {
 }
 
 let isConnected = false
+let isInitialized = false
 
 function getSeedData(): DbSchema {
   const seedPath = resolve(__dirname, '../../..', 'data', 'db.json')
@@ -65,6 +66,8 @@ function normalizeDataShape(saved: Partial<DbSchema> = {}): DbSchema {
 }
 
 export async function initData(): Promise<void> {
+  isInitialized = false
+
   // Re-evaluate URI at init time (may be provided via SAM env overrides)
   mongoUri = process.env.MONGODB_URI?.trim()
 
@@ -75,6 +78,7 @@ export async function initData(): Promise<void> {
 
     console.log('[DB] Test mode or no MongoDB URI - using in-memory data store')
     data = getSeedData()
+    isInitialized = true
     return
   }
 
@@ -109,6 +113,7 @@ export async function initData(): Promise<void> {
         throw error
       }
 
+      isInitialized = true
       return
     }
   }
@@ -175,16 +180,28 @@ export async function initData(): Promise<void> {
     data = normalizeDataShape(migrated as Partial<DbSchema>)
     await collection.insertOne({ name: DOCUMENT_NAME, data })
     console.log('[DB] Migrated legacy collections into single-document datastore - users:', data.users.length)
+    isInitialized = true
     return
   }
 
   data = normalizeDataShape()
   await collection.insertOne({ name: DOCUMENT_NAME, data })
   console.log('[DB] No existing document - inserted fresh empty datastore')
+  isInitialized = true
 }
 
 export async function persistData(): Promise<void> {
   if (isTestMode) {
+    return
+  }
+
+  if (!isInitialized) {
+    console.error('[DB] persistData() called before initData() completed - write blocked to prevent data loss')
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Database not initialized - cannot persist data safely')
+    }
+
     return
   }
 
