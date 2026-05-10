@@ -72,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[LOGIN] User approved. Generating JWT token for ${user.id}`)
 
-    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '1h' })
+    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
 
     console.log(`[LOGIN] ✓ Login successful for ${user.id}`)
 

@@ -1,5 +1,28 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "local-admin-1",
+      "name": "Local Admin",
+      "email": "local-admin@kinevents.test",
+      "role": "admin",
+      "accessStatus": "approved",
+      "birthday": "1990-01-01",
+      "capabilities": [
+        "create_event",
+        "edit_any_event",
+        "delete_any_event",
+        "edit_locked_event",
+        "manage_users",
+        "edit_content"
+      ],
+      "notificationPrefs": {
+        "level": "all",
+        "channels": ["email"]
+      },
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
   "events": [],
   "accessRequests": [],
   "notifications": [],

@@ -25,27 +25,17 @@ async function silentlyReauthenticate(client: AxiosInstance): Promise<boolean> {
     return false
   }
 
-  const loginUrl = new URL(ENDPOINTS.AUTH_LOGIN, client.defaults.baseURL || window.location.origin).toString()
-  const response = await fetch(loginUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email: user.email }),
-  })
+  try {
+    const resp = await client.post(ENDPOINTS.AUTH_LOGIN, { email: user.email })
+    const body = unwrapResponse<{ user: typeof user; token: string }>(resp)
 
-  if (!response.ok) {
+    if (!body?.token || !body?.user) return false
+
+    setAuth(body.user, body.token)
+    return true
+  } catch (err) {
     return false
   }
-
-  const body = (await response.json()) as ApiResponse<{ user: typeof user; token: string }>
-
-  if (!body?.success || !body.data?.user || !body.data?.token) {
-    return false
-  }
-
-  setAuth(body.data.user, body.data.token)
-  return true
 }
 
 export function attachInterceptors(client: AxiosInstance): void {

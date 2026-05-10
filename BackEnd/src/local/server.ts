@@ -10,17 +10,25 @@ async function startServer() {
 
   try {
     const current = getData()
+    // Only seed if we have no users. Prefer data from db.json or MongoDB.
     if ((current.users?.length || 0) === 0 && process.env.NODE_ENV !== 'production') {
       const now = new Date().toISOString()
       const seeded: IUser[] = [
         {
           id: randomUUID(),
           name: 'Local Admin',
-          email: 'admin.local@example.com',
+          email: 'local-admin@kinevents.test',
           role: 'admin',
           accessStatus: 'approved',
-          birthday: undefined,
-          capabilities: ['manage_events', 'manage_users'],
+          birthday: '1990-01-01',
+          capabilities: [
+            'create_event',
+            'edit_any_event',
+            'delete_any_event',
+            'edit_locked_event',
+            'manage_users',
+            'edit_content',
+          ],
           notificationPrefs: { level: 'all', channels: ['email'] },
           createdAt: now,
           updatedAt: now,

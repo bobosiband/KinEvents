@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import type { IUser } from '../src/interfaces/user.interface'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getData } from '../src/config/db'
-import { resetDb } from './helpers/db.helper'
+import { resetDb, seedDb } from './helpers/db.helper'
 
 // Ensure JWT_SECRET is available (set in setup.ts)
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-testing-purposes-only'
@@ -78,6 +78,8 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('GET /api/events should work with valid token', async () => {
       const eventsHandler = require('../api/events/index').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      // Seed the user so withAuth can find them
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'GET',
@@ -97,6 +99,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/events should validate URL fields', async () => {
       const eventsHandler = require('../api/events/index').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -129,6 +132,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/events should validate date format', async () => {
       const eventsHandler = require('../api/events/index').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -171,6 +175,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/users/promote should require admin role', async () => {
       const promoteHandler = require('../api/users/promote').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -194,6 +199,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/users/promote should work with admin token', async () => {
       const promoteHandler = require('../api/users/promote').default
       const token = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockAdmin] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -217,6 +223,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('PATCH /api/users/:id should validate birthday format', async () => {
       const userByIdHandler = require('../api/users/[id]').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'PATCH',
@@ -242,6 +249,8 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('PATCH /api/users/:id should accept valid birthday format', async () => {
       const userByIdHandler = require('../api/users/[id]').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      // seed the user so PATCH can actually find them
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'PATCH',
@@ -277,6 +286,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('PATCH /api/users/:id should accept email update for own account', async () => {
       const userByIdHandler = require('../api/users/[id]').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
 
       const req = createMockRequest({
         method: 'PATCH',
@@ -307,6 +317,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('PATCH /api/users/:id should reject invalid email', async () => {
       const userByIdHandler = require('../api/users/[id]').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
 
       const req = createMockRequest({
         method: 'PATCH',
@@ -343,7 +354,8 @@ describe('API Handler Authentication & Authorization Tests', () => {
         updatedAt: new Date().toISOString(),
       }
 
-      getData().users.push(deletedUser)
+      // seed BOTH admin (for withAuth) AND the user to be deleted
+      seedDb({ users: [mockAdmin, deletedUser] })
 
       const req = createMockRequest({
         method: 'DELETE',
@@ -364,6 +376,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('DELETE /api/users/:id should return 404 for unknown user', async () => {
       const userByIdHandler = require('../api/users/[id]').default
       const token = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockAdmin] })
 
       const req = createMockRequest({
         method: 'DELETE',
@@ -385,6 +398,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('GET /api/admin/dashboard should require admin role', async () => {
       const dashboardHandler = require('../api/admin/dashboard').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'GET',
@@ -403,6 +417,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('GET /api/admin/dashboard should work with admin token', async () => {
       const dashboardHandler = require('../api/admin/dashboard').default
       const token = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockAdmin] })
       
       const req = createMockRequest({
         method: 'GET',
@@ -421,6 +436,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/admin/content should require admin role', async () => {
       const contentHandler = require('../api/admin/content').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -486,6 +502,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/auth/approve-access should require admin role', async () => {
       const approveHandler = require('../api/auth/approve-access').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -508,6 +525,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/auth/revoke-access should require admin role', async () => {
       const revokeHandler = require('../api/auth/revoke-access').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',
@@ -546,6 +564,7 @@ describe('API Handler Authentication & Authorization Tests', () => {
     it('POST /api/birthdays/generate should require admin role', async () => {
       const generateHandler = require('../api/birthdays/generate').default
       const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+      seedDb({ users: [mockMember] })
       
       const req = createMockRequest({
         method: 'POST',

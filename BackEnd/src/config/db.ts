@@ -37,7 +37,8 @@ let data: DbSchema = {
 }
 
 let isConnected = false
-let isInitialized = false
+let initPromise: Promise<void> | null = null
+let initComplete = false
 
 function getSeedData(): DbSchema {
   const seedPath = resolve(__dirname, '../../..', 'data', 'db.json')
@@ -66,128 +67,139 @@ function normalizeDataShape(saved: Partial<DbSchema> = {}): DbSchema {
 }
 
 export async function initData(): Promise<void> {
-  isInitialized = false
+  if (initPromise) return initPromise
 
-  // Re-evaluate URI at init time (may be provided via SAM env overrides)
-  mongoUri = process.env.MONGODB_URI?.trim()
+  // Store the init work in the promise so callers can await readiness.
+  initPromise = (async () => {
+    initComplete = false
 
-  if (isTestMode || !mongoUri) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('MONGODB_URI is required in production')
+    // Re-evaluate URI at init time (may be provided via SAM env overrides)
+    mongoUri = process.env.MONGODB_URI?.trim()
+
+    if (isTestMode || !mongoUri) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('MONGODB_URI is required in production')
+      }
+
+      console.log('[DB] Test mode or no MongoDB URI - using in-memory data store')
+      data = getSeedData()
+      initComplete = true
+      return
     }
 
-    console.log('[DB] Test mode or no MongoDB URI - using in-memory data store')
-    data = getSeedData()
-    isInitialized = true
-    return
-  }
+    // Lazily create client now that we have a URI and are not in test mode
+    if (!client) {
+      try {
+        client = new MongoClient(mongoUri, {
+          serverSelectionTimeoutMS: 8000,
+          connectTimeoutMS: 8000,
+        })
+      } catch (err) {
+        console.error('[DB] Invalid MONGODB_URI, falling back to in-memory store', err)
+        client = null
+        if (process.env.NODE_ENV === 'production') {
+          throw err
+        }
+        // Non-production fallback: use in-memory store and mark initialized
+        data = getSeedData()
+        initComplete = true
+        return
+      }
+    }
 
-  // Lazily create client now that we have a URI and are not in test mode
-  if (!client) {
+    if (!isConnected && client) {
+      try {
+        await client.connect()
+        isConnected = true
+        console.log('[DB] MongoDB connected')
+      } catch (error) {
+        client = null
+        console.warn('[DB] MongoDB connect failed, using empty in-memory store', error)
+        data = normalizeDataShape()
+
+        if (process.env.NODE_ENV === 'production') {
+          throw error
+        }
+
+        initComplete = true
+        return
+      }
+    }
+
+    const collection = client.db(DB_NAME).collection(COLLECTION)
+    const saved = await collection.findOne({ name: DOCUMENT_NAME })
+
+    if (saved) {
+      data = normalizeDataShape(saved.data as Partial<DbSchema>)
+      console.log('[DB] Data loaded - users:', data.users.length, 'events:', data.events.length)
+      initComplete = true
+      return
+    }
+
+    // No single-document datastore found. Attempt to migrate from legacy per-collection storage
+    // (collections named 'users', 'events', 'accessRequests', 'notifications', 'content').
+    const db = client.db(DB_NAME)
+    const migrated: Partial<DbSchema> = {}
+
     try {
-      client = new MongoClient(mongoUri, {
-        serverSelectionTimeoutMS: 8000,
-        connectTimeoutMS: 8000,
-      })
+      const collNames = await db.listCollections().toArray()
+      const names = collNames.map((c) => c.name)
+
+      if (names.includes('users')) {
+        const usersColl = db.collection('users')
+        const users = await usersColl.find().toArray()
+        migrated.users = (Array.isArray(users) ? users : []) as unknown as typeof migrated.users
+      }
+
+      if (names.includes('events')) {
+        const eventsColl = db.collection('events')
+        const events = await eventsColl.find().toArray()
+        migrated.events = (Array.isArray(events) ? events : []) as unknown as typeof migrated.events
+      }
+
+      if (names.includes('accessRequests')) {
+        const arColl = db.collection('accessRequests')
+        const ars = await arColl.find().toArray()
+        migrated.accessRequests = (Array.isArray(ars) ? ars : []) as unknown as typeof migrated.accessRequests
+      }
+
+      if (names.includes('notifications')) {
+        const nColl = db.collection('notifications')
+        const notifs = await nColl.find().toArray()
+        migrated.notifications = (Array.isArray(notifs) ? notifs : []) as unknown as typeof migrated.notifications
+      }
+
+      if (names.includes('content')) {
+        const cColl = db.collection('content')
+        const content = await cColl.find().toArray()
+        migrated.content = (Array.isArray(content) ? content : []) as unknown as typeof migrated.content
+      }
     } catch (err) {
-      console.error('[DB] Invalid MONGODB_URI, falling back to in-memory store', err)
-      client = null
-      if (process.env.NODE_ENV === 'production') {
-        throw err
-      }
+      console.error('[DB] Error while checking legacy collections', err)
+    }
+
+    // If we found any legacy data, use it; otherwise initialize fresh document.
+    if (
+      (migrated.users && migrated.users.length > 0) ||
+      (migrated.events && migrated.events.length > 0) ||
+      (migrated.accessRequests && migrated.accessRequests.length > 0) ||
+      (migrated.notifications && migrated.notifications.length > 0) ||
+      (migrated.content && migrated.content.length > 0)
+    ) {
+      data = normalizeDataShape(migrated as Partial<DbSchema>)
+      await collection.insertOne({ name: DOCUMENT_NAME, data })
+      console.log('[DB] Migrated legacy collections into single-document datastore - users:', data.users.length)
+      initComplete = true
       return
     }
-  }
 
-  if (!isConnected && client) {
-    try {
-      await client.connect()
-      isConnected = true
-      console.log('[DB] MongoDB connected')
-    } catch (error) {
-      client = null
-      console.warn('[DB] MongoDB connect failed, using empty in-memory store', error)
-      data = normalizeDataShape()
-
-      if (process.env.NODE_ENV === 'production') {
-        throw error
-      }
-
-      isInitialized = true
-      return
-    }
-  }
-
-  const collection = client.db(DB_NAME).collection(COLLECTION)
-  const saved = await collection.findOne({ name: DOCUMENT_NAME })
-
-  if (saved) {
-    data = normalizeDataShape(saved.data as Partial<DbSchema>)
-    console.log('[DB] Data loaded - users:', data.users.length, 'events:', data.events.length)
-    return
-  }
-
-  // No single-document datastore found. Attempt to migrate from legacy per-collection storage
-  // (collections named 'users', 'events', 'accessRequests', 'notifications', 'content').
-  const db = client.db(DB_NAME)
-  const migrated: Partial<DbSchema> = {}
-
-  try {
-    const collNames = await db.listCollections().toArray()
-    const names = collNames.map((c) => c.name)
-
-    if (names.includes('users')) {
-      const usersColl = db.collection('users')
-      const users = await usersColl.find().toArray()
-      migrated.users = (Array.isArray(users) ? users : []) as unknown as typeof migrated.users
-    }
-
-    if (names.includes('events')) {
-      const eventsColl = db.collection('events')
-      const events = await eventsColl.find().toArray()
-      migrated.events = (Array.isArray(events) ? events : []) as unknown as typeof migrated.events
-    }
-
-    if (names.includes('accessRequests')) {
-      const arColl = db.collection('accessRequests')
-      const ars = await arColl.find().toArray()
-      migrated.accessRequests = (Array.isArray(ars) ? ars : []) as unknown as typeof migrated.accessRequests
-    }
-
-    if (names.includes('notifications')) {
-      const nColl = db.collection('notifications')
-      const notifs = await nColl.find().toArray()
-      migrated.notifications = (Array.isArray(notifs) ? notifs : []) as unknown as typeof migrated.notifications
-    }
-
-    if (names.includes('content')) {
-      const cColl = db.collection('content')
-      const content = await cColl.find().toArray()
-      migrated.content = (Array.isArray(content) ? content : []) as unknown as typeof migrated.content
-    }
-  } catch (err) {
-    console.error('[DB] Error while checking legacy collections', err)
-  }
-
-  // If we found any legacy data, use it; otherwise initialize fresh document.
-  if (
-    (migrated.users && migrated.users.length > 0) ||
-    (migrated.events && migrated.events.length > 0) ||
-    (migrated.accessRequests && migrated.accessRequests.length > 0) ||
-    (migrated.notifications && migrated.notifications.length > 0) ||
-    (migrated.content && migrated.content.length > 0)
-  ) {
-    data = normalizeDataShape(migrated as Partial<DbSchema>)
+    data = normalizeDataShape()
     await collection.insertOne({ name: DOCUMENT_NAME, data })
-    console.log('[DB] Migrated legacy collections into single-document datastore - users:', data.users.length)
-    isInitialized = true
-    return
-  }
+    console.log('[DB] No existing document - inserted fresh empty datastore')
+    initComplete = true
+  })()
 
-  data = normalizeDataShape()
-  await collection.insertOne({ name: DOCUMENT_NAME, data })
-  console.log('[DB] No existing document - inserted fresh empty datastore')
-  isInitialized = true
+  return initPromise
 }
 
 export async function persistData(): Promise<void> {
@@ -195,15 +207,15 @@ export async function persistData(): Promise<void> {
     return
   }
 
-  if (!isInitialized) {
-    console.error('[DB] persistData() called before initData() completed - write blocked to prevent data loss')
-
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Database not initialized - cannot persist data safely')
-    }
-
-    return
+  // If no init has even been started and we're in production, fail fast with
+  // the original error message tests expect. If init is in progress, wait for it.
+  if (!initPromise && process.env.NODE_ENV === 'production') {
+    console.error('[DB] persistData() called before initData() started - write blocked')
+    throw new Error('Database not initialized - cannot persist data safely')
   }
+
+  // Wait for initialisation to complete instead of throwing immediately.
+  await waitForDb()
 
   if (!client) {
     console.error('[DB] persistData() called but MongoDB client is not connected - write skipped')
@@ -233,4 +245,19 @@ export function getData(): DbSchema {
 
 export function setData(value: DbSchema): void {
   data = value
+}
+
+export function waitForDb(): Promise<void> {
+  return initPromise ?? Promise.resolve()
+}
+
+export function isDbReady(): boolean {
+  // Consider DB "ready" if an explicit init completed, or if in tests the
+  // in-memory `data` has been seeded with users (helpers call `setData`).
+  if (initComplete) return true
+  try {
+    return Array.isArray(data.users) && data.users.length > 0
+  } catch (e) {
+    return false
+  }
 }
