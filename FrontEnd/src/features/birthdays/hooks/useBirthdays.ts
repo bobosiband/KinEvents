@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { generateBirthdayEvents, getUpcomingBirthdays } from '../api/birthdays.api'
+import { generateBirthdayEvents, getUpcomingBirthdays, sendBirthdayReminders } from '../api/birthdays.api'
 
 export function useBirthdays(limit?: number) {
   return useQuery({ queryKey: ['birthdays', limit], queryFn: () => getUpcomingBirthdays(limit) })
@@ -10,5 +10,11 @@ export function useGenerateBirthdays() {
   return useMutation({
     mutationFn: generateBirthdayEvents,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+  })
+}
+
+export function useSendBirthdayReminders() {
+  return useMutation({
+    mutationFn: (daysAhead: number) => sendBirthdayReminders(daysAhead),
   })
 }
