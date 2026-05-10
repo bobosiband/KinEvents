@@ -40,4 +40,6 @@ coverage/
 # Database files (if local)
 db.json
 
+# Lambda build artifacts
 .lambda-pkg
+.lambda-pkg.zip
