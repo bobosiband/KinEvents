@@ -38,6 +38,11 @@ export interface SiteContentForm {
   announcement: string
 }
 
+export interface CleanupResult {
+  deletedNotifications: number
+  deletedEvents: number
+}
+
 export function useAdminDashboard() {
   return useQuery({
     queryKey: ['admin-dashboard'],
@@ -58,5 +63,17 @@ export function useSaveSiteContent() {
     mutationFn: (payload: { key: SiteContent['key']; value: string; updatedBy: string }) =>
       postData<SiteContent, typeof payload>(ENDPOINTS.ADMIN_CONTENT, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-content'] }),
+  })
+}
+
+export function useRunCleanup() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => postData<CleanupResult, Record<string, never>>(ENDPOINTS.ADMIN_CLEANUP, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    },
   })
 }

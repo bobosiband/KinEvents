@@ -18,4 +18,5 @@ export interface INotification {
   createdAt: string
   sentAt?: string
   readBy?: string[]
+  readAt?: string
 }

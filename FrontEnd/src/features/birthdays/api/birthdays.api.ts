@@ -2,8 +2,10 @@ import { getData, postData } from '@/services/api/apiClient'
 import { ENDPOINTS } from '@/services/api/endpoints'
 import type { User } from '@/features/auth/types/auth.types'
 
+type BirthdayUser = Pick<User, 'id' | 'name'>
+
 export interface Birthday {
-  user: User
+  user: BirthdayUser
   birthdayThisYear: string
 }
 

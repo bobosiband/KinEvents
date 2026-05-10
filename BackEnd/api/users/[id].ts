@@ -1,11 +1,14 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
+import jwt from 'jsonwebtoken'
 
 import { getData, persistData } from '../../src/config/db'
+import { env } from '../../src/config/env'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const updateUserSchema = z.object({
   name: z.string().optional(),
+  email: z.string().email().optional(),
   birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   notificationPrefs: z.object({
     level: z.enum(['all', 'important', 'none']).optional(),
@@ -53,6 +56,18 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
     const updateData: any = { updatedAt: new Date().toISOString() }
     if (parseResult.data.name) updateData.name = parseResult.data.name
+    if (parseResult.data.email) {
+      const normalizedEmail = parseResult.data.email.trim().toLowerCase()
+      // Prevent duplicate email assignment across users.
+      const conflict = getData().users.find(
+        (u) => u.email.trim().toLowerCase() === normalizedEmail && u.id !== id,
+      )
+      if (conflict) {
+        res.status(409).json({ success: false, message: 'Email already in use' })
+        return
+      }
+      updateData.email = normalizedEmail
+    }
     if (parseResult.data.birthday) updateData.birthday = parseResult.data.birthday
     if (parseResult.data.notificationPrefs) {
       const existing = getData().users.find((item) => item.id === id)
@@ -71,7 +86,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     Object.assign(user, updateData)
     await persistData()
 
-    res.status(200).json({ success: true, data: user })
+    const freshToken = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
+    res.status(200).json({ success: true, data: { user, token: freshToken } })
   } else if (req.method === 'DELETE') {
     // Only admins or the user themselves may delete the user record
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.id !== id)) {

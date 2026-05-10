@@ -267,6 +267,60 @@ describe('API Handler Authentication & Authorization Tests', () => {
       })
       expect(hasValidationError).toBeFalsy()
     })
+
+    it('PATCH /api/users/:id should accept email update for own account', async () => {
+      const userByIdHandler = require('../api/users/[id]').default
+      const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+
+      const req = createMockRequest({
+        method: 'PATCH',
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        query: {
+          id: mockMember.id,
+        },
+        body: {
+          email: 'newemail@example.com',
+        },
+      })
+
+      const res = createMockResponse()
+
+      await userByIdHandler(req, res)
+
+      const statusCalls = (res.status as any).mock.calls
+      const hasValidationError = statusCalls.some((call: number[]) =>
+        call[0] === 400 &&
+        (res.json as any).mock.calls.some((j: any[]) => j[0]?.message?.includes('Validation failed')),
+      )
+
+      expect(hasValidationError).toBeFalsy()
+    })
+
+    it('PATCH /api/users/:id should reject invalid email', async () => {
+      const userByIdHandler = require('../api/users/[id]').default
+      const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+
+      const req = createMockRequest({
+        method: 'PATCH',
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        query: {
+          id: mockMember.id,
+        },
+        body: {
+          email: 'not-an-email',
+        },
+      })
+
+      const res = createMockResponse()
+
+      await userByIdHandler(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+    })
   })
 
   describe('Admin API Protection', () => {

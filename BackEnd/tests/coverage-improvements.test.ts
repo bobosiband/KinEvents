@@ -67,6 +67,87 @@ describe('Coverage Improvements', () => {
     await expect(eventService.setRsvp('missing-event', 'user-id', 'yes')).rejects.toThrow('Event not found')
   })
 
+  it('RSVP by a different user triggers a notification to the event creator', async () => {
+    const creatorId = randomUUID()
+    const rsvpUserId = randomUUID()
+    const notificationSpy = jest.spyOn(notificationService, 'createNotification')
+
+    const event = await eventService.createEvent({
+      title: 'RSVP Notification Event',
+      description: 'Event for RSVP notification coverage',
+      date: new Date().toISOString(),
+      createdBy: creatorId,
+    })
+
+    notificationSpy.mockClear()
+
+    await eventService.setRsvp(event.id, rsvpUserId, 'yes')
+
+    expect(notificationSpy).toHaveBeenCalledTimes(1)
+    expect(notificationSpy).toHaveBeenCalledWith({
+      type: 'event_reminder',
+      recipientId: creatorId,
+      payload: {
+        eventId: event.id,
+        title: event.title,
+        userId: rsvpUserId,
+        status: 'yes',
+      },
+    })
+
+    notificationSpy.mockRestore()
+  })
+
+  it('RSVP by the event creator does NOT trigger a notification', async () => {
+    const creatorId = randomUUID()
+    const notificationSpy = jest.spyOn(notificationService, 'createNotification')
+
+    const event = await eventService.createEvent({
+      title: 'Self RSVP Event',
+      description: 'Event for self RSVP coverage',
+      date: new Date().toISOString(),
+      createdBy: creatorId,
+    })
+
+    notificationSpy.mockClear()
+
+    await eventService.setRsvp(event.id, creatorId, 'maybe')
+
+    expect(notificationSpy).not.toHaveBeenCalled()
+
+    notificationSpy.mockRestore()
+  })
+
+  it('notification payload contains eventId, title, userId, and status', async () => {
+    const creatorId = randomUUID()
+    const rsvpUserId = randomUUID()
+    const notificationSpy = jest.spyOn(notificationService, 'createNotification')
+
+    const event = await eventService.createEvent({
+      title: 'Payload Event',
+      description: 'Event for payload coverage',
+      date: new Date().toISOString(),
+      createdBy: creatorId,
+    })
+
+    notificationSpy.mockClear()
+
+    await eventService.setRsvp(event.id, rsvpUserId, 'no')
+
+    expect(notificationSpy).toHaveBeenCalledWith({
+      type: 'event_reminder',
+      recipientId: creatorId,
+      payload: {
+        eventId: event.id,
+        title: event.title,
+        userId: rsvpUserId,
+        status: 'no',
+      },
+    })
+
+    notificationSpy.mockRestore()
+  })
+
   it('covers birthday service parsing and generation branches', async () => {
     getData().users.push({
       id: randomUUID(),
@@ -99,8 +180,9 @@ describe('Coverage Improvements', () => {
     expect(upcoming[0]?.birthdayThisYear).toBe('2026-11-03')
 
     const created = await birthdayService.generateBirthdayEvents(2026)
-    expect(created).toHaveLength(1)
-    expect(created[0]?.date).toBe('2026-11-03')
+    expect(created.events).toHaveLength(1)
+    expect(created.skipped).toBe(0)
+    expect(created.events[0]?.date).toBe('2026-11-03')
   })
 
   it('covers notification service status transitions and misses', async () => {
@@ -176,6 +258,90 @@ describe('Coverage Improvements', () => {
     expect(reminders[0]?.payload.daysUntil).toBe('0')
   })
 
+  it('events within daysAhead window generate reminders for RSVP yes users', async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-05-10T12:00:00.000Z'))
+
+    const creatorId = randomUUID()
+    const rsvpUserId = randomUUID()
+    const notificationSpy = jest.spyOn(notificationService, 'createNotification')
+
+    const event = await eventService.createEvent({
+      title: 'Upcoming Event',
+      description: 'Event inside reminder window',
+      date: '2026-05-12T00:00:00.000Z',
+      createdBy: creatorId,
+    })
+    event.rsvps[rsvpUserId] = 'yes'
+
+    notificationSpy.mockClear()
+
+    const reminders = await eventService.generateEventReminders(3)
+
+    expect(reminders).toHaveLength(2)
+    expect(notificationSpy).toHaveBeenCalledTimes(2)
+    expect(reminders.map((item) => item.recipientId).sort()).toEqual([creatorId, rsvpUserId].sort())
+    expect(reminders[0]?.payload.daysUntil).toBe('2')
+
+    notificationSpy.mockRestore()
+    jest.useRealTimers()
+  })
+
+  it('events outside the reminder window generate no reminders', async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-05-10T12:00:00.000Z'))
+
+    const creatorId = randomUUID()
+    const rsvpUserId = randomUUID()
+    const notificationSpy = jest.spyOn(notificationService, 'createNotification')
+
+    const event = await eventService.createEvent({
+      title: 'Distant Event',
+      description: 'Event outside reminder window',
+      date: '2026-05-20T00:00:00.000Z',
+      createdBy: creatorId,
+    })
+    event.rsvps[rsvpUserId] = 'yes'
+
+    notificationSpy.mockClear()
+
+    const reminders = await eventService.generateEventReminders(3)
+
+    expect(reminders).toHaveLength(0)
+    expect(notificationSpy).not.toHaveBeenCalled()
+
+    notificationSpy.mockRestore()
+    jest.useRealTimers()
+  })
+
+  it('event creator gets notified even if they did not RSVP', async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-05-10T12:00:00.000Z'))
+
+    const creatorId = randomUUID()
+    const rsvpUserId = randomUUID()
+    const notificationSpy = jest.spyOn(notificationService, 'createNotification')
+
+    const event = await eventService.createEvent({
+      title: 'Creator Reminder Event',
+      description: 'Event for creator reminder coverage',
+      date: '2026-05-11T00:00:00.000Z',
+      createdBy: creatorId,
+    })
+    event.rsvps[rsvpUserId] = 'yes'
+
+    notificationSpy.mockClear()
+
+    const reminders = await eventService.generateEventReminders(3)
+
+    expect(reminders).toHaveLength(2)
+    expect(reminders.map((item) => item.recipientId)).toContain(creatorId)
+    expect(reminders.map((item) => item.recipientId)).toContain(rsvpUserId)
+
+    notificationSpy.mockRestore()
+    jest.useRealTimers()
+  })
+
   it('covers mark notification as read by user', async () => {
     const notification = await notificationService.createNotification({
       type: 'event_created',
@@ -229,5 +395,69 @@ describe('Coverage Improvements', () => {
   it('covers mark as read for missing notification', async () => {
     const result = await notificationService.markAsReadByUser('missing-id', 'user-1')
     expect(result).toBeNull()
+  })
+
+  it('calling generateBirthdayEvents twice for the same year only creates events once', async () => {
+    getData().users.push({
+      id: randomUUID(),
+      name: 'Duplicate Guard User',
+      email: 'duplicate@example.com',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
+      capabilities: [],
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
+      birthday: '1992-07-14',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    const first = await birthdayService.generateBirthdayEvents(2026)
+    const second = await birthdayService.generateBirthdayEvents(2026)
+
+    expect(first.events).toHaveLength(1)
+    expect(first.skipped).toBe(0)
+    expect(second.events).toHaveLength(0)
+    expect(second.skipped).toBe(1)
+  })
+
+  it('new users added after first generation get their event created on second call', async () => {
+    const firstUserId = randomUUID()
+    const secondUserId = randomUUID()
+
+    getData().users.push({
+      id: firstUserId,
+      name: 'First Birthday User',
+      email: 'first@example.com',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
+      capabilities: [],
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
+      birthday: '1991-08-20',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    const first = await birthdayService.generateBirthdayEvents(2026)
+    expect(first.events).toHaveLength(1)
+    expect(first.skipped).toBe(0)
+
+    getData().users.push({
+      id: secondUserId,
+      name: 'Second Birthday User',
+      email: 'second@example.com',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
+      capabilities: [],
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
+      birthday: '1993-09-21',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    const second = await birthdayService.generateBirthdayEvents(2026)
+
+    expect(second.events).toHaveLength(1)
+    expect(second.skipped).toBe(1)
+    expect(second.events[0]?.createdBy).toBe(secondUserId)
   })
 })

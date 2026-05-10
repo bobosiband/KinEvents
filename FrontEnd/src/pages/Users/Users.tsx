@@ -30,7 +30,6 @@ export function Users() {
             <Card key={user.id} className="cursor-pointer space-y-3" onClick={() => navigate(`/users/${user.id}`)}>
               <Avatar name={user.name} size="lg" />
               <h3 className="text-lg font-semibold">{user.name}</h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
               <Badge tone={roleColor[user.role]}>{user.role}</Badge>
               {user.birthday && <p className="text-sm text-muted-foreground">🎂 {user.birthday}</p>}
             </Card>

@@ -5,7 +5,14 @@ import type { User, UserRole } from '@/features/users/types/user.types'
 
 const columns: Column<User>[] = [
   { key: 'name', header: 'Name' },
-  { key: 'email', header: 'Email' },
+  {
+    key: 'email',
+    header: 'Email',
+    render: (row: User) => {
+      const [local, domain] = row.email.split('@')
+      return `${local[0]}***@${domain}`
+    },
+  },
   { key: 'role', header: 'Role' },
   { key: 'accessStatus', header: 'Status' },
 ]

@@ -4,8 +4,14 @@ import type { NotificationPrefs, User, UserRole } from '../types/user.types'
 
 export interface ProfilePayload {
   name?: string
+  email?: string
   birthday?: string
   notificationPrefs: NotificationPrefs
+}
+
+export interface UpdateUserResponse {
+  user: User
+  token?: string
 }
 
 export function getUsers(params?: { role?: string; status?: string }): Promise<User[]> {
@@ -16,8 +22,8 @@ export function getUser(id: string): Promise<User> {
   return getData<User>(ENDPOINTS.USER_BY_ID(id))
 }
 
-export function updateUser(id: string, payload: ProfilePayload): Promise<User> {
-  return patchData<User, ProfilePayload>(ENDPOINTS.USER_BY_ID(id), payload)
+export function updateUser(id: string, payload: ProfilePayload): Promise<UpdateUserResponse> {
+  return patchData<UpdateUserResponse, ProfilePayload>(ENDPOINTS.USER_BY_ID(id), payload)
 }
 
 export function promoteUser(userId: string, role: UserRole): Promise<User> {

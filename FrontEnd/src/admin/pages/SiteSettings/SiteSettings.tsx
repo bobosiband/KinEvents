@@ -5,13 +5,14 @@ import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
-import { useSaveSiteContent, useSiteContent } from '@/admin/hooks/useAdmin'
+import { useRunCleanup, useSaveSiteContent, useSiteContent } from '@/admin/hooks/useAdmin'
 
 export function SiteSettings() {
   const { theme, toggleTheme } = useTheme()
   const { user } = useAuth()
   const content = useSiteContent()
   const save = useSaveSiteContent()
+  const cleanup = useRunCleanup()
   const [homepageTitle, setHomepageTitle] = useState('')
   const [homepageSubtitle, setHomepageSubtitle] = useState('')
   const [announcement, setAnnouncement] = useState('')
@@ -53,6 +54,28 @@ export function SiteSettings() {
       <Card className="space-y-4">
         <h2 className="text-lg font-semibold">Theme</h2>
         <Button type="button" variant="secondary" onClick={toggleTheme}>{theme === 'dark' ? 'Light' : 'Dark'} mode</Button>
+      </Card>
+      <Card className="space-y-4">
+        <h2 className="text-lg font-semibold">Data Maintenance</h2>
+        <p className="text-sm text-muted-foreground">
+          Remove read notifications older than 1 hour and past events older than 1 day.
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          loading={cleanup.isPending}
+          onClick={() =>
+            cleanup.mutate(undefined, {
+              onSuccess: (result) =>
+                toast.success(
+                  `Cleanup done: ${result.deletedNotifications} notifications, ${result.deletedEvents} events removed`,
+                ),
+              onError: (err) => toast.error(err instanceof Error ? err.message : 'Cleanup failed'),
+            })
+          }
+        >
+          Run Cleanup Now
+        </Button>
       </Card>
     </form>
   )

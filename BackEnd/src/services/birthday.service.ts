@@ -12,6 +12,11 @@ export interface BirthdayPreview {
   birthdayThisYear: string
 }
 
+export interface BirthdayGenerationResult {
+  events: IEvent[]
+  skipped: number
+}
+
 function extractMonthDay(birthday: string): { month: string; day: string } | null {
   const parts = birthday.split('-')
   if (parts.length === 3) {
@@ -40,20 +45,32 @@ export class BirthdayService {
       .slice(0, limit)
   }
 
-  async generateBirthdayEvents(year = new Date().getFullYear()): Promise<IEvent[]> {
+  async generateBirthdayEvents(year = new Date().getFullYear()): Promise<BirthdayGenerationResult> {
     const now = new Date().toISOString()
     const created: IEvent[] = []
+    let skipped = 0
+    const targetYear = String(year)
 
     for (const user of getData().users) {
       if (!user.birthday) continue
       const parts = extractMonthDay(user.birthday)
       if (!parts) continue
 
+      const title = `${user.name}'s Birthday`
+      const duplicateExists = getData().events.some(
+        (event) => event.type === EVENT_TYPES.BIRTHDAY && event.title === title && event.date.startsWith(targetYear)
+      )
+
+      if (duplicateExists) {
+        skipped += 1
+        continue
+      }
+
       const event: IEvent = {
         id: randomUUID(),
-        title: `${user.name}'s Birthday`,
+        title,
         description: `Birthday celebration for ${user.name}`,
-        date: `${year}-${parts.month}-${parts.day}`,
+        date: `${targetYear}-${parts.month}-${parts.day}`,
         type: EVENT_TYPES.BIRTHDAY,
         locked: true,
         createdBy: user.id,
@@ -68,7 +85,7 @@ export class BirthdayService {
     if (created.length > 0) {
       await persistData()
     }
-    return created
+    return { events: created, skipped }
   }
 
   async generateBirthdayReminders(daysAhead: number = 7, referenceDate = new Date()): Promise<INotification[]> {

@@ -26,11 +26,11 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const events = await birthdayService.generateBirthdayEvents(parseResult.data.year)
+    const result = await birthdayService.generateBirthdayEvents(parseResult.data.year)
     res.status(201).json({
       success: true,
-      data: events,
-      message: `Generated ${events.length} birthday events`,
+      data: result.events,
+      message: `Generated ${result.events.length} birthday events (${result.skipped} skipped as duplicates)`,
     })
   } catch (error) {
     res.status(400).json({ success: false, message: (error as Error).message })

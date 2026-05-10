@@ -18,4 +18,5 @@ export const ENDPOINTS = {
   ADMIN_DASHBOARD: '/api/admin/dashboard',
   ADMIN_CONTENT: '/api/admin/content',
   ADMIN_CREATE_ADMIN: '/api/admin/create-admin',
+  ADMIN_CLEANUP: '/api/admin/cleanup',
 } as const

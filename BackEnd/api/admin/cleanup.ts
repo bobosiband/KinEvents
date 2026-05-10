@@ -1,0 +1,26 @@
+import type { VercelResponse } from '@vercel/node'
+
+import { cleanupService } from '../../src/services/cleanup.service'
+import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
+
+async function handler(req: RequestWithUser, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ success: false, message: 'Method not allowed' })
+    return
+  }
+
+  try {
+    const deletedNotifications = await cleanupService.deleteOldReadNotifications()
+    const deletedEvents = await cleanupService.deleteOldEvents()
+
+    res.status(200).json({
+      success: true,
+      data: { deletedNotifications, deletedEvents },
+      message: `Cleanup complete: ${deletedNotifications} notifications, ${deletedEvents} events deleted`,
+    })
+  } catch (error) {
+    res.status(500).json({ success: false, message: (error as Error).message })
+  }
+}
+
+export default withAuth(handler, 'admin')

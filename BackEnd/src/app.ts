@@ -10,11 +10,13 @@ import revokeAccessHandler from '../api/auth/revoke-access'
 import adminContentHandler from '../api/admin/content'
 import adminDashboardHandler from '../api/admin/dashboard'
 import createAdminHandler from '../api/admin/create-admin'
+import adminCleanupHandler from '../api/admin/cleanup'
 import birthdayGenerateHandler from '../api/birthdays/generate'
 import birthdayRemindersHandler from '../api/birthdays/reminders'
 import birthdayUpcomingHandler from '../api/birthdays/upcoming'
 import eventByIdHandler from '../api/events/[id]'
 import eventsHandler from '../api/events/index'
+import eventRemindersHandler from '../api/events/reminders'
 import eventRsvpHandler from '../api/events/rsvp'
 import notificationsHandler from '../api/notifications/index'
 import notificationSendHandler from '../api/notifications/send'
@@ -37,6 +39,7 @@ export const routes = [
   { method: 'all', path: '/api/users/promote', handler: promoteUserHandler },
   { method: 'all', path: '/api/users/:id', handler: userByIdHandler },
   { method: 'all', path: '/api/events', handler: eventsHandler },
+  { method: 'all', path: '/api/events/reminders', handler: eventRemindersHandler },
   { method: 'all', path: '/api/events/rsvp', handler: eventRsvpHandler },
   { method: 'all', path: '/api/events/:id', handler: eventByIdHandler },
   { method: 'all', path: '/api/birthdays/upcoming', handler: birthdayUpcomingHandler },
@@ -49,6 +52,7 @@ export const routes = [
   { method: 'all', path: '/api/admin/create-admin', handler: createAdminHandler },
   { method: 'all', path: '/api/admin/dashboard', handler: adminDashboardHandler },
   { method: 'all', path: '/api/admin/content', handler: adminContentHandler },
+  { method: 'all', path: '/api/admin/cleanup', handler: adminCleanupHandler },
   { method: 'all', path: '/api/debug/db', handler: debugDbHandler },
 ] as const
 

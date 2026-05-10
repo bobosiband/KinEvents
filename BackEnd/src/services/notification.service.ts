@@ -49,6 +49,9 @@ export class NotificationService {
     
     if (!notification.readBy.includes(userId)) {
       notification.readBy.push(userId)
+      if (!notification.readAt) {
+        notification.readAt = new Date().toISOString()
+      }
       await persistData()
     }
     

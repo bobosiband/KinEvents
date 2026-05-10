@@ -8,6 +8,11 @@ interface ApiResponse<T = unknown> {
   details?: unknown
 }
 
+interface UserPatchResponse {
+  user: LoginUser
+  token: string
+}
+
 interface LoginUser {
   id: string
   name: string
@@ -197,7 +202,7 @@ describeIntegration('Real user integration', () => {
     expect(userGet.status).toBe(200)
     expect(userGet.body?.data?.email).toBe(tempRequestEmail)
 
-    const userPatch = await authRequest<LoginUser>(`/api/users/${tempUserId}`, {
+    const userPatch = await authRequest<UserPatchResponse>(`/api/users/${tempUserId}`, {
       method: 'PATCH',
       body: JSON.stringify({
         name: 'Integration User Updated',
@@ -209,7 +214,7 @@ describeIntegration('Real user integration', () => {
       }),
     })
     expect(userPatch.status).toBe(200)
-    expect(userPatch.body?.data?.birthday).toBe('1991-05-08')
+    expect(userPatch.body?.data?.user.birthday).toBe('1991-05-08')
 
     const userPromote = await authRequest<LoginUser>('/api/users/promote', {
       method: 'POST',
@@ -281,6 +286,9 @@ describeIntegration('Real user integration', () => {
       }),
     })
     expect(contentPost.status).toBe(201)
+
+    const cleanupResult = await authRequest('/api/admin/cleanup', { method: 'POST' })
+    expect(cleanupResult.status).toBe(200)
 
     if (adminSecret) {
       const createAdmin = await authRequest(`/api/admin/create-admin`, {

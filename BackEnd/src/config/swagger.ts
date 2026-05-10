@@ -459,6 +459,11 @@ const swaggerDocument: OpenAPIV3_0 = {
                 type: 'object',
                 properties: {
                   name: { type: 'string' },
+                  email: {
+                    type: 'string',
+                    format: 'email',
+                    description: 'New email address (must be unique)',
+                  },
                   birthday: { 
                     type: 'string', 
                     format: 'date',
@@ -990,6 +995,19 @@ const swaggerDocument: OpenAPIV3_0 = {
               },
             },
           },
+        },
+      },
+    },
+    '/api/admin/cleanup': {
+      post: {
+        tags: ['Admin'],
+        summary: 'Run data cleanup',
+        description: 'Deletes read notifications older than 1 hour and past events older than 1 day. Admin only.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'Cleanup completed' },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Admin required' },
         },
       },
     },
