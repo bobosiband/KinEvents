@@ -62,13 +62,25 @@ export function attachInterceptors(client: AxiosInstance): void {
       const message = error.response?.data?.message || error.message || 'Something went wrong.'
 
       if (status === 401) {
-        if (message === 'User no longer exists') {
+        // Permanent failures — do NOT retry. Clear auth and redirect immediately.
+        if (
+          message === 'User no longer exists' ||
+          message === 'User account is not approved' ||
+          message === 'Missing authorization token'
+        ) {
           useAuthStore.getState().clearAuth()
-          toast.error('Your account no longer exists')
+          toast.error(
+            message === 'User no longer exists'
+              ? 'Your account no longer exists'
+              : message === 'User account is not approved'
+              ? 'Your account access has been revoked'
+              : 'Missing authorization token'
+          )
           window.location.assign('/login')
           return Promise.reject(new Error(message))
         }
 
+        // Token expiry / transient 401 — attempt one silent re-auth then retry.
         const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
         if (originalRequest && !originalRequest._retry) {
           originalRequest._retry = true
@@ -84,14 +96,15 @@ export function attachInterceptors(client: AxiosInstance): void {
               }
 
               useAuthStore.getState().clearAuth()
-              toast.error('Session expired')
+              toast.error('Session expired. Please sign in again.')
               window.location.assign('/login')
               return Promise.reject(new Error(message))
             })
         }
 
+        // Already retried or cannot retry — clear and redirect.
         useAuthStore.getState().clearAuth()
-        toast.error('Session expired')
+        toast.error('Session expired. Please sign in again.')
         window.location.assign('/login')
       } else if (status === 403) {
         toast.error("You don't have permission to do that")
