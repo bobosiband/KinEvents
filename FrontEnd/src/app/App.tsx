@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { Analytics } from '@vercel/analytics/react'
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary'
 import { AuthProvider } from './providers/AuthProvider'
 import { QueryProvider } from './providers/QueryProvider'
@@ -17,6 +18,7 @@ export function App() {
               <RouterProvider router={router} />
             </main>
             <Toaster position="top-center" />
+            <Analytics />
           </AuthProvider>
         </ThemeProvider>
       </QueryProvider>
