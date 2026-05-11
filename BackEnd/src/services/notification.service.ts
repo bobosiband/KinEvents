@@ -2,6 +2,9 @@ import { randomUUID } from 'crypto'
 
 import { getData, persistData } from '../config/db'
 import type { NotificationStatus, NotificationType, INotification } from '../interfaces/notification.interface'
+import { emailService } from './email.service'
+import { buildEmailContent } from '../utils/emailTemplates'
+import { env } from '../config/env'
 
 export interface CreateNotificationInput {
   type: NotificationType
@@ -36,6 +39,48 @@ export class NotificationService {
     }
     getData().notifications.push(notification)
     await persistData()
+
+    // Fire-and-forget email dispatch
+    try {
+      const recipient = getData().users.find((u) => u.id === input.recipientId)
+      if (recipient?.email) {
+        const ctx: any = {
+          appUrl: env.APP_URL,
+          eventTitle: input.payload.title,
+          eventDate: input.payload.date,
+          daysUntil: input.payload.daysUntil,
+          birthdayName: input.payload.name,
+        }
+        const { subject, text, html } = buildEmailContent(input.type as NotificationType, ctx)
+        const templateMap: Record<string, string> = {
+          event_created: 'event-created',
+          event_updated: 'event-updated',
+          event_reminder: 'event-reminder',
+          birthday_reminder: 'birthday-reminder',
+          birthday_today: 'birthday-today',
+          access_approved: 'access-approved',
+          access_rejected: 'access-rejected',
+        }
+
+        const payload = {
+          to: { name: recipient.name, email: recipient.email },
+          subject,
+          html,
+          text,
+        }
+
+        emailService
+          .send(payload, { templateName: (templateMap[input.type] as any) || 'announcement', recipientId: recipient.id })
+          .then((sent) => {
+            if (sent) notificationService.markAsSent(notification.id).catch(() => {})
+            else notificationService.markAsFailed(notification.id).catch(() => {})
+          })
+          .catch((err) => console.error('[NOTIFICATION] Email dispatch error:', err))
+      }
+    } catch (err) {
+      console.error('[NOTIFICATION] Email preparation error:', err)
+    }
+
     return notification
   }
 

@@ -42,3 +42,8 @@ export const env = envSchema.parse({
   EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
   EMAIL_ENABLED: process.env.EMAIL_ENABLED,
 })
+
+// Warn when SENDGRID key looks invalid in production (helps catch placeholder keys)
+if (env.SENDGRID_API_KEY && env.NODE_ENV === 'production' && !env.SENDGRID_API_KEY.startsWith('SG.')) {
+  console.warn('[ENV] SENDGRID_API_KEY does not look like a real SendGrid key — emails will fail')
+}

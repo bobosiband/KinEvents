@@ -28,6 +28,7 @@ export function EventDetail() {
   const deleteEvent = useDeleteEvent()
   const updateEvent = useUpdateEvent(id)
   const [editing, setEditing] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | undefined>(undefined)
 
   if (event.isLoading) return <Loader />
   if (!event.data) return <ErrorMessage message="Event not found." />
@@ -48,12 +49,21 @@ export function EventDetail() {
   }
 
   const handleUpdate = (payload: EventPayload) => {
+    setFieldErrors(undefined)
     updateEvent.mutate(payload, {
       onSuccess: () => {
         toast.success('Event updated')
         setEditing(false)
       },
-      onError: err => toast.error(err instanceof Error ? err.message : 'Failed to update event'),
+      onError: err => {
+        const serverFieldErrors = err?.response?.data?.details?.fieldErrors || err?.details?.fieldErrors
+        if (serverFieldErrors) {
+          setFieldErrors(serverFieldErrors)
+          toast.error('Validation failed')
+          return
+        }
+        toast.error(err instanceof Error ? err.message : 'Failed to update event')
+      },
     })
   }
 
@@ -98,7 +108,7 @@ export function EventDetail() {
       </Card>
 
       <Modal title="Edit Event" open={editing} onClose={() => setEditing(false)}>
-        {event.data ? <EventForm event={event.data} loading={updateEvent.isPending} onSubmit={handleUpdate} /> : null}
+        {event.data ? <EventForm event={event.data} loading={updateEvent.isPending} onSubmit={handleUpdate} fieldErrors={fieldErrors} /> : null}
       </Modal>
     </article>
   )

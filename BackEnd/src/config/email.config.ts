@@ -1,33 +1,49 @@
-import nodemailer from 'nodemailer'
-import type Mail from 'nodemailer/lib/mailer'
+import sgMail from '@sendgrid/mail'
 
-let transport: Mail | null = null
+type SendMailOptions = {
+  from: string
+  to: string | string[]
+  subject: string
+  html?: string
+  text?: string
+  replyTo?: string
+}
+
+type SendGridTransport = {
+  sendMail: (options: SendMailOptions) => Promise<unknown>
+}
+
+let transport: SendGridTransport | null = null
 
 /**
- * Creates a Nodemailer transport for Gmail SMTP if credentials are configured.
- * Returns null if EMAIL_USER or EMAIL_PASS is missing.
+ * Creates a SendGrid-backed transport if the API key is configured.
+ * Returns null if SENDGRID_API_KEY is missing.
  */
-function createTransport(): Mail | null {
-  const user = process.env.EMAIL_USER?.trim()
-  const pass = process.env.EMAIL_PASS?.trim()
+function createTransport(): SendGridTransport | null {
+  const apiKey = process.env.SENDGRID_API_KEY?.trim()
 
-  if (!user || !pass) {
-    console.warn('[EMAIL] SMTP credentials not configured — email sending disabled')
+  if (!apiKey) {
+    console.warn('[EMAIL] SENDGRID_API_KEY not configured — email sending disabled')
     return null
   }
 
   try {
-    return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // STARTTLS
-      auth: {
-        user,
-        pass,
+    sgMail.setApiKey(apiKey)
+
+    return {
+      async sendMail(options: SendMailOptions): Promise<unknown> {
+        return sgMail.send({
+          from: options.from,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          text: options.text ?? '',
+          replyTo: options.replyTo,
+        })
       },
-    })
+    }
   } catch (error) {
-    console.error('[EMAIL] Failed to create transport:', error)
+    console.error('[EMAIL] Failed to create SendGrid transport:', error)
     return null
   }
 }
@@ -36,7 +52,7 @@ function createTransport(): Mail | null {
  * Lazy-loads and returns the Nodemailer transport singleton.
  * Initializes on first call, reuses on subsequent calls.
  */
-export function getTransport(): Mail | null {
+export function getTransport(): SendGridTransport | null {
   if (!transport) {
     transport = createTransport()
   }

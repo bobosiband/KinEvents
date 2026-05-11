@@ -5,6 +5,8 @@ import { ROLE_CAPABILITIES, USER_ROLES } from '../constants/roles'
 import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IUser } from '../interfaces/user.interface'
 import { emailDispatcher } from './email-dispatcher.service'
+import { emailService } from './email.service'
+import { env } from '../config/env'
 
 export interface RequestAccessInput {
   name: string
@@ -89,14 +91,26 @@ export class AuthService {
 
     // Send notification emails (non-blocking)
     try {
-      await emailDispatcher.onAccessApproved(user)
+      emailDispatcher.onAccessApproved(user).catch((err) => console.error('[AuthService] emailDispatcher.onAccessApproved failed:', err))
       if (isNewUser) {
-        await emailDispatcher.onWelcome(user)
+        emailDispatcher.onWelcome(user).catch((err) => console.error('[AuthService] emailDispatcher.onWelcome failed:', err))
       }
     } catch (error) {
       console.error('[AuthService] Email dispatch failed:', error)
-      // Don't throw - email failures don't affect the primary operation
     }
+
+    // Also send a simple approval email (fire-and-forget)
+    emailService
+      .send(
+        {
+          to: { name: user.name, email: user.email },
+          subject: 'Your KinEvents access has been approved',
+          text: `Welcome ${user.name}! Your access to KinEvents has been approved. Sign in at ${env.APP_URL}/login`,
+          html: `<h2>Welcome to KinEvents! 🏠</h2><p>Hi <strong>${user.name}</strong>, your access has been approved.</p><p><a href="${env.APP_URL}/login">Sign In Now</a></p>`,
+        },
+        { templateName: 'access-approved', recipientId: user.id }
+      )
+      .catch((err) => console.error('[AUTH] Approval email error:', err))
 
     return { request, user }
   }

@@ -23,14 +23,24 @@ export function ManageEvents() {
   const generate = useGenerateBirthdays()
   const [editing, setEditing] = useState<Event | undefined>()
   const update = useUpdateEvent(editing?.id || '')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | undefined>(undefined)
 
   const submit = (payload: EventPayload) => {
+    setFieldErrors(undefined)
     update.mutate(payload, {
       onSuccess: () => {
         toast.success('Event saved')
         setEditing(undefined)
       },
-      onError: err => toast.error(err instanceof Error ? err.message : 'Failed to save event'),
+      onError: err => {
+        const serverFieldErrors = err?.response?.data?.details?.fieldErrors || err?.details?.fieldErrors
+        if (serverFieldErrors) {
+          setFieldErrors(serverFieldErrors)
+          toast.error('Validation failed')
+          return
+        }
+        toast.error(err instanceof Error ? err.message : 'Failed to save event')
+      },
     })
   }
 
@@ -68,7 +78,7 @@ export function ManageEvents() {
         ]}
       />
       <Modal title="Edit Event" open={Boolean(editing)} onClose={() => setEditing(undefined)}>
-        {editing ? <EventForm event={editing} loading={update.isPending} onSubmit={submit} /> : null}
+        {editing ? <EventForm event={editing} loading={update.isPending} onSubmit={submit} fieldErrors={fieldErrors} /> : null}
       </Modal>
     </div>
   )

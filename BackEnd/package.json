@@ -23,6 +23,7 @@
     "ci": "npm run build && npm test -- --runInBand"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",

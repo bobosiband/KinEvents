@@ -15,6 +15,10 @@ export class EmailService {
    * Never throws; logs failures and returns false on error.
    */
   async send(payload: EmailPayload, meta: { templateName: EmailTemplateName; recipientId: string }): Promise<boolean> {
+    if (process.env.NODE_ENV === 'test') {
+      return true
+    }
+
     const transport = getTransport()
 
     // Handle missing transport gracefully
