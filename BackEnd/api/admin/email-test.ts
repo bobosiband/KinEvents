@@ -131,7 +131,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       message: 'Test email sent successfully',
     })
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message })
+    console.error('[POST /api/admin/email-test] Error sending test email:', error)
+    res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
   }
 }
 

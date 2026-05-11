@@ -1,11 +1,11 @@
-import { getData, persistData } from '../config/db'
+import { readData, persistData } from '../config/db'
 
 export class CleanupService {
   /**
    * Deletes notifications that were read more than 1 hour ago.
    */
   async deleteOldReadNotifications(): Promise<number> {
-    const db = getData()
+    const db = await readData()
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     const before = db.notifications.length
     const previousNotifications = [...db.notifications]
@@ -33,7 +33,7 @@ export class CleanupService {
    * Keeps locked events.
    */
   async deleteOldEvents(): Promise<number> {
-    const db = getData()
+    const db = await readData()
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const before = db.events.length
     const previousEvents = [...db.events]

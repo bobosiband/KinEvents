@@ -37,7 +37,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       message: 'Email resend queued',
     })
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message })
+    console.error('[POST /api/admin/email-resend] Error resending email:', error)
+    res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
   }
 }
 

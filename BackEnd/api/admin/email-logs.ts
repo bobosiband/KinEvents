@@ -33,7 +33,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       message: `Retrieved ${logs.length} email logs`,
     })
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message })
+    console.error('[GET /api/admin/email-logs] Error retrieving logs:', error)
+    res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
   }
 }
 

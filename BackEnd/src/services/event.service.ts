@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { getData, persistData } from '../config/db'
+import { readData, persistData } from '../config/db'
 import { EVENT_TYPES } from '../constants/events'
 import type { IEvent, RSVPStatus } from '../interfaces/event.interface'
 import type { INotification } from '../interfaces/notification.interface'
@@ -20,14 +20,17 @@ export interface CreateEventInput {
 
 export class EventService {
   async listEvents(): Promise<IEvent[]> {
-    return getData().events
+    const db = await readData()
+    return db.events
   }
 
   async getEvent(id: string): Promise<IEvent | undefined> {
-    return getData().events.find((event) => event.id === id)
+    const db = await readData()
+    return db.events.find((event) => event.id === id)
   }
 
   async createEvent(input: CreateEventInput): Promise<IEvent> {
+    const db = await readData()
     const now = new Date().toISOString()
     const event: IEvent = {
       id: randomUUID(),
@@ -44,7 +47,7 @@ export class EventService {
       createdAt: now,
       updatedAt: now,
     }
-    getData().events.push(event)
+    db.events.push(event)
     await persistData()
 
     // Auto-trigger notification
@@ -60,7 +63,7 @@ export class EventService {
 
     // Send emails to all approved users (non-blocking)
     try {
-      const allApprovedUsers = getData().users.filter((user) => user.accessStatus === 'approved')
+      const allApprovedUsers = db.users.filter((user) => user.accessStatus === 'approved')
       await emailDispatcher.onEventCreated(event, allApprovedUsers)
     } catch (error) {
       console.error('[EventService] Email dispatch failed:', error)
@@ -71,7 +74,8 @@ export class EventService {
   }
 
   async updateEvent(id: string, patch: Partial<Omit<IEvent, 'id' | 'createdAt' | 'createdBy'>>): Promise<IEvent | null> {
-    const event = getData().events.find((item) => item.id === id)
+    const db = await readData()
+    const event = db.events.find((item) => item.id === id)
     if (!event) return null
     Object.assign(event, patch, { updatedAt: new Date().toISOString() })
     await persistData()
@@ -92,7 +96,7 @@ export class EventService {
       const rsvpYesUserIds = Object.entries(event.rsvps)
         .filter(([, status]) => status === 'yes')
         .map(([userId]) => userId)
-      const rsvpYesUsers = getData().users.filter((user) => rsvpYesUserIds.includes(user.id))
+      const rsvpYesUsers = db.users.filter((user) => rsvpYesUserIds.includes(user.id))
       const changes = Object.keys(patch).filter((key) => key !== 'updatedAt')
       await emailDispatcher.onEventUpdated(event, rsvpYesUsers, changes)
     } catch (error) {
@@ -104,7 +108,7 @@ export class EventService {
   }
 
   async deleteEvent(id: string): Promise<boolean> {
-    const db = getData()
+    const db = await readData()
     const index = db.events.findIndex((event) => event.id === id)
     if (index < 0) return false
     const [removedEvent] = db.events.splice(index, 1)
@@ -122,7 +126,8 @@ export class EventService {
   }
 
   async setRsvp(eventId: string, userId: string, status: RSVPStatus): Promise<IEvent> {
-    const event = getData().events.find((item) => item.id === eventId)
+    const db = await readData()
+    const event = db.events.find((item) => item.id === eventId)
     if (!event) throw new Error('Event not found')
     event.rsvps[userId] = status
     event.updatedAt = new Date().toISOString()
@@ -143,7 +148,7 @@ export class EventService {
 
     // Send RSVP confirmation email (non-blocking)
     try {
-      const user = getData().users.find((u) => u.id === userId)
+      const user = db.users.find((u) => u.id === userId)
       if (user) {
         await emailDispatcher.onRsvpConfirmed(event, user, status)
       }
@@ -156,11 +161,12 @@ export class EventService {
   }
 
   async generateEventReminders(daysAhead = 3): Promise<INotification[]> {
+    const db = await readData()
     const now = new Date()
     const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
     const created: INotification[] = []
 
-    for (const event of getData().events) {
+    for (const event of db.events) {
       const eventDate = new Date(`${event.date.split('T')[0]}T00:00:00Z`)
       const daysUntil = Math.floor((eventDate.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24))
 

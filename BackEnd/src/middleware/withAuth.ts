@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../config/env'
-import { getData, waitForDb } from '../config/db'
+import { readData, waitForDb } from '../config/db'
 import type { IUser, UserRole } from '../interfaces/user.interface'
 import { ROLE_CAPABILITIES } from '../constants/roles'
 
@@ -43,11 +43,12 @@ export function withAuth(
       const decoded = jwt.verify(token, env.JWT_SECRET) as IUser
 
       // Wait for DB init if it's currently initialising. If no init is in progress
-      // this resolves immediately; then perform the live lookup against the in-memory
-      // store or the loaded MongoDB document.
+      // this resolves immediately; then perform the live lookup against the database
+      // to get the latest user data, ensuring we catch role changes immediately.
       await waitForDb()
 
-      const liveUser = getData().users.find((user) => user.id === decoded.id)
+      const db = await readData()
+      const liveUser = db.users.find((user) => user.id === decoded.id)
 
       if (!liveUser) {
         res.status(401).json({ success: false, message: 'User no longer exists' })

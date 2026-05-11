@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../../src/config/env'
-import { getData, persistData } from '../../src/config/db'
+import { readData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES } from '../../src/constants/roles'
 import type { IUser } from '../../src/interfaces/user.interface'
 
@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const db = getData()
+    const db = await readData()
     const existingAdmin = db.users.find((user) => user.role === 'admin')
     if (existingAdmin) {
       res.status(400).json({ success: false, message: 'An admin user already exists' })
@@ -78,6 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: 'Admin user created successfully',
     })
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message })
+    console.error('[POST /api/admin/create-admin] Error creating admin:', error)
+    res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
   }
 }

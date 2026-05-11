@@ -51,7 +51,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       }
       res.status(200).json({ success: true, data: updatedEvent })
     } catch (error) {
-      res.status(400).json({ success: false, message: (error as Error).message })
+      console.error('[PATCH /api/events/:id] Error updating event:', error)
+      res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
     }
   } else if (req.method === 'DELETE') {
     try {
@@ -63,7 +64,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
       res.status(200).json({ success: true, message: 'Event deleted successfully' })
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Failed to persist event deletion' })
+      console.error('[DELETE /api/events/:id] Error deleting event:', error)
+      res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
     }
   } else {
     res.status(405).json({ success: false, message: 'Method not allowed' })

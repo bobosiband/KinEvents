@@ -8,6 +8,19 @@ import { useCreateEvent } from '@/features/events/hooks/useCreateEvent'
 import type { EventPayload } from '@/features/events/types/event.types'
 import { useAuth } from '@/hooks/useAuth'
 
+type ValidationErrorLike = {
+  response?: {
+    data?: {
+      details?: {
+        fieldErrors?: Record<string, string[]>
+      }
+    }
+  }
+  details?: {
+    fieldErrors?: Record<string, string[]>
+  }
+}
+
 export function CreateEvent() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -23,7 +36,8 @@ export function CreateEvent() {
         navigate(`/events/${event.id}`)
       },
       onError: err => {
-        const serverFieldErrors = err?.response?.data?.details?.fieldErrors || err?.details?.fieldErrors
+        const validationError = err as ValidationErrorLike
+        const serverFieldErrors = validationError.response?.data?.details?.fieldErrors || validationError.details?.fieldErrors
         if (serverFieldErrors) {
           setFieldErrors(serverFieldErrors)
           toast.error('Validation failed')

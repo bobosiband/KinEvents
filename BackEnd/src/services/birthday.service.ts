@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { getData, persistData } from '../config/db'
+import { readData, persistData } from '../config/db'
 import { EVENT_TYPES } from '../constants/events'
 import type { IEvent } from '../interfaces/event.interface'
 import type { IUser } from '../interfaces/user.interface'
@@ -33,9 +33,10 @@ function extractMonthDay(birthday: string): { month: string; day: string } | nul
 
 export class BirthdayService {
   async getUpcomingBirthdays(referenceDate = new Date(), limit = 10): Promise<BirthdayPreview[]> {
+    const db = await readData()
     const currentYear = referenceDate.getFullYear()
-    return getData()
-      .users.filter((user) => Boolean(user.birthday))
+    return db.users
+      .filter((user) => Boolean(user.birthday))
       .map((user) => {
         const parts = extractMonthDay(user.birthday ?? '')
         if (!parts) return null
@@ -47,18 +48,19 @@ export class BirthdayService {
   }
 
   async generateBirthdayEvents(year = new Date().getFullYear()): Promise<BirthdayGenerationResult> {
+    const db = await readData()
     const now = new Date().toISOString()
     const created: IEvent[] = []
     let skipped = 0
     const targetYear = String(year)
 
-    for (const user of getData().users) {
+    for (const user of db.users) {
       if (!user.birthday) continue
       const parts = extractMonthDay(user.birthday)
       if (!parts) continue
 
       const title = `${user.name}'s Birthday`
-      const duplicateExists = getData().events.some(
+      const duplicateExists = db.events.some(
         (event) => event.type === EVENT_TYPES.BIRTHDAY && event.title === title && event.date.startsWith(targetYear)
       )
 
@@ -79,7 +81,7 @@ export class BirthdayService {
         createdAt: now,
         updatedAt: now,
       }
-      getData().events.push(event)
+      db.events.push(event)
       created.push(event)
     }
 
@@ -90,12 +92,13 @@ export class BirthdayService {
   }
 
   async generateBirthdayReminders(daysAhead: number = 7, referenceDate = new Date()): Promise<INotification[]> {
+    const db = await readData()
     const created: INotification[] = []
     const currentYear = referenceDate.getFullYear()
 
     // Get all users with birthdays
-    const usersWithBirthdays = getData().users.filter((user) => Boolean(user.birthday))
-    const allUsers = getData().users
+    const usersWithBirthdays = db.users.filter((user) => Boolean(user.birthday))
+    const allUsers = db.users
 
     for (const user of usersWithBirthdays) {
       const parts = extractMonthDay(user.birthday ?? '')

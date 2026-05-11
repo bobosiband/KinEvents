@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
 
-import { getData, persistData } from '../../src/config/db'
+import { readData, persistData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const updateUserSchema = z.object({
@@ -33,7 +33,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   const currentUser = req.user
 
   if (req.method === 'GET') {
-    const user = getData().users.find((item) => item.id === id)
+    const db = await readData()
+    const user = db.users.find((item) => item.id === id)
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
@@ -51,12 +52,13 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
+    const db = await readData()
     const updateData: any = { updatedAt: new Date().toISOString() }
     if (parseResult.data.name) updateData.name = parseResult.data.name
     if (parseResult.data.email) {
       const normalizedEmail = parseResult.data.email.trim().toLowerCase()
       // Prevent duplicate email assignment across users.
-      const conflict = getData().users.find(
+      const conflict = db.users.find(
         (u) => u.email.trim().toLowerCase() === normalizedEmail && u.id !== id,
       )
       if (conflict) {
@@ -67,14 +69,14 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
     if (parseResult.data.birthday) updateData.birthday = parseResult.data.birthday
     if (parseResult.data.notificationPrefs) {
-      const existing = getData().users.find((item) => item.id === id)
+      const existing = db.users.find((item) => item.id === id)
       updateData.notificationPrefs = {
         level: parseResult.data.notificationPrefs.level ?? existing?.notificationPrefs.level,
         channels: parseResult.data.notificationPrefs.channels ?? existing?.notificationPrefs.channels,
       }
     }
 
-    const user = getData().users.find((item) => item.id === id)
+    const user = db.users.find((item) => item.id === id)
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
@@ -91,7 +93,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
-    const db = getData()
+    const db = await readData()
     const index = db.users.findIndex((item) => item.id === id)
     if (index < 0) {
       res.status(404).json({ success: false, message: 'User not found' })

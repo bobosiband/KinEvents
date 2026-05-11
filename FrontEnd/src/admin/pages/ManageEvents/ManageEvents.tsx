@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { DataTable, type Column } from '@/admin/components/DataTable/DataTable'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +10,19 @@ import { useEvents } from '@/features/events/hooks/useEvents'
 import { useGenerateBirthdays } from '@/features/birthdays/hooks/useBirthdays'
 import type { Event, EventPayload } from '@/features/events/types/event.types'
 
+type ValidationErrorLike = {
+  response?: {
+    data?: {
+      details?: {
+        fieldErrors?: Record<string, string[]>
+      }
+    }
+  }
+  details?: {
+    fieldErrors?: Record<string, string[]>
+  }
+}
+
 const columns: Column<Event>[] = [
   { key: 'title', header: 'Name' },
   { key: 'type', header: 'Type' },
@@ -18,6 +32,7 @@ const columns: Column<Event>[] = [
 ]
 
 export function ManageEvents() {
+  const queryClient = useQueryClient()
   const events = useEvents()
   const remove = useDeleteEvent()
   const generate = useGenerateBirthdays()
@@ -33,7 +48,8 @@ export function ManageEvents() {
         setEditing(undefined)
       },
       onError: err => {
-        const serverFieldErrors = err?.response?.data?.details?.fieldErrors || err?.details?.fieldErrors
+        const validationError = err as ValidationErrorLike
+        const serverFieldErrors = validationError.response?.data?.details?.fieldErrors || validationError.details?.fieldErrors
         if (serverFieldErrors) {
           setFieldErrors(serverFieldErrors)
           toast.error('Validation failed')
@@ -71,7 +87,13 @@ export function ManageEvents() {
             tone: 'danger',
             onClick: event =>
               remove.mutate(event.id, {
-                onSuccess: () => toast.success('Event deleted'),
+                onSuccess: async (_data, deletedId) => {
+                  queryClient.setQueryData<Event[]>(['events'], currentEvents =>
+                    currentEvents?.filter(item => item.id !== deletedId) ?? []
+                  )
+                  await queryClient.invalidateQueries({ queryKey: ['events'] })
+                  toast.success('Event deleted')
+                },
                 onError: err => toast.error(err instanceof Error ? err.message : 'Failed to delete'),
               }),
           },

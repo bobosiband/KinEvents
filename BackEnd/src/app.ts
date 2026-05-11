@@ -1,8 +1,9 @@
-import express, { type Request, type Response } from 'express'
+import express, { type NextFunction, type Request, type Response } from 'express'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import swaggerUi from 'swagger-ui-express'
 
 import swaggerDocument from './config/swagger'
+import { readData, waitForDb, isDbReady } from './config/db'
 import approveAccessHandler from '../api/auth/approve-access'
 import requestAccessHandler from '../api/auth/request-access'
 import loginHandler from '../api/auth/login'
@@ -67,10 +68,10 @@ function toVercelHandler(handler: VercelHandler) {
     try {
       await handler(req as unknown as VercelRequest, res as unknown as VercelResponse)
     } catch (error) {
-      console.error(error)
+      console.error('[ROUTE] Unhandled error in handler:', error instanceof Error ? error.stack : error)
 
       if (!res.headersSent) {
-        res.status(500).json({ success: false, message: (error as Error).message })
+        res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
       }
     }
   }
@@ -93,8 +94,27 @@ export function createApp() {
     next()
   })
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', env: process.env.NODE_ENV })
+  app.get('/health', async (_req, res) => {
+    try {
+      await waitForDb()
+      const db = await readData()
+      res.json({
+        status: 'ok',
+        env: process.env.NODE_ENV,
+        dbReady: isDbReady(),
+        userCount: db.users.length,
+      })
+    } catch (err) {
+      res.status(503).json({ status: 'degraded', error: 'Database not ready' })
+    }
+  })
+
+  app.get('/ready', async (_req, res) => {
+    if (!isDbReady()) {
+      res.status(503).json({ ready: false, reason: 'Database initializing' })
+      return
+    }
+    res.json({ ready: true })
   })
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument as unknown as swaggerUi.SwaggerUiOptions))
@@ -102,6 +122,14 @@ export function createApp() {
   for (const route of routes) {
     app[route.method](route.path, toVercelHandler(route.handler))
   }
+
+  // Global error handler
+  app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+    console.error('[APP] Unhandled error:', err)
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'An unexpected error occurred.' })
+    }
+  })
 
   return app
 }

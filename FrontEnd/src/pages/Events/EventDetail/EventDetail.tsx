@@ -18,6 +18,19 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import type { EventPayload, RSVPStatus } from '@/features/events/types/event.types'
 
+type ValidationErrorLike = {
+  response?: {
+    data?: {
+      details?: {
+        fieldErrors?: Record<string, string[]>
+      }
+    }
+  }
+  details?: {
+    fieldErrors?: Record<string, string[]>
+  }
+}
+
 export function EventDetail() {
   const navigate = useNavigate()
   const { id = '' } = useParams()
@@ -56,7 +69,8 @@ export function EventDetail() {
         setEditing(false)
       },
       onError: err => {
-        const serverFieldErrors = err?.response?.data?.details?.fieldErrors || err?.details?.fieldErrors
+        const validationError = err as ValidationErrorLike
+        const serverFieldErrors = validationError.response?.data?.details?.fieldErrors || validationError.details?.fieldErrors
         if (serverFieldErrors) {
           setFieldErrors(serverFieldErrors)
           toast.error('Validation failed')

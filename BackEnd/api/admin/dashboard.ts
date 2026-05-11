@@ -1,7 +1,7 @@
 import type { VercelResponse } from '@vercel/node'
 
 import { eventService } from '../../src/services/event.service'
-import { getData } from '../../src/config/db'
+import { readData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 /**
@@ -16,7 +16,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const { users: allUsers, accessRequests: allAccessRequests } = getData()
+    const db = await readData()
+    const { users: allUsers, accessRequests: allAccessRequests } = db
     const allEvents = await eventService.listEvents()
 
     const dashboard = {

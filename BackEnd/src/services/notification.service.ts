@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { getData, persistData } from '../config/db'
+import { readData, persistData } from '../config/db'
 import type { NotificationStatus, NotificationType, INotification } from '../interfaces/notification.interface'
 import { emailService } from './email.service'
 import { buildEmailContent } from '../utils/emailTemplates'
@@ -15,7 +15,8 @@ export interface CreateNotificationInput {
 
 export class NotificationService {
   async listNotifications(userId?: string): Promise<Array<INotification & { isRead?: boolean }>> {
-    const notifications = getData().notifications
+    const db = await readData()
+    const notifications = db.notifications
     
     if (!userId) {
       return notifications
@@ -29,6 +30,7 @@ export class NotificationService {
   }
 
   async createNotification(input: CreateNotificationInput): Promise<INotification> {
+    const db = await readData()
     const notification: INotification = {
       id: randomUUID(),
       type: input.type,
@@ -37,12 +39,12 @@ export class NotificationService {
       status: input.status ?? 'pending',
       createdAt: new Date().toISOString(),
     }
-    getData().notifications.push(notification)
+    db.notifications.push(notification)
     await persistData()
 
     // Fire-and-forget email dispatch
     try {
-      const recipient = getData().users.find((u) => u.id === input.recipientId)
+      const recipient = db.users.find((u) => u.id === input.recipientId)
       if (recipient?.email) {
         const ctx: any = {
           appUrl: env.APP_URL,
@@ -85,7 +87,8 @@ export class NotificationService {
   }
 
   async markAsReadByUser(notificationId: string, userId: string): Promise<INotification | null> {
-    const notification = getData().notifications.find((item) => item.id === notificationId)
+    const db = await readData()
+    const notification = db.notifications.find((item) => item.id === notificationId)
     if (!notification) return null
     
     if (!notification.readBy) {
@@ -104,7 +107,8 @@ export class NotificationService {
   }
 
   async markAsSent(id: string): Promise<INotification | null> {
-    const notification = getData().notifications.find((item) => item.id === id)
+    const db = await readData()
+    const notification = db.notifications.find((item) => item.id === id)
     if (!notification) return null
     notification.status = 'sent'
     notification.sentAt = new Date().toISOString()
@@ -113,7 +117,8 @@ export class NotificationService {
   }
 
   async markAsFailed(id: string): Promise<INotification | null> {
-    const notification = getData().notifications.find((item) => item.id === id)
+    const db = await readData()
+    const notification = db.notifications.find((item) => item.id === id)
     if (!notification) return null
     notification.status = 'failed'
     await persistData()

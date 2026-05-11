@@ -3,13 +3,13 @@ describe('db persistence guard', () => {
 
   afterEach(() => {
     process.env.NODE_ENV = originalEnv
-    jest.resetModules()
   })
 
   it('rejects persistData() before initData() completes in production mode', async () => {
     process.env.NODE_ENV = 'production'
 
-    const { persistData } = await import('../src/config/db')
+    const { persistData, resetInitForTesting } = await import('../src/config/db')
+    resetInitForTesting()
 
     await expect(persistData()).rejects.toThrow('Database not initialized - cannot persist data safely')
   })

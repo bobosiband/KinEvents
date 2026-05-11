@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
 
-import { getData, persistData } from '../../src/config/db'
+import { readData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../../src/constants/roles'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
@@ -34,7 +34,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   try {
-    const db = getData()
+    const db = await readData()
     const user = db.users.find((item) => item.id === parseResult.data.userId)
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' })

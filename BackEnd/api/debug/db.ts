@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getData } from '../../src/config/db'
+import { readData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 async function handler(req: RequestWithUser, res: VercelResponse) {
@@ -8,7 +8,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     return
   }
 
-  const data = getData()
+  const data = await readData()
   res.status(200).json({
     success: true,
     data: {

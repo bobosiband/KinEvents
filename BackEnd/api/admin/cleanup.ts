@@ -19,7 +19,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       message: `Cleanup complete: ${deletedNotifications} notifications, ${deletedEvents} events deleted`,
     })
   } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message })
+    console.error('[POST /api/admin/cleanup] Cleanup error:', error)
+    res.status(500).json({ success: false, message: 'An internal error occurred. Please try again.' })
   }
 }
 

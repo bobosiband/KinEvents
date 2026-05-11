@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import jwt from 'jsonwebtoken'
 
 import { env } from '../../src/config/env'
-import { getData } from '../../src/config/db'
+import { readData } from '../../src/config/db'
 import { authService } from '../../src/services/auth.service'
 
 const loginSchema = z.object({
@@ -50,7 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const inputEmail = normalizeEmail(parseResult.data.email)
     console.log(`[LOGIN] Looking up user with email: ${inputEmail}`)
 
-    const existingUser = getData().users.find((item) => item.email.trim().toLowerCase() === inputEmail)
+    const db = await readData()
+    const existingUser = db.users.find((item) => item.email.trim().toLowerCase() === inputEmail)
 
     if (!existingUser) {
       console.warn(`[LOGIN] User not found: ${inputEmail}`)
@@ -66,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    const user = authService.getApprovedUser(inputEmail) ?? existingUser
+    const user = (await authService.getApprovedUser(inputEmail)) ?? existingUser
 
     console.log(`[LOGIN] User found: ${user.id} (${user.email})`)
 

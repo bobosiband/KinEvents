@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { getData, persistData } from '../config/db'
+import { readData, persistData } from '../config/db'
 import { getTransport } from '../config/email.config'
 import type {
   EmailPayload,
@@ -130,7 +130,8 @@ export class EmailService {
       ...entry,
     }
 
-    getData().emailLogs.push(logEntry)
+      const db = await readData()
+      db.emailLogs.push(logEntry)
     await persistData()
   }
 
@@ -138,7 +139,8 @@ export class EmailService {
    * Retrieves email logs, optionally filtered by recipient ID.
    */
   async getEmailLogs(recipientId?: string): Promise<EmailLogEntry[]> {
-    const logs = getData().emailLogs
+      const db = await readData()
+      const logs = db.emailLogs
     if (recipientId) {
       return logs.filter((log) => log.recipientId === recipientId)
     }
@@ -150,7 +152,8 @@ export class EmailService {
    * Increments retryCount and attempts delivery again.
    */
   async resend(logEntryId: string): Promise<boolean> {
-    const logs = getData().emailLogs
+      const db = await readData()
+      const logs = db.emailLogs
     const logEntry = logs.find((log) => log.id === logEntryId)
 
     if (!logEntry) {

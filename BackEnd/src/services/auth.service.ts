@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { getData, persistData } from '../config/db'
+import { readData, persistData } from '../config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../constants/roles'
 import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IUser } from '../interfaces/user.interface'
@@ -19,14 +19,16 @@ function normalizeEmail(email: string): string {
 }
 
 export class AuthService {
-  getApprovedUser(email: string): IUser | null {
-    return getData().users.find(
+  async getApprovedUser(email: string): Promise<IUser | null> {
+    const db = await readData()
+    return db.users.find(
       (user) => normalizeEmail(user.email) === normalizeEmail(email) && user.accessStatus === 'approved'
     ) ?? null
   }
 
   async requestAccess(input: RequestAccessInput): Promise<IAccessRequest> {
-    const { accessRequests } = getData()
+    const db = await readData()
+    const { accessRequests } = db
     const existing = accessRequests.find(
       (request) => normalizeEmail(request.email) === normalizeEmail(input.email) && request.status === 'pending'
     )
@@ -41,13 +43,13 @@ export class AuthService {
       status: 'pending',
       requestedAt: now,
     }
-    getData().accessRequests.push(request)
+    db.accessRequests.push(request)
     await persistData()
     return request
   }
 
   async approveAccess(accessRequestId: string, resolvedBy = 'system'): Promise<{ request: IAccessRequest; user: IUser }> {
-    const db = getData()
+    const db = await readData()
     const requestIndex = db.accessRequests.findIndex((item) => item.id === accessRequestId)
     if (requestIndex < 0) throw new Error('Access request not found')
 
@@ -116,7 +118,7 @@ export class AuthService {
   }
 
   async revokeAccess(accessRequestId: string, resolvedBy = 'system'): Promise<IAccessRequest> {
-    const db = getData()
+    const db = await readData()
     const requestIndex = db.accessRequests.findIndex((item) => item.id === accessRequestId)
     if (requestIndex < 0) throw new Error('Access request not found')
 
@@ -155,15 +157,18 @@ export class AuthService {
   }
 
   async listAccessRequests(): Promise<IAccessRequest[]> {
-    return getData().accessRequests.filter((request) => request.status === 'pending')
+    const db = await readData()
+    return db.accessRequests.filter((request) => request.status === 'pending')
   }
 
   async listAccessRequestHistory(): Promise<IAccessRequest[]> {
-    return getData().accessRequestHistory
+    const db = await readData()
+    return db.accessRequestHistory
   }
 
   async listApprovedUsers(): Promise<IUser[]> {
-    return getData().users.filter((user) => user.accessStatus === 'approved')
+    const db = await readData()
+    return db.users.filter((user) => user.accessStatus === 'approved')
   }
 }
 

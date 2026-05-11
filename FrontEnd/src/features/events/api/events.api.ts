@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import { deleteData, getData, patchData, postData } from '@/services/api/apiClient'
 import { ENDPOINTS } from '@/services/api/endpoints'
 import type { CreateEventPayload, Event, EventPayload, RSVPStatus } from '../types/event.types'
@@ -19,7 +21,13 @@ export function updateEvent(id: string, payload: EventPayload): Promise<Event> {
 }
 
 export function deleteEvent(id: string): Promise<{ message: string }> {
-  return deleteData<{ message: string }>(ENDPOINTS.EVENT_BY_ID(id))
+  return deleteData<{ message: string }>(ENDPOINTS.EVENT_BY_ID(id)).catch((error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return { message: 'Event already deleted' }
+    }
+
+    throw error
+  })
 }
 
 export function rsvp(eventId: string, userId: string, status: RSVPStatus): Promise<Event> {
