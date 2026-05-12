@@ -14,15 +14,22 @@ const emailTestSchema = z.object({
 const mockContexts: Record<EmailTemplateName, Record<string, unknown>> = {
   'welcome': {
     recipientName: 'John Doe',
-    loginUrl: 'https://kinevents.app/login',
+    loginUrl: 'https://kinevents.vercel.app/login',
   },
   'access-approved': {
     recipientName: 'Jane Smith',
-    loginUrl: 'https://kinevents.app/login',
+    loginUrl: 'https://kinevents.vercel.app/login',
   },
   'access-rejected': {
     recipientName: 'Bob Johnson',
-    supportEmail: 'support@kinevents.app',
+    supportEmail: 'support@kinevents.vercel.app',
+  },
+  'access-request': {
+    requesterName: 'Michael Johnson',
+    requesterEmail: 'michael.johnson@example.com',
+    message: 'I would like to join the family events platform to stay connected with my family.',
+    approvalUrl: 'https://kinevents.vercel.app/admin/access-requests/req-123/approve',
+    rejectionUrl: 'https://kinevents.vercel.app/admin/access-requests/req-123/reject',
   },
   'account-updated': {
     recipientName: 'Alice Brown',
@@ -38,14 +45,14 @@ const mockContexts: Record<EmailTemplateName, Record<string, unknown>> = {
     eventTitle: 'Family Reunion 2026',
     eventDate: '2026-07-15',
     eventLocation: 'Central Park, New York',
-    eventUrl: 'https://kinevents.app/events/123',
+    eventUrl: 'https://kinevents.vercel.app/events/123',
   },
   'event-updated': {
     recipientName: 'Eve Martinez',
     eventTitle: 'Summer BBQ',
     eventDate: '2026-08-20',
     changes: ['Moved to new location', 'Changed start time to 6 PM'],
-    eventUrl: 'https://kinevents.app/events/456',
+    eventUrl: 'https://kinevents.vercel.app/events/456',
   },
   'event-cancelled': {
     recipientName: 'Frank Miller',
@@ -57,7 +64,7 @@ const mockContexts: Record<EmailTemplateName, Record<string, unknown>> = {
     eventTitle: 'Kids Birthday Party',
     eventDate: '2026-05-20',
     daysUntil: 3,
-    eventUrl: 'https://kinevents.app/events/789',
+    eventUrl: 'https://kinevents.vercel.app/events/789',
   },
   'rsvp-confirmation': {
     recipientName: 'Henry Davis',

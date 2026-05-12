@@ -45,6 +45,10 @@ export class AuthService {
     }
     db.accessRequests.push(request)
     await persistData()
+
+    // Send notification to admins
+    await emailDispatcher.onAccessRequested(request)
+
     return request
   }
 

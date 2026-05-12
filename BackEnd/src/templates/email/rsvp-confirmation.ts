@@ -13,6 +13,7 @@ export interface RSVPConfirmationContext {
  */
 export function render(context: RSVPConfirmationContext) {
   const statusEmoji = context.rsvpStatus === 'yes' ? '✅' : context.rsvpStatus === 'no' ? '❌' : '❓'
+  const formattedDate = formatDate(context.eventDate)
 
   const body = `<p>Hi ${escapeHtml(context.recipientName)},</p>
 
@@ -20,7 +21,7 @@ export function render(context: RSVPConfirmationContext) {
 
 <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px; margin: 20px 0;">
   <p style="margin-top: 0; font-weight: 600; font-size: 18px;">${escapeHtml(context.eventTitle)}</p>
-  <p><strong>📅 Date:</strong> ${escapeHtml(context.eventDate)}</p>
+  <p><strong>📅 Date:</strong> ${formattedDate}</p>
   <p><strong>Your RSVP:</strong> ${statusEmoji} ${escapeHtml(context.rsvpStatus)}</p>
 </div>
 
@@ -34,7 +35,7 @@ The KinEvents Team</p>`
 Your RSVP has been recorded for the following event:
 
 ${context.eventTitle}
-📅 Date: ${context.eventDate}
+📅 Date: ${formattedDate}
 Your RSVP: ${statusEmoji} ${context.rsvpStatus}
 
 Thank you for letting us know! We look forward to seeing you.
@@ -54,6 +55,15 @@ The KinEvents Team`
       body: plainText,
     }),
   }
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 function escapeHtml(text: string): string {

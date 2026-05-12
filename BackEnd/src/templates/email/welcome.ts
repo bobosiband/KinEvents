@@ -18,7 +18,7 @@ export function render(context: WelcomeContext) {
 
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
-    <td style="background-color: #B45309; border-radius: 6px; text-align: center; padding: 0;">
+    <td style="background-color: #EF6C6C; border-radius: 6px; text-align: center; padding: 0;">
       <a href="${escapeHtml(context.loginUrl)}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">Log In Now</a>
     </td>
   </tr>

@@ -13,7 +13,7 @@ export interface AnnouncementContext {
  */
 export function render(context: AnnouncementContext) {
   const bgColor = context.priority === 'important' ? '#fee2e2' : '#fef3c7'
-  const borderColor = context.priority === 'important' ? '#dc2626' : '#B45309'
+  const borderColor = context.priority === 'important' ? '#dc2626' : '#EF6C6C'
 
   const body = `<p>Hi ${escapeHtml(context.recipientName)},</p>
 

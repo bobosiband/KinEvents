@@ -13,15 +13,16 @@ export interface EventUpdatedContext {
  * Email sent when an event is updated.
  */
 export function render(context: EventUpdatedContext) {
+  const formattedDate = formatDate(context.eventDate)
   const changesList = context.changes.map((c) => `<li>${escapeHtml(c)}</li>`).join('')
 
   const body = `<p>Hi ${escapeHtml(context.recipientName)},</p>
 
 <p>An event you're interested in has been updated:</p>
 
-<div style="background-color: #fef3c7; border-left: 4px solid #B45309; padding: 16px; margin: 20px 0;">
+<div style="background-color: #F5E6E6; border-left: 4px solid #EF6C6C; padding: 16px; margin: 20px 0;">
   <p style="margin-top: 0; font-weight: 600; font-size: 18px;">${escapeHtml(context.eventTitle)}</p>
-  <p><strong>📅 Date:</strong> ${escapeHtml(context.eventDate)}</p>
+  <p><strong>📅 Date:</strong> ${formattedDate}</p>
 </div>
 
 <p><strong>Changes made:</strong></p>
@@ -34,7 +35,7 @@ export function render(context: EventUpdatedContext) {
 
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
-    <td style="background-color: #B45309; border-radius: 6px; text-align: center; padding: 0;">
+    <td style="background-color: #EF6C6C; border-radius: 6px; text-align: center; padding: 0;">
       <a href="${escapeHtml(context.eventUrl)}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View Event</a>
     </td>
   </tr>
@@ -48,7 +49,7 @@ The KinEvents Team</p>`
 An event you're interested in has been updated:
 
 ${context.eventTitle}
-📅 Date: ${context.eventDate}
+📅 Date: ${formattedDate}
 
 Changes made:
 ${context.changes.map((c) => `- ${c}`).join('\n')}
@@ -71,6 +72,15 @@ The KinEvents Team`
       body: plainText,
     }),
   }
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 function escapeHtml(text: string): string {

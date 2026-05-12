@@ -13,15 +13,16 @@ export interface EventCreatedContext {
  * Email sent when a new event is created.
  */
 export function render(context: EventCreatedContext) {
+  const formattedDate = formatDate(context.eventDate)
   const locationLine = context.eventLocation ? `<p><strong>📍 Location:</strong> ${escapeHtml(context.eventLocation)}</p>` : ''
 
   const body = `<p>Hi ${escapeHtml(context.recipientName)},</p>
 
 <p>A new event has been created on KinEvents:</p>
 
-<div style="background-color: #fef3c7; border-left: 4px solid #B45309; padding: 16px; margin: 20px 0;">
+<div style="background-color: #F5E6E6; border-left: 4px solid #EF6C6C; padding: 16px; margin: 20px 0;">
   <p style="margin-top: 0; font-weight: 600; font-size: 18px;">${escapeHtml(context.eventTitle)}</p>
-  <p><strong>📅 Date:</strong> ${escapeHtml(context.eventDate)}</p>
+  <p><strong>📅 Date:</strong> ${formattedDate}</p>
   ${locationLine}
 </div>
 
@@ -29,7 +30,7 @@ export function render(context: EventCreatedContext) {
 
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
-    <td style="background-color: #B45309; border-radius: 6px; text-align: center; padding: 0;">
+    <td style="background-color: #EF6C6C; border-radius: 6px; text-align: center; padding: 0;">
       <a href="${escapeHtml(context.eventUrl)}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View Event</a>
     </td>
   </tr>
@@ -43,7 +44,7 @@ The KinEvents Team</p>`
 A new event has been created on KinEvents:
 
 ${escapeHtml(context.eventTitle)}
-📅 Date: ${context.eventDate}${context.eventLocation ? `\n📍 Location: ${context.eventLocation}` : ''}
+📅 Date: ${formattedDate}${context.eventLocation ? `\n📍 Location: ${context.eventLocation}` : ''}
 
 View the event and RSVP:
 ${context.eventUrl}
@@ -63,6 +64,15 @@ The KinEvents Team`
       body: plainText,
     }),
   }
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 function escapeHtml(text: string): string {

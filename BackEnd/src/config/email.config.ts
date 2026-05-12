@@ -79,6 +79,6 @@ export function getFromAddress(): string {
     process.env.EMAIL_FROM?.trim() ||
     GMAIL_USER ||
     process.env.RESEND_FROM?.trim() ||
-    'noreply@kinevents.app'
+    'noreply@kinevents.vercel.app'
   )
 }

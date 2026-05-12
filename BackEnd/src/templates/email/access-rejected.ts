@@ -16,7 +16,7 @@ export function render(context: AccessRejectedContext) {
 
 <p>If you believe this is an error or would like more information, please contact us:</p>
 
-<p><a href="mailto:${escapeHtml(context.supportEmail)}" style="color: #B45309; text-decoration: none; font-weight: 600;">${escapeHtml(context.supportEmail)}</a></p>
+<p><a href="mailto:${escapeHtml(context.supportEmail)}" style="color: #EF6C6C; text-decoration: none; font-weight: 600;">${escapeHtml(context.supportEmail)}</a></p>
 
 <p>We appreciate your understanding.</p>
 

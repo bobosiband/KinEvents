@@ -25,9 +25,9 @@ export function renderLayout(options: {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-collapse: collapse;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #B45309 0%, #92400e 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #92400e;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">KinEvents</h1>
-              <p style="color: #fef3c7; margin: 8px 0 0 0; font-size: 14px;">Family Events Platform</p>
+            <td style="background: linear-gradient(135deg, #EF6C6C 0%, #F49090 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #EF6C6C;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">❤️ KinEvents</h1>
+              <p style="color: #ffffff; margin: 8px 0 0 0; font-size: 14px;">Family Events Platform</p>
             </td>
           </tr>
 
@@ -46,7 +46,7 @@ export function renderLayout(options: {
               </p>
               ${options.footerText ? `<p style="margin: 8px 0 0 0; padding: 0;">${escapeHtml(options.footerText)}</p>` : ''}
               <p style="margin: 12px 0 0 0; padding: 0; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-                <a href="https://kinevents.app/unsubscribe" style="color: #B45309; text-decoration: none; font-weight: 500;">Manage email preferences</a>
+                <a href="https://kinevents.vercel.app/profile" style="color: #EF6C6C; text-decoration: none; font-weight: 500;">Manage email preferences</a>
               </p>
               <p style="margin: 8px 0 0 0; padding: 0;">
                 © 2024–2026 KinEvents. All rights reserved.

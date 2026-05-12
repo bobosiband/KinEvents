@@ -19,9 +19,11 @@ export function render(context: BirthdayReminderContext) {
         ? 'tomorrow'
         : `in ${context.daysUntil} days`
 
+  const formattedDate = formatBirthdayDate(context.birthdayDate)
+
   const body = `<p>Hi ${escapeHtml(context.recipientName)},</p>
 
-<p>Just a heads up! <strong>${escapeHtml(context.birthdayPersonName)}'s</strong> birthday is coming up ${daysText} on ${escapeHtml(context.birthdayDate)}.</p>
+<p>Just a heads up! <strong>${escapeHtml(context.birthdayPersonName)}'s</strong> birthday is coming up ${daysText} on ${formattedDate}.</p>
 
 <p>Start planning your celebration! 🎂</p>
 
@@ -30,7 +32,7 @@ The KinEvents Team</p>`
 
   const plainText = `Hi ${context.recipientName},
 
-Just a heads up! ${context.birthdayPersonName}'s birthday is coming up ${daysText} on ${context.birthdayDate}.
+Just a heads up! ${context.birthdayPersonName}'s birthday is coming up ${daysText} on ${formattedDate}.
 
 Start planning your celebration! 🎂
 
@@ -49,6 +51,14 @@ The KinEvents Team`
       body: plainText,
     }),
   }
+}
+
+function formatBirthdayDate(dateStr: string): string {
+  const [, month, day] = dateStr.split('-').map(Number)
+  return new Date(2000, month - 1, day).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 function escapeHtml(text: string): string {

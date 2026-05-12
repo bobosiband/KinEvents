@@ -2,6 +2,7 @@ export type EmailTemplateName =
   | 'welcome'
   | 'access-approved'
   | 'access-rejected'
+  | 'access-request'
   | 'account-updated'
   | 'role-changed'
   | 'event-created'
@@ -40,6 +41,6 @@ export interface EmailLogEntry {
 }
 
 export interface TemplateContext {
-  recipientName: string
+  recipientName?: string
   [key: string]: unknown
 }

@@ -65,7 +65,7 @@ class EmailDispatcherService {
   async onAccessRejected(request: IAccessRequest): Promise<void> {
     // We don't have user preferences here, so send if email is properly configured
     try {
-      const supportEmail = 'support@kinevents.app'
+      const supportEmail = 'support@kinevents.vercel.app'
       await emailService.sendTemplate(
         'access-rejected',
         {
@@ -381,6 +381,50 @@ class EmailDispatcherService {
     })
 
     await Promise.all(promises)
+  }
+
+  /**
+   * Sends access request notification to all admins.
+   */
+  async onAccessRequested(request: IAccessRequest): Promise<void> {
+    try {
+      // Get all admin users
+      const { users } = await import('../config/db').then((db) => db.readData())
+      const admins = (users || []).filter((user: IUser) => user.role === 'admin')
+
+      if (admins.length === 0) {
+        console.log(`[EMAIL] No admin users found to notify about access request ${request.id}`)
+        return
+      }
+
+      const approvalUrl = `${process.env.APP_URL}/admin/access-requests/${request.id}/approve`
+      const rejectionUrl = `${process.env.APP_URL}/admin/access-requests/${request.id}/reject`
+
+      const promises = admins.map((admin: IUser) =>
+        (async () => {
+          try {
+            await emailService.sendTemplate(
+              'access-request',
+              {
+                requesterName: request.name,
+                requesterEmail: request.email,
+                message: request.message,
+                approvalUrl,
+                rejectionUrl,
+              },
+              { name: admin.name, email: admin.email },
+              request.id
+            )
+          } catch (error) {
+            console.error(`[EMAIL] onAccessRequested failed to send to admin ${admin.id}:`, error)
+          }
+        })()
+      )
+
+      await Promise.all(promises)
+    } catch (error) {
+      console.error(`[EMAIL] onAccessRequested failed for ${request.id}:`, error)
+    }
   }
 
   /**
