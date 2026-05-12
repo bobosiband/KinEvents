@@ -9,8 +9,8 @@ import type { RSVPStatus } from '../interfaces/event.interface'
  * Respects user notification preferences and never throws.
  */
 class EmailDispatcherService {
-  // Resolve email link base URL from environment, with production fallback.
-  private readonly baseUrl: string = process.env.APP_URL?.trim().replace(/\/$/, '') || 'https://kinevents.vercel.app'
+  // Hardcoded frontend URL for all email links.
+  private readonly baseUrl: string = 'https://kinevents.vercel.app'
   /**
    * Sends access approved email to newly approved user.
    */

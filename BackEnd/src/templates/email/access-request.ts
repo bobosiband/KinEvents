@@ -9,12 +9,10 @@ export interface AccessRequestContext {
   rejectionUrl: string
 }
 
+const ADMIN_URL = 'https://kinevents.vercel.app/admin/events'
 
 /**
  * Email sent to admins when a user requests access to KinEvents.
- * This renderer uses the `approvalUrl` and `rejectionUrl` provided in the
- * template context instead of any hardcoded admin URL so links point to the
- * live frontend (from `process.env.APP_URL` as provided by the dispatcher).
  */
 export function render(context: AccessRequestContext) {
   const messageSection = context.message
@@ -39,11 +37,8 @@ ${messageSection}
 
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
-    <td style="padding: 0 8px 0 0;">
-      <a href="${escapeHtml(context.approvalUrl)}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 20px; border-radius: 6px;">Approve</a>
-    </td>
-    <td style="padding: 0;">
-      <a href="${escapeHtml(context.rejectionUrl)}" style="display: inline-block; background-color: #EF6C6C; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 20px; border-radius: 6px;">Reject</a>
+    <td style="background-color: #EF6C6C; border-radius: 6px; text-align: center; padding: 0;">
+      <a href="${ADMIN_URL}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">Review Request</a>
     </td>
   </tr>
 </table>
@@ -61,8 +56,7 @@ Email: ${context.requesterEmail}
 ${context.message ? `Message from requester:\n"${context.message}"\n` : ''}
 
 Log in to the admin panel to review and take action on this request:
-Approve: ${context.approvalUrl}
-Reject: ${context.rejectionUrl}
+${ADMIN_URL}
 
 Best regards,
 The KinEvents Team`
