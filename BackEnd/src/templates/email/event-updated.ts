@@ -1,12 +1,13 @@
 import { renderLayout } from './layout'
 import { renderPlainText } from './plain-text-layout'
 
+const FRONTEND_EVENTS_URL = 'https://kinevents.vercel.app/events'
+
 export interface EventUpdatedContext {
   recipientName: string
   eventTitle: string
   eventDate: string
   changes: string[]
-  eventUrl: string
 }
 
 /**
@@ -36,7 +37,7 @@ export function render(context: EventUpdatedContext) {
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
     <td style="background-color: #EF6C6C; border-radius: 6px; text-align: center; padding: 0;">
-      <a href="${escapeHtml(context.eventUrl)}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View Event</a>
+      <a href="${FRONTEND_EVENTS_URL}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View Event</a>
     </td>
   </tr>
 </table>
@@ -55,7 +56,7 @@ Changes made:
 ${context.changes.map((c) => `- ${c}`).join('\n')}
 
 View the updated event:
-${context.eventUrl}
+${FRONTEND_EVENTS_URL}
 
 Best regards,
 The KinEvents Team`

@@ -6,6 +6,7 @@ export interface WelcomeContext {
   loginUrl: string
 }
 
+const LOGIN_URL = 'https://kinevents.vercel.app/login'
 /**
  * Welcome email template for new approved users.
  */
@@ -42,13 +43,15 @@ The KinEvents Team</p>`
 Welcome to KinEvents! Your access request has been approved, and you now have full access to our platform.
 
 You can log in and start managing your family events right away:
-${context.loginUrl}
+${LOGIN_URL}
 
 Once logged in, you'll be able to:
 - Create and manage family events
 - Respond to upcoming gatherings
 - View upcoming birthdays
 - Receive notifications about events
+
+One More Important Thing: If you have do do is ADDING YOUR BIRTHDAY!!
 
 If you have any questions, feel free to reach out. Looking forward to having you on the platform!
 

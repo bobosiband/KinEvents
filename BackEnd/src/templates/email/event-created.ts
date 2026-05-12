@@ -1,12 +1,13 @@
 import { renderLayout } from './layout'
 import { renderPlainText } from './plain-text-layout'
 
+const FRONTEND_EVENTS_URL = 'https://kinevents.vercel.app/events'
+
 export interface EventCreatedContext {
   recipientName: string
   eventTitle: string
   eventDate: string
   eventLocation?: string
-  eventUrl: string
 }
 
 /**
@@ -31,7 +32,7 @@ export function render(context: EventCreatedContext) {
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
     <td style="background-color: #EF6C6C; border-radius: 6px; text-align: center; padding: 0;">
-      <a href="${escapeHtml(context.eventUrl)}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View Event</a>
+      <a href="${FRONTEND_EVENTS_URL}" style="display: inline-block; color: #ffffff; text-decoration: none; font-weight: 600; padding: 12px 28px; border-radius: 6px;">View Event</a>
     </td>
   </tr>
 </table>
@@ -47,7 +48,7 @@ ${escapeHtml(context.eventTitle)}
 📅 Date: ${formattedDate}${context.eventLocation ? `\n📍 Location: ${context.eventLocation}` : ''}
 
 View the event and let us know if you're coming:
-${context.eventUrl}
+${FRONTEND_EVENTS_URL}
 
 Best regards,
 The KinEvents Team`
