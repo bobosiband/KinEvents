@@ -26,7 +26,7 @@ export function render(context: EventCreatedContext) {
   ${locationLine}
 </div>
 
-<p>View the event and RSVP:</p>
+<p>View the event and let us know if you're coming:</p>
 
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
@@ -46,7 +46,7 @@ A new event has been created on KinEvents:
 ${escapeHtml(context.eventTitle)}
 📅 Date: ${formattedDate}${context.eventLocation ? `\n📍 Location: ${context.eventLocation}` : ''}
 
-View the event and RSVP:
+View the event and let us know if you're coming:
 ${context.eventUrl}
 
 Best regards,

@@ -27,7 +27,7 @@ export function render(context: WelcomeContext) {
 <p>Once logged in, you'll be able to:</p>
 <ul style="margin: 12px 0; padding-left: 20px;">
   <li>Create and manage family events</li>
-  <li>RSVP to upcoming gatherings</li>
+  <li>Respond to upcoming gatherings</li>
   <li>View upcoming birthdays</li>
   <li>Receive notifications about events</li>
 </ul>
@@ -46,7 +46,7 @@ ${context.loginUrl}
 
 Once logged in, you'll be able to:
 - Create and manage family events
-- RSVP to upcoming gatherings
+- Respond to upcoming gatherings
 - View upcoming birthdays
 - Receive notifications about events
 

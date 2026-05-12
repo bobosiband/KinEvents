@@ -17,7 +17,7 @@ Parameters:
     NoEcho: true
   AppUrl:
     Type: String
-    Default: https://your-lambda-url.amazonaws.com
+    Default: https://kinevents.vercel.app
   MongoDbUri:
     Type: String
     NoEcho: true

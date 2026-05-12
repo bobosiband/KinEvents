@@ -24,7 +24,7 @@ export function render(context: EventReminderContext) {
 
   const body = `<p>Hi ${escapeHtml(context.recipientName)},</p>
 
-<p>Just a reminder that an event you've RSVP'd to is coming up ${daysText}:</p>
+<p>Just a reminder that an event you're attending is coming up ${daysText}:</p>
 
 <div style="background-color: #dbeafe; border-left: 4px solid #0284c7; padding: 16px; margin: 20px 0;">
   <p style="margin-top: 0; font-weight: 600; font-size: 18px;">${escapeHtml(context.eventTitle)}</p>
@@ -46,7 +46,7 @@ The KinEvents Team</p>`
 
   const plainText = `Hi ${context.recipientName},
 
-Just a reminder that an event you've RSVP'd to is coming up ${daysText}:
+Just a reminder that an event you're attending is coming up ${daysText}:
 
 ${context.eventTitle}
 📅 Date: ${formattedDate}

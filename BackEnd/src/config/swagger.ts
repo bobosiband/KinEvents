@@ -8,7 +8,7 @@ const swaggerDocument: OpenAPIV3_0 = {
     description: 'Comprehensive API for managing events, users, and notifications for family gatherings',
     contact: {
       name: 'KinEvents Support',
-      url: 'https://3lnnoggn81.execute-api.us-east-1.amazonaws.com/Prod',
+      url: 'https://kinevents.vercel.app',
     },
   },
   servers: [
@@ -17,7 +17,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       description: 'Local development server',
     },
     {
-      url: 'https://3lnnoggn81.execute-api.us-east-1.amazonaws.com/Prod',
+      url: 'https://kinevents.vercel.app',
       description: 'Production server',
     },
   ],
@@ -769,7 +769,8 @@ const swaggerDocument: OpenAPIV3_0 = {
     '/api/events/rsvp': {
       post: {
         tags: ['Events'],
-        summary: 'Set event RSVP',
+        summary: 'Record attendance response',
+        description: 'Record a user attendance response for an event',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -789,7 +790,7 @@ const swaggerDocument: OpenAPIV3_0 = {
         },
         responses: {
           '200': {
-            description: 'RSVP recorded',
+            description: 'Attendance response recorded',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ApiSuccess' },
@@ -1002,10 +1003,10 @@ const swaggerDocument: OpenAPIV3_0 = {
       post: {
         tags: ['Admin'],
         summary: 'Run data cleanup',
-        description: 'Deletes read notifications older than 1 hour and past events older than 1 day. Admin only.',
+        description: 'Deletes notifications older than 1 hour, past events older than 1 day, and email logs older than 1 day. Admin only.',
         security: [{ bearerAuth: [] }],
         responses: {
-          '200': { description: 'Cleanup completed' },
+          '200': { description: 'Cleanup completed: removes notifications and events older than 1 hour/day, and email logs older than 1 day' },
           '401': { description: 'Unauthorized' },
           '403': { description: 'Admin required' },
         },
