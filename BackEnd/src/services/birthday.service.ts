@@ -34,13 +34,38 @@ function extractMonthDay(birthday: string): { month: string; day: string } | nul
 export class BirthdayService {
   async getUpcomingBirthdays(referenceDate = new Date(), limit = 10): Promise<BirthdayPreview[]> {
     const db = await readData()
-    const currentYear = referenceDate.getFullYear()
+    const currentYear = referenceDate.getUTCFullYear()
+
+    // Build birthday dates in UTC and ensure returned `birthdayThisYear` is
+    // always the next upcoming occurrence (this year or next year).
     return db.users
       .filter((user) => Boolean(user.birthday))
       .map((user) => {
         const parts = extractMonthDay(user.birthday ?? '')
         if (!parts) return null
-        return { user, birthdayThisYear: `${currentYear}-${parts.month}-${parts.day}` }
+
+        const month = parseInt(parts.month, 10)
+        const day = parseInt(parts.day, 10)
+
+        // Build the birthday date in UTC for this year
+        let birthdayDate = new Date(Date.UTC(currentYear, month - 1, day))
+
+        // Build today at UTC midnight for a clean date-only comparison
+        const todayUTC = new Date(
+          Date.UTC(
+            referenceDate.getUTCFullYear(),
+            referenceDate.getUTCMonth(),
+            referenceDate.getUTCDate()
+          )
+        )
+
+        // If this year's birthday has already passed, advance to next year
+        if (birthdayDate < todayUTC) {
+          birthdayDate = new Date(Date.UTC(currentYear + 1, month - 1, day))
+        }
+
+        const birthdayThisYear = birthdayDate.toISOString().split('T')[0]
+        return { user, birthdayThisYear }
       })
       .filter((item): item is BirthdayPreview => item !== null)
       .sort((a, b) => a.birthdayThisYear.localeCompare(b.birthdayThisYear))

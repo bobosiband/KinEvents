@@ -9,6 +9,8 @@ import type { RSVPStatus } from '../interfaces/event.interface'
  * Respects user notification preferences and never throws.
  */
 class EmailDispatcherService {
+  // All email links point to the live production frontend.
+  private readonly baseUrl: string = 'https://kinevents.vercel.app'
   /**
    * Sends access approved email to newly approved user.
    */
@@ -19,7 +21,7 @@ class EmailDispatcherService {
     }
 
     try {
-      const loginUrl = `${process.env.APP_URL}/login`
+      const loginUrl = `${this.baseUrl}/login`
       await emailService.sendTemplate(
         'access-approved',
         {
@@ -44,7 +46,7 @@ class EmailDispatcherService {
     }
 
     try {
-      const loginUrl = `${process.env.APP_URL}/login`
+      const loginUrl = `${this.baseUrl}/login`
       await emailService.sendTemplate(
         'welcome',
         {
@@ -148,7 +150,7 @@ class EmailDispatcherService {
 
       return (async () => {
         try {
-          const eventUrl = `${process.env.APP_URL}/events/${event.id}`
+          const eventUrl = `${this.baseUrl}/events/${event.id}`
           await emailService.sendTemplate(
             'event-created',
             {
@@ -182,7 +184,7 @@ class EmailDispatcherService {
 
       return (async () => {
         try {
-          const eventUrl = `${process.env.APP_URL}/events/${event.id}`
+          const eventUrl = `${this.baseUrl}/events/${event.id}`
           await emailService.sendTemplate(
             'event-updated',
             {
@@ -247,7 +249,7 @@ class EmailDispatcherService {
 
       return (async () => {
         try {
-          const eventUrl = `${process.env.APP_URL}/events/${event.id}`
+          const eventUrl = `${this.baseUrl}/events/${event.id}`
           await emailService.sendTemplate(
             'event-reminder',
             {
@@ -397,8 +399,8 @@ class EmailDispatcherService {
         return
       }
 
-      const approvalUrl = `${process.env.APP_URL}/admin/access-requests/${request.id}/approve`
-      const rejectionUrl = `${process.env.APP_URL}/admin/access-requests/${request.id}/reject`
+      const approvalUrl = `${this.baseUrl}/admin/access-requests/${request.id}/approve`
+      const rejectionUrl = `${this.baseUrl}/admin/access-requests/${request.id}/reject`
 
       const promises = admins.map((admin: IUser) =>
         (async () => {

@@ -5,34 +5,32 @@ import type { BirthdayPreview } from '@/features/birthdays/api/birthdays.api'
 
 const DAY_IN_MS = 86_400_000
 
-function startOfDay(value: Date): Date {
-  const next = new Date(value)
-  next.setHours(0, 0, 0, 0)
-  return next
+// Return a Date at UTC midnight for the given Date.
+function startOfDayUTC(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
 }
 
+// Parse an ISO yyyy-mm-dd string as a UTC date. The backend guarantees
+// that `birthdayThisYear` already represents the next upcoming occurrence,
+// so no year rollover logic is needed here.
 function getUpcomingDate(value: string): Date {
-  const today = startOfDay(new Date())
-  const birthday = startOfDay(new Date(`${value}T00:00:00`))
-
-  if (birthday < today) {
-    birthday.setFullYear(birthday.getFullYear() + 1)
-  }
-
-  return birthday
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day))
 }
 
 function getDaysUntilBirthday(birthdayThisYear: string): number {
-  const today = startOfDay(new Date())
+  const today = startOfDayUTC(new Date())
   const birthday = getUpcomingDate(birthdayThisYear)
   return Math.ceil((birthday.getTime() - today.getTime()) / DAY_IN_MS)
 }
 
-function getAge(birthday?: string): number | null {
-  if (!birthday || !/^\d{4}-\d{2}-\d{2}$/.test(birthday)) return null
-  const birthYear = Number.parseInt(birthday.split('-')[0], 10)
-  if (Number.isNaN(birthYear)) return null
-  return new Date().getFullYear() - birthYear
+// Compute the age the person will turn on the provided `birthdayThisYear`.
+function getAge(userBirthday: string | undefined, birthdayThisYear: string): number | null {
+  if (!userBirthday || !/^\d{4}-\d{2}-\d{2}$/.test(userBirthday)) return null
+  const birthYear = Number.parseInt(userBirthday.split('-')[0], 10)
+  const turningYear = Number.parseInt(birthdayThisYear.split('-')[0], 10)
+  if (Number.isNaN(birthYear) || Number.isNaN(turningYear)) return null
+  return turningYear - birthYear
 }
 
 interface BirthdayCardProps {
@@ -45,7 +43,7 @@ export function BirthdayCard({ birthday, onSendReminder, reminderLoading = false
   const birthdayDate = getUpcomingDate(birthday.birthdayThisYear)
   const daysUntil = getDaysUntilBirthday(birthday.birthdayThisYear)
   const isToday = daysUntil === 0
-  const age = getAge(birthday.user.birthday)
+  const age = getAge(birthday.user.birthday, birthday.birthdayThisYear)
 
   return (
     <motion.div
