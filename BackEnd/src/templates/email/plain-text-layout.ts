@@ -10,5 +10,5 @@ ${options.body}
 ---
 
 KinEvents | Family Events Platform
-© 2024–2026 KinEvents. All rights reserved.`
+© 2026 KinEvents. All rights reserved.`
 }

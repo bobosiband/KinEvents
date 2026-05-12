@@ -49,7 +49,7 @@ export function renderLayout(options: {
                 <a href="https://kinevents.vercel.app/profile" style="color: #EF6C6C; text-decoration: none; font-weight: 500;">Manage email preferences</a>
               </p>
               <p style="margin: 8px 0 0 0; padding: 0;">
-                © 2024–2026 KinEvents. All rights reserved.
+                © 2026 KinEvents. All rights reserved.
               </p>
             </td>
           </tr>

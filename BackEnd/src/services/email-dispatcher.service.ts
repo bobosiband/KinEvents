@@ -67,7 +67,7 @@ class EmailDispatcherService {
   async onAccessRejected(request: IAccessRequest): Promise<void> {
     // We don't have user preferences here, so send if email is properly configured
     try {
-      const supportEmail = 'support@kinevents.vercel.app'
+      const supportEmail = 'kinfamevents@gmail.com'
       await emailService.sendTemplate(
         'access-rejected',
         {
