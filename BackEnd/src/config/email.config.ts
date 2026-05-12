@@ -1,4 +1,4 @@
-import sgMail from '@sendgrid/mail'
+import nodemailer from 'nodemailer'
 
 type SendMailOptions = {
   from: string
@@ -9,52 +9,76 @@ type SendMailOptions = {
   replyTo?: string
 }
 
-type SendGridTransport = {
+type EmailTransport = {
   sendMail: (options: SendMailOptions) => Promise<unknown>
 }
 
-let transport: SendGridTransport | null = null
+const GMAIL_USER = process.env.GMAIL_USER?.trim() || process.env.EMAIL_USER?.trim() || ''
+const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD?.trim() || process.env.EMAIL_PASS?.trim() || ''
+const RESEND_API_KEY = process.env.RESEND_API_KEY?.trim() || ''
 
-/**
- * Creates a SendGrid-backed transport if the API key is configured.
- * Returns null if SENDGRID_API_KEY is missing.
- */
-function createTransport(): SendGridTransport | null {
-  const apiKey = process.env.SENDGRID_API_KEY?.trim()
+let transport: EmailTransport | null = null
 
-  if (!apiKey) {
-    console.warn('[EMAIL] SENDGRID_API_KEY not configured — email sending disabled')
-    return null
-  }
+function createGmailTransport(): EmailTransport | null {
+  if (!GMAIL_USER || !GMAIL_PASS) return null
 
-  try {
-    sgMail.setApiKey(apiKey)
+  const nodemailerTransport = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+  })
 
-    return {
-      async sendMail(options: SendMailOptions): Promise<unknown> {
-        return sgMail.send({
-          from: options.from,
-          to: options.to,
-          subject: options.subject,
-          html: options.html,
-          text: options.text ?? '',
-          replyTo: options.replyTo,
-        })
-      },
-    }
-  } catch (error) {
-    console.error('[EMAIL] Failed to create SendGrid transport:', error)
-    return null
+  return {
+    async sendMail(options: SendMailOptions) {
+      return nodemailerTransport.sendMail(options)
+    },
   }
 }
 
-/**
- * Lazy-loads and returns the Nodemailer transport singleton.
- * Initializes on first call, reuses on subsequent calls.
- */
-export function getTransport(): SendGridTransport | null {
+function createResendTransport(): EmailTransport | null {
+  if (!RESEND_API_KEY) return null
+
+  return {
+    async sendMail(options: SendMailOptions) {
+      const to = Array.isArray(options.to) ? options.to : [options.to]
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: options.from,
+          to,
+          subject: options.subject,
+          html: options.html,
+          text: options.text,
+          reply_to: options.replyTo,
+        }),
+      })
+      if (!response.ok) {
+        const body = await response.text()
+        throw new Error(`Resend API error ${response.status}: ${body}`)
+      }
+      return response.json()
+    },
+  }
+}
+
+export function getTransport(): EmailTransport | null {
   if (!transport) {
-    transport = createTransport()
+    transport = createGmailTransport() ?? createResendTransport()
+    if (!transport) {
+      console.warn('[EMAIL] No transport configured — set GMAIL_USER+GMAIL_APP_PASSWORD or RESEND_API_KEY')
+    }
   }
   return transport
+}
+
+export function getFromAddress(): string {
+  return (
+    process.env.EMAIL_FROM?.trim() ||
+    GMAIL_USER ||
+    process.env.RESEND_FROM?.trim() ||
+    'noreply@kinevents.app'
+  )
 }

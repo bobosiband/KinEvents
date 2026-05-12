@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { readData, persistData } from '../config/db'
-import { getTransport } from '../config/email.config'
+import { getTransport, getFromAddress } from '../config/email.config'
 import type {
   EmailPayload,
   EmailTemplateName,
@@ -43,7 +43,7 @@ export class EmailService {
       console.log(`[EMAIL] Sending '${meta.templateName}' to ${meta.recipientId}`)
 
       await transport.sendMail({
-        from: `${process.env.EMAIL_FROM_NAME || 'KinEvents'} <${process.env.EMAIL_USER}>`,
+        from: `${process.env.EMAIL_FROM_NAME || 'KinEvents'} <${getFromAddress()}>`,
         to,
         subject: payload.subject,
         html: payload.html,
