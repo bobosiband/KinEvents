@@ -1,13 +1,19 @@
 import { v4 as uuid } from 'uuid'
 
-import { mutateData, readData } from '../config/db'
-import { USER_ROLES } from '../constants/roles'
+import { atomicDeleteMessage, atomicMarkRead, atomicPushMessage, readData } from '../config/db'
 import type { IMessage } from '../interfaces/message.interface'
 
 class MessageService {
   private MAX_LIMIT = 50
   private DEFAULT_LIMIT = 30
-  private seq = 0
+  private lastCreatedAtMs = 0
+
+  private nextCreatedAt(): string {
+    const now = Date.now()
+    const next = Math.max(now, this.lastCreatedAtMs + 1)
+    this.lastCreatedAtMs = next
+    return new Date(next).toISOString()
+  }
 
   async listMessages(options: {
     limit?: number
@@ -96,7 +102,7 @@ class MessageService {
     if (!content) throw new Error('Content is required')
     if (content.length > 2000) throw new Error('Content exceeds maximum length')
 
-    const now = new Date(Date.now() + this.seq++).toISOString()
+    const now = this.nextCreatedAt()
     const msg: IMessage = {
       id: uuid(),
       from: input.from,
@@ -107,10 +113,7 @@ class MessageService {
       type: 'text',
     }
 
-    await mutateData(async (db) => {
-      db.messages = db.messages ?? []
-      db.messages.push(msg)
-    })
+    await atomicPushMessage(msg)
     return msg
   }
 
@@ -128,21 +131,7 @@ class MessageService {
 
     if (!validIds.length) return 0
 
-    return mutateData(async (db) => {
-      let updated = 0
-      db.messages = db.messages ?? []
-
-      for (const message of db.messages) {
-        if (message.deletedAt) continue
-        if (!validIds.includes(message.id)) continue
-        if (!message.readBy.includes(userId)) {
-          message.readBy.push(userId)
-          updated += 1
-        }
-      }
-
-      return updated
-    })
+    return atomicMarkRead(validIds, userId)
   }
 
   async deleteMessage(
@@ -150,22 +139,7 @@ class MessageService {
     requestingUserId: string,
     requestingUserRole: string
   ): Promise<IMessage | null> {
-    return mutateData(async (db) => {
-      db.messages = db.messages ?? []
-      const msg = db.messages.find((m) => m.id === messageId)
-      if (!msg || msg.deletedAt) return null
-
-      const isAdmin = requestingUserRole === USER_ROLES.ADMIN
-      const isOwner = requestingUserId === msg.from
-      if (!isAdmin && !isOwner) {
-        throw new Error('Forbidden')
-      }
-
-      const now = new Date().toISOString()
-      msg.deletedAt = now
-      msg.updatedAt = now
-      return msg
-    })
+    return atomicDeleteMessage(messageId, requestingUserId, requestingUserRole)
   }
 
   async getUnreadCount(userId: string): Promise<number> {

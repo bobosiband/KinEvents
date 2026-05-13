@@ -15,9 +15,18 @@ export function sendMessage(payload: SendMessagePayload): Promise<Message> {
 }
 
 export function markMessagesRead(messageIds: string[]): Promise<{ updated: number }> {
+  const idempotencyKey = Array.from(new Set(messageIds)).sort().join('|')
+
   return postData<{ updated: number }, { messageIds: string[] }>(
     ENDPOINTS.CHAT_MESSAGES_READ,
     { messageIds },
+    {
+      headers: idempotencyKey
+        ? {
+            'X-Idempotency-Key': idempotencyKey,
+          }
+        : undefined,
+    },
   )
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { useUsers } from '@/features/users/hooks/useUsers'
@@ -25,7 +25,14 @@ export function Messages() {
   const markRead = useMarkRead()
   const deleteMutation = useDeleteMessage()
   const sendMutation = useSendMessage(currentUserId)
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden)
+  const markReadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastMarkedUnreadSignatureRef = useRef('')
+  const markReadPendingRef = useRef(markRead.isPending)
+
+  useEffect(() => {
+    markReadPendingRef.current = markRead.isPending
+  }, [markRead.isPending])
 
   const baseMessages = useMemo(() => {
     return (messagesQuery.data?.pages ?? []).flatMap((page) => page.messages)
@@ -38,7 +45,7 @@ export function Messages() {
         [baseMessages.length - 1]?.createdAt
     : undefined
 
-  const newMessagesQuery = useNewMessages(newestCursor)
+  const newMessagesQuery = useNewMessages(newestCursor, pageVisible)
 
   const flatMessages = useMemo(() => {
     const merged = [...baseMessages, ...(newMessagesQuery.data ?? [])]
@@ -68,33 +75,47 @@ export function Messages() {
   }, [flatMessages, currentUserId])
 
   const markUnreadAsRead = useCallback(() => {
-    if (!unreadIds.length || markRead.isPending) {
-      if (!unreadIds.length) lastMarkedUnreadSignatureRef.current = ''
+    if (document.hidden || !pageVisible) return
+
+    const realUnreadIds = unreadIds.filter((id) => !id.startsWith('temp-'))
+    if (!realUnreadIds.length) {
+      lastMarkedUnreadSignatureRef.current = ''
       return
     }
 
-    const signature = unreadIds.join('|')
+    const signature = [...realUnreadIds].sort().join('|')
     if (signature === lastMarkedUnreadSignatureRef.current) return
+    if (markReadPendingRef.current) return
 
-    lastMarkedUnreadSignatureRef.current = signature
-    markRead.mutate(unreadIds, {
-      onError: () => {
-        lastMarkedUnreadSignatureRef.current = ''
-      },
-    })
-  }, [markRead, markRead.isPending, unreadIds])
+    if (markReadDebounceRef.current) {
+      clearTimeout(markReadDebounceRef.current)
+    }
+
+    markReadDebounceRef.current = setTimeout(() => {
+      if (document.hidden || !pageVisible) return
+
+      lastMarkedUnreadSignatureRef.current = signature
+      markRead.mutate(realUnreadIds, {
+        onError: () => {
+          lastMarkedUnreadSignatureRef.current = ''
+        },
+      })
+    }, 500)
+  }, [markRead, pageVisible, unreadIds])
 
   useEffect(() => {
     markUnreadAsRead()
   }, [flatMessages.length, markUnreadAsRead])
 
   useEffect(() => {
-    const handleFocus = () => markUnreadAsRead()
-    const handleVisibility = () => {
-      if (!document.hidden) {
-        markUnreadAsRead()
-      }
+    if (pageVisible) {
+      markUnreadAsRead()
     }
+  }, [markUnreadAsRead, pageVisible])
+
+  useEffect(() => {
+    const handleFocus = () => markUnreadAsRead()
+    const handleVisibility = () => setPageVisible(!document.hidden)
 
     window.addEventListener('focus', handleFocus)
     document.addEventListener('visibilitychange', handleVisibility)
@@ -104,6 +125,14 @@ export function Messages() {
       document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [markUnreadAsRead])
+
+  useEffect(() => {
+    return () => {
+      if (markReadDebounceRef.current) {
+        clearTimeout(markReadDebounceRef.current)
+      }
+    }
+  }, [])
 
   const handleSend = useCallback(async (content: string) => {
     await sendMutation.mutateAsync({ content })

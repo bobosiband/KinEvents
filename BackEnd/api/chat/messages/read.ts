@@ -9,6 +9,15 @@ const schema = z.object({
   messageIds: z.array(z.string().min(1)).min(1).max(100),
 })
 
+const idempotencyMap = new Map<string, { response: { success: true; data: { updated: number } }; expiresAt: number }>()
+
+function cleanIdempotencyMap() {
+  const now = Date.now()
+  for (const [key, value] of idempotencyMap) {
+    if (value.expiresAt < now) idempotencyMap.delete(key)
+  }
+}
+
 async function handler(req: RequestWithUser, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.status(405).json({ success: false, message: 'Method not allowed' })
@@ -22,23 +31,48 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   const userId = req.user!.id
+  cleanIdempotencyMap()
+
+  const rawIdempotencyKey = req.headers['x-idempotency-key']
+  const idempotencyKey = typeof rawIdempotencyKey === 'string' ? rawIdempotencyKey.trim() : ''
+  const cacheKey = idempotencyKey ? `${userId}:${idempotencyKey}` : ''
+  if (cacheKey) {
+    const cached = idempotencyMap.get(cacheKey)
+    if (cached && cached.expiresAt > Date.now()) {
+      res.status(200).json(cached.response)
+      return
+    }
+  }
+
   const db = await readData()
-  const existingIds = new Set((db.messages ?? []).map((message) => message.id))
+  const messageById = new Map((db.messages ?? []).map((message) => [message.id, message]))
   const validIds = Array.from(
     new Set(
       parse.data.messageIds
         .map((messageId) => messageId.trim())
-        .filter((messageId) => messageId && !messageId.startsWith('temp-') && existingIds.has(messageId)),
+        .filter((messageId) => {
+          if (!messageId || messageId.startsWith('temp-')) return false
+          const message = messageById.get(messageId)
+          return Boolean(message && !message.deletedAt)
+        }),
     ),
   )
 
   if (!validIds.length) {
-    res.status(200).json({ success: true, data: { updated: 0 } })
+    const response = { success: true as const, data: { updated: 0 } }
+    if (cacheKey) {
+      idempotencyMap.set(cacheKey, { response, expiresAt: Date.now() + 30000 })
+    }
+    res.status(200).json(response)
     return
   }
 
   const updated = await messageService.markAsRead(validIds, userId)
-  res.status(200).json({ success: true, data: { updated } })
+  const response = { success: true as const, data: { updated } }
+  if (cacheKey) {
+    idempotencyMap.set(cacheKey, { response, expiresAt: Date.now() + 30000 })
+  }
+  res.status(200).json(response)
 }
 
 export default withAuth(handler)

@@ -226,6 +226,11 @@ export async function persistData(): Promise<void> {
   return persistQueue
 }
 
+function getMessagesCollection() {
+  if (!client || !isConnected) return null
+  return client.db(DB_NAME).collection(COLLECTION)
+}
+
 let mutationQueue: Promise<unknown> = Promise.resolve()
 
 export async function mutateData<T>(mutator: (db: DbSchema) => T | Promise<T>): Promise<T> {
@@ -243,6 +248,144 @@ export async function mutateData<T>(mutator: (db: DbSchema) => T | Promise<T>): 
     () => undefined,
   )
   return next
+}
+
+export async function atomicPushMessage(message: IMessage): Promise<void> {
+  await waitForDb()
+
+  if (isTestMode || !client || !isConnected) {
+    data.messages = data.messages ?? []
+    data.messages.push(message)
+    await readData()
+    return
+  }
+
+  const collection = getMessagesCollection()
+  if (!collection) return
+
+  await collection.updateOne(
+    { name: DOCUMENT_NAME },
+    { $push: { 'data.messages': message } } as never,
+    { upsert: true }
+  )
+
+  await readData()
+}
+
+export async function atomicDeleteMessage(
+  messageId: string,
+  requestingUserId: string,
+  requestingUserRole: string
+): Promise<IMessage | null> {
+  await waitForDb()
+
+  if (isTestMode || !client || !isConnected) {
+    data.messages = data.messages ?? []
+    const msg = data.messages.find((message) => message.id === messageId)
+    if (!msg || msg.deletedAt) return null
+
+    const isAdmin = requestingUserRole === 'admin'
+    const isOwner = requestingUserId === msg.from
+    if (!isAdmin && !isOwner) {
+      throw new Error('Forbidden')
+    }
+
+    const now = new Date().toISOString()
+    msg.deletedAt = now
+    msg.updatedAt = now
+    await readData()
+    return { ...msg }
+  }
+
+  const collection = getMessagesCollection()
+  if (!collection) return null
+
+  const saved = await collection.findOne({ name: DOCUMENT_NAME })
+  const savedMessages = normalizeDataShape(saved?.data as Partial<DbSchema> | undefined).messages
+  const msg = savedMessages.find((message) => message.id === messageId)
+  if (!msg || msg.deletedAt) return null
+
+  const isAdmin = requestingUserRole === 'admin'
+  const isOwner = requestingUserId === msg.from
+  if (!isAdmin && !isOwner) {
+    throw new Error('Forbidden')
+  }
+
+  const now = new Date().toISOString()
+  await collection.updateOne(
+    { name: DOCUMENT_NAME },
+    {
+      $set: {
+        'data.messages.$[elem].deletedAt': now,
+        'data.messages.$[elem].updatedAt': now,
+      },
+    } as never,
+    {
+      arrayFilters: [{ 'elem.id': messageId }],
+    }
+  )
+
+  await readData()
+  return { ...msg, deletedAt: now, updatedAt: now }
+}
+
+export async function atomicMarkRead(messageIds: string[], userId: string): Promise<number> {
+  await waitForDb()
+
+  const validIds = Array.from(
+    new Set(
+      (Array.isArray(messageIds) ? messageIds : [])
+        .filter((messageId): messageId is string => typeof messageId === 'string')
+        .map((messageId) => messageId.trim())
+        .filter((messageId) => messageId.length > 0 && !messageId.startsWith('temp-')),
+    ),
+  )
+
+  if (!validIds.length) return 0
+
+  if (isTestMode || !client || !isConnected) {
+    data.messages = data.messages ?? []
+    let updated = 0
+
+    for (const messageId of validIds) {
+      const message = data.messages.find((entry) => entry.id === messageId)
+      if (!message || message.deletedAt) continue
+      if (message.readBy.includes(userId)) continue
+
+      message.readBy.push(userId)
+      updated += 1
+    }
+
+    await readData()
+    return updated
+  }
+
+  const collection = getMessagesCollection()
+  if (!collection) return 0
+
+  const result = await collection.bulkWrite(
+    validIds.map((messageId) => ({
+      updateOne: {
+        filter: { name: DOCUMENT_NAME },
+        update: {
+          $addToSet: {
+            'data.messages.$[elem].readBy': userId,
+          },
+        },
+        arrayFilters: [
+          {
+            'elem.id': messageId,
+            'elem.deletedAt': { $exists: false },
+            'elem.readBy': { $ne: userId },
+          },
+        ],
+      },
+    }) as never),
+    { ordered: false }
+  )
+
+  await readData()
+  return result.modifiedCount
 }
 
 async function _doPersist(): Promise<void> {

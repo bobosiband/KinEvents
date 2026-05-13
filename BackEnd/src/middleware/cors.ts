@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 const allowedMethods = 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS'
-const allowedHeaders = 'Content-Type,Authorization,X-Requested-With,Accept,Origin'
+const allowedHeaders = 'Content-Type,Authorization,X-Requested-With,Accept,Origin,X-Idempotency-Key'
 
 export function corsMiddleware(req: Request, res: Response, next: NextFunction) {
   const requestOrigin = req.headers.origin

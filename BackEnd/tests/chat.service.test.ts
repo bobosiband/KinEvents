@@ -101,6 +101,29 @@ describe('Message Service', () => {
       expect(count).toBe(0)
     })
 
+    it('concurrent markAsRead from two users both succeed without data loss', async () => {
+      const owner = randomUUID()
+      const userA = randomUUID()
+      const userB = randomUUID()
+
+      const msg = await messageService.createMessage({ from: owner, content: 'concurrent read test' })
+
+      const [countA, countB] = await Promise.all([
+        messageService.markAsRead([msg.id], userA),
+        messageService.markAsRead([msg.id], userB),
+      ])
+
+      expect(countA + countB).toBeGreaterThanOrEqual(1)
+
+      const list = await messageService.listMessages({ limit: 10 })
+      const found = list.messages.find((message) => message.id === msg.id)
+      expect(found).toBeDefined()
+      expect(found!.readBy).toContain(userA)
+      expect(found!.readBy).toContain(userB)
+      expect(found!.readBy.filter((id) => id === userA)).toHaveLength(1)
+      expect(found!.readBy.filter((id) => id === userB)).toHaveLength(1)
+    })
+
     it('does not count a sender’s own messages as unread', async () => {
       const sender = randomUUID()
 

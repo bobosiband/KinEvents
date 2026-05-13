@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { AxiosRequestConfig } from 'axios'
 import { env } from '@/config/env'
 import { attachInterceptors, unwrapResponse } from './interceptors'
 
@@ -16,8 +17,12 @@ export async function getData<T>(url: string, params?: Record<string, string | n
   return unwrapResponse<T>(response)
 }
 
-export async function postData<TResponse, TPayload>(url: string, payload: TPayload): Promise<TResponse> {
-  const response = await apiClient.post(url, payload)
+export async function postData<TResponse, TPayload>(
+  url: string,
+  payload: TPayload,
+  config?: AxiosRequestConfig,
+): Promise<TResponse> {
+  const response = await apiClient.post(url, payload, config)
   return unwrapResponse<TResponse>(response)
 }
 
