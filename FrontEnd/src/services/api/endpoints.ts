@@ -19,4 +19,8 @@ export const ENDPOINTS = {
   ADMIN_CONTENT: '/api/admin/content',
   ADMIN_CREATE_ADMIN: '/api/admin/create-admin',
   ADMIN_CLEANUP: '/api/admin/cleanup',
+  CHAT_MESSAGES: '/api/chat/messages',
+  CHAT_MESSAGES_READ: '/api/chat/messages/read',
+  CHAT_UNREAD_COUNT: '/api/chat/unread-count',
+  CHAT_MESSAGE_DELETE: (id: string) => `/api/chat/messages/${id}`,
 } as const

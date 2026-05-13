@@ -6,7 +6,7 @@ import { BottomNav } from '@/components/shared/BottomNav'
 import { TopBar } from '@/components/shared/TopBar'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
-import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { useUnreadCount } from '@/features/chat/hooks/useChat'
 
 const USER_NAV_ITEMS = [
   { icon: Home, label: 'Home', path: '/home' },
@@ -30,8 +30,7 @@ export function UserLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user } = useAuth()
   const permissions = usePermissions()
-  const { data: notifications = [] } = useNotifications()
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  const { data: chatUnreadCount = 0 } = useUnreadCount()
 
   const adminNavItem = permissions.canAccessAdmin
     ? [{ icon: Shield, label: 'Admin', path: '/admin', adminOnly: true }]
@@ -39,13 +38,11 @@ export function UserLayout() {
 
   const navItemsWithBadge = [
     ...USER_NAV_ITEMS.map(item =>
-      item.path === '/notifications' ? { ...item, badge: unreadCount } : item,
+      item.path === '/messages' ? { ...item, badge: chatUnreadCount } : item,
     ),
     ...adminNavItem,
   ]
-  const bottomNavWithBadge = USER_BOTTOM_NAV.map(item =>
-    item.path === '/notifications' ? { ...item, badge: unreadCount } : item
-  )
+  const bottomNavWithBadge = USER_BOTTOM_NAV
 
   return (
     <div className="min-h-screen bg-background">

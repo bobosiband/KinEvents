@@ -14,7 +14,10 @@ export function App() {
           <AuthProvider>
             <a href="#main-content" className="skipLink">Skip to main content</a>
             <main id="main-content">
-              <RouterProvider router={router} />
+              <RouterProvider
+                router={router}
+                future={{ v7_startTransition: true }}
+              />
             </main>
             <Toaster position="top-center" />
           </AuthProvider>
