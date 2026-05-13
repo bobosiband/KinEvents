@@ -141,8 +141,48 @@ describe('Cleanup Service', () => {
     expect(getData().emailLogs).toHaveLength(1)
   })
 
-  it('should hard-delete messages soft-deleted more than 24 hours ago', async () => {
-    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  it('should delete access request history older than 30 days', async () => {
+    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
+    const thirtyOneDaysAgo = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString()
+    const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+
+    getData().accessRequestHistory.push(
+      {
+        id: randomUUID(),
+        name: 'Old Approved',
+        email: 'old-approved@example.com',
+        status: 'approved',
+        requestedAt: fortyDaysAgo,
+        resolvedAt: fortyDaysAgo,
+        resolvedBy: 'admin',
+      },
+      {
+        id: randomUUID(),
+        name: 'Old Rejected Legacy',
+        email: 'old-rejected@example.com',
+        status: 'rejected',
+        requestedAt: thirtyOneDaysAgo,
+      },
+      {
+        id: randomUUID(),
+        name: 'Recent Approved',
+        email: 'recent@example.com',
+        status: 'approved',
+        requestedAt: tenDaysAgo,
+        resolvedAt: tenDaysAgo,
+        resolvedBy: 'admin',
+      },
+    )
+
+    const deleted = await cleanupService.deleteOldAccessRequestHistory()
+
+    expect(deleted).toBe(2)
+    expect(getData().accessRequestHistory).toHaveLength(1)
+    expect(getData().accessRequestHistory[0].email).toBe('recent@example.com')
+  })
+
+  it('should hard-delete messages older than 7 days and keep recent soft-deleted messages', async () => {
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
     const now = new Date().toISOString()
 
@@ -150,16 +190,25 @@ describe('Cleanup Service', () => {
       {
         id: randomUUID(),
         from: 'user-1',
-        content: 'old deleted',
-        createdAt: twoDaysAgo,
-        updatedAt: twoDaysAgo,
-        deletedAt: twoDaysAgo,
+        content: 'old active',
+        createdAt: eightDaysAgo,
+        updatedAt: eightDaysAgo,
         readBy: [],
         type: 'text' as const,
       },
       {
         id: randomUUID(),
         from: 'user-2',
+        content: 'old deleted',
+        createdAt: eightDaysAgo,
+        updatedAt: eightDaysAgo,
+        deletedAt: twoHoursAgo,
+        readBy: [],
+        type: 'text' as const,
+      },
+      {
+        id: randomUUID(),
+        from: 'user-3',
         content: 'recent deleted',
         createdAt: twoHoursAgo,
         updatedAt: twoHoursAgo,
@@ -169,7 +218,7 @@ describe('Cleanup Service', () => {
       },
       {
         id: randomUUID(),
-        from: 'user-3',
+        from: 'user-4',
         content: 'active message',
         createdAt: now,
         updatedAt: now,
@@ -178,9 +227,10 @@ describe('Cleanup Service', () => {
       },
     )
 
-    const deleted = await cleanupService.deleteOldSoftDeletedMessages()
+    const deleted = await cleanupService.deleteOldMessages()
 
-    expect(deleted).toBe(1)
+    expect(deleted).toBe(2)
+    expect(getData().messages.find((m) => m.content === 'old active')).toBeUndefined()
     expect(getData().messages.find((m) => m.content === 'old deleted')).toBeUndefined()
     expect(getData().messages.find((m) => m.content === 'recent deleted')).toBeDefined()
     expect(getData().messages.find((m) => m.content === 'active message')).toBeDefined()

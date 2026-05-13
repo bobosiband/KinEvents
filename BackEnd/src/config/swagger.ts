@@ -8,7 +8,7 @@ const swaggerDocument: OpenAPIV3_0 = {
     description: 'Comprehensive API for managing events, users, and notifications for family gatherings',
     contact: {
       name: 'KinEvents Support',
-      url: 'https://kinevents.vercel.app',
+      url: 'https://3lnnoggn81.execute-api.us-east-1.amazonaws.com/Prod',
     },
   },
   servers: [
@@ -17,7 +17,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       description: 'Local development server',
     },
     {
-      url: 'https://kinevents.vercel.app',
+      url: 'https://3lnnoggn81.execute-api.us-east-1.amazonaws.com/Prod',
       description: 'Production server',
     },
   ],

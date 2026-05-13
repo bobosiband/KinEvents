@@ -13,7 +13,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     const deletedNotifications = await cleanupService.deleteOldReadNotifications()
     const deletedEvents = await cleanupService.deleteOldEvents()
     const deletedEmailLogs = await cleanupService.deleteOldEmailLogs()
-    const deletedMessages = await cleanupService.deleteOldSoftDeletedMessages()
+    const deletedMessages = await cleanupService.deleteOldMessages()
 
     res.status(200).json({
       success: true,

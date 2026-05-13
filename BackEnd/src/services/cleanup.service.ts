@@ -79,21 +79,44 @@ export class CleanupService {
   }
 
   /**
-   * Hard-deletes messages that have been soft-deleted for more than 24 hours.
-   * This is the only place messages are permanently removed from the database.
+   * Hard-deletes access request history older than 30 days.
    */
-  async deleteOldSoftDeletedMessages(): Promise<number> {
+  async deleteOldAccessRequestHistory(): Promise<number> {
     const db = await readData()
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    const before = (db.messages ?? []).length
-    const previousMessages = [...(db.messages ?? [])]
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const before = db.accessRequestHistory.length
+    const previousAccessRequestHistory = [...db.accessRequestHistory]
 
-    db.messages = (db.messages ?? []).filter((m) => {
-      if (!m.deletedAt) return true
-      return m.deletedAt > oneDayAgo
+    db.accessRequestHistory = db.accessRequestHistory.filter((entry) => {
+      const timestamp = entry.resolvedAt ?? entry.requestedAt
+      return timestamp > thirtyDaysAgo
     })
 
-    const deleted = before - (db.messages ?? []).length
+    const deleted = before - db.accessRequestHistory.length
+    if (deleted > 0) {
+      try {
+        await persistData()
+      } catch (error) {
+        db.accessRequestHistory = previousAccessRequestHistory
+        throw error
+      }
+    }
+
+    return deleted
+  }
+
+  /**
+   * Hard-deletes messages older than 7 days.
+   */
+  async deleteOldMessages(): Promise<number> {
+    const db = await readData()
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const before = db.messages.length
+    const previousMessages = [...db.messages]
+
+    db.messages = db.messages.filter((message) => message.createdAt > sevenDaysAgo)
+
+    const deleted = before - db.messages.length
     if (deleted > 0) {
       try {
         await persistData()
