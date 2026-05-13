@@ -77,6 +77,34 @@ export class CleanupService {
 
     return deleted
   }
+
+  /**
+   * Hard-deletes messages that have been soft-deleted for more than 24 hours.
+   * This is the only place messages are permanently removed from the database.
+   */
+  async deleteOldSoftDeletedMessages(): Promise<number> {
+    const db = await readData()
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const before = (db.messages ?? []).length
+    const previousMessages = [...(db.messages ?? [])]
+
+    db.messages = (db.messages ?? []).filter((m) => {
+      if (!m.deletedAt) return true
+      return m.deletedAt > oneDayAgo
+    })
+
+    const deleted = before - (db.messages ?? []).length
+    if (deleted > 0) {
+      try {
+        await persistData()
+      } catch (error) {
+        db.messages = previousMessages
+        throw error
+      }
+    }
+
+    return deleted
+  }
 }
 
 export const cleanupService = new CleanupService()

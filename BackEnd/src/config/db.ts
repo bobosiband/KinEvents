@@ -8,6 +8,7 @@ import type { IContentBlock } from '../interfaces/content.interface'
 import type { IEvent } from '../interfaces/event.interface'
 import type { INotification } from '../interfaces/notification.interface'
 import type { IUser } from '../interfaces/user.interface'
+import type { IMessage } from '../interfaces/message.interface'
 import type { EmailLogEntry } from '../interfaces/email.interface'
 
 export interface DbSchema {
@@ -18,6 +19,7 @@ export interface DbSchema {
   notifications: INotification[]
   content: IContentBlock[]
   emailLogs: EmailLogEntry[]
+  messages: IMessage[]
 }
 
 const isTestMode = process.env.NODE_ENV === 'test'
@@ -39,6 +41,7 @@ let data: DbSchema = {
   notifications: [],
   content: [],
   emailLogs: [],
+  messages: [],
 }
 
 let isConnected = false
@@ -70,6 +73,7 @@ function normalizeDataShape(saved: Partial<DbSchema> = {}): DbSchema {
     notifications: Array.isArray(saved.notifications) ? saved.notifications : [],
     content: Array.isArray(saved.content) ? saved.content : [],
     emailLogs: Array.isArray(saved.emailLogs) ? saved.emailLogs : [],
+    messages: Array.isArray(saved.messages) ? saved.messages : [],
   }
 }
 

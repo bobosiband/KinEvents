@@ -12,6 +12,7 @@ export function resetDb(): void {
     notifications: [],
     content: [],
     emailLogs: [],
+    messages: [],
   })
 }
 
@@ -28,5 +29,6 @@ export function seedDb(partialData: Partial<DbSchema>): void {
     notifications: partialData.notifications ?? [],
     content: partialData.content ?? [],
     emailLogs: partialData.emailLogs ?? [],
+    messages: partialData.messages ?? [],
   })
 }

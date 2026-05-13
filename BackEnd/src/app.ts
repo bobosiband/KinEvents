@@ -30,6 +30,10 @@ import userByIdHandler from '../api/users/[id]'
 import usersHandler from '../api/users/index'
 import promoteUserHandler from '../api/users/promote'
 import debugDbHandler from '../api/debug/db'
+import chatMessagesHandler from '../api/chat/messages/index'
+import chatMessagesReadHandler from '../api/chat/messages/read'
+import chatMessageByIdHandler from '../api/chat/messages/[id]'
+import chatUnreadCountHandler from '../api/chat/unread-count'
 import { corsMiddleware } from './middleware/cors'
 
 type VercelHandler = (req: VercelRequest, res: VercelResponse) => void | Promise<void>
@@ -53,6 +57,10 @@ export const routes = [
   { method: 'all', path: '/api/notifications/send', handler: notificationSendHandler },
   { method: 'all', path: '/api/notifications/:id/read', handler: notificationReadHandler },
   { method: 'all', path: '/api/notifications/:id', handler: notificationByIdHandler },
+  { method: 'all', path: '/api/chat/messages/read', handler: chatMessagesReadHandler },
+  { method: 'all', path: '/api/chat/messages', handler: chatMessagesHandler },
+  { method: 'all', path: '/api/chat/messages/:id', handler: chatMessageByIdHandler },
+  { method: 'all', path: '/api/chat/unread-count', handler: chatUnreadCountHandler },
   { method: 'all', path: '/api/admin/create-admin', handler: createAdminHandler },
   { method: 'all', path: '/api/admin/dashboard', handler: adminDashboardHandler },
   { method: 'all', path: '/api/admin/content', handler: adminContentHandler },

@@ -123,6 +123,19 @@ const swaggerDocument: OpenAPIV3_0 = {
           details: { type: 'object' },
         },
       },
+      Message: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          from: { type: 'string', format: 'uuid' },
+          content: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+          editedAt: { type: 'string', format: 'date-time' },
+          readBy: { type: 'array', items: { type: 'string', format: 'uuid' } },
+          type: { type: 'string', enum: ['text'] },
+        },
+      },
     },
   },
   paths: {
@@ -1182,6 +1195,90 @@ const swaggerDocument: OpenAPIV3_0 = {
           },
           '401': { description: 'Unauthorized' },
           '403': { description: 'Admin required or production environment' },
+        },
+      },
+    },
+    '/api/chat/messages': {
+      get: {
+        tags: ['Chat'],
+        summary: 'List chat messages',
+        description: 'Fetch paginated chat messages (approved users)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50 }, description: 'Page size (max 50)' },
+          { name: 'cursor', in: 'query', schema: { type: 'string', format: 'date-time' }, description: 'createdAt cursor' },
+          { name: 'direction', in: 'query', schema: { type: 'string', enum: ['before', 'after'] }, description: "'before' to fetch older messages (default)" },
+        ],
+        responses: {
+          '200': { description: 'Messages page', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '401': { description: 'Unauthorized' },
+        },
+      },
+      post: {
+        tags: ['Chat'],
+        summary: 'Create chat message',
+        description: 'Post a new chat message (approved users)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['content'], properties: { content: { type: 'string', maxLength: 2000 } } },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'Message created', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '400': { description: 'Validation failed' },
+          '401': { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/api/chat/messages/read': {
+      post: {
+        tags: ['Chat'],
+        summary: 'Mark messages read',
+        description: 'Mark an array of messageIds as read by the current user',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['messageIds'], properties: { messageIds: { type: 'array', items: { type: 'string', format: 'uuid' }, minItems: 1, maxItems: 100 } } },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Marked read', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '400': { description: 'Validation failed' },
+          '401': { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/api/chat/messages/{id}': {
+      delete: {
+        tags: ['Chat'],
+        summary: 'Delete a message',
+        description: 'Soft-delete a message (owner or admin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Message deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Forbidden' },
+          '404': { description: 'Not found' },
+        },
+      },
+    },
+    '/api/chat/unread-count': {
+      get: {
+        tags: ['Chat'],
+        summary: 'Get unread count',
+        description: 'Get number of unread messages for current user',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'Unread count', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '401': { description: 'Unauthorized' },
         },
       },
     },

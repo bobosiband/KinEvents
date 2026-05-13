@@ -140,4 +140,49 @@ describe('Cleanup Service', () => {
     expect(deleted).toBe(2)
     expect(getData().emailLogs).toHaveLength(1)
   })
+
+  it('should hard-delete messages soft-deleted more than 24 hours ago', async () => {
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+    const now = new Date().toISOString()
+
+    getData().messages.push(
+      {
+        id: randomUUID(),
+        from: 'user-1',
+        content: 'old deleted',
+        createdAt: twoDaysAgo,
+        updatedAt: twoDaysAgo,
+        deletedAt: twoDaysAgo,
+        readBy: [],
+        type: 'text' as const,
+      },
+      {
+        id: randomUUID(),
+        from: 'user-2',
+        content: 'recent deleted',
+        createdAt: twoHoursAgo,
+        updatedAt: twoHoursAgo,
+        deletedAt: twoHoursAgo,
+        readBy: [],
+        type: 'text' as const,
+      },
+      {
+        id: randomUUID(),
+        from: 'user-3',
+        content: 'active message',
+        createdAt: now,
+        updatedAt: now,
+        readBy: [],
+        type: 'text' as const,
+      },
+    )
+
+    const deleted = await cleanupService.deleteOldSoftDeletedMessages()
+
+    expect(deleted).toBe(1)
+    expect(getData().messages.find((m) => m.content === 'old deleted')).toBeUndefined()
+    expect(getData().messages.find((m) => m.content === 'recent deleted')).toBeDefined()
+    expect(getData().messages.find((m) => m.content === 'active message')).toBeDefined()
+  })
 })

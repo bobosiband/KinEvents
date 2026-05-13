@@ -1,0 +1,83 @@
+name: Backend Deploy & Integration Tests
+
+on:
+  push:
+    branches: [ 'staging' ]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-test:
+    name: Build and Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: BackEnd
+        run: npm ci
+
+      - name: Build and run unit tests
+        working-directory: BackEnd
+        run: npm run ci
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install deps and deploy
+        working-directory: BackEnd
+        env:
+          # Provide any runtime env vars needed by your deploy (loaded from repo secrets)
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Optional: API envs your deployment may require
+          API_ENV_EXAMPLE: ${{ secrets.API_ENV_EXAMPLE }}
+        run: |
+          npm ci
+          npm run deploy
+
+  integration-tests:
+    name: Integration Tests Against Staging
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install deps
+        working-directory: BackEnd
+        run: npm ci
+
+      - name: Run integration tests
+        working-directory: BackEnd
+        env:
+          API_BASE_URL: ${{ secrets.DEPLOYED_API_URL }}
+          # Provide credentials for real-user tests via secrets
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+        run: npm run test:integration

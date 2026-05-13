@@ -13,11 +13,12 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     const deletedNotifications = await cleanupService.deleteOldReadNotifications()
     const deletedEvents = await cleanupService.deleteOldEvents()
     const deletedEmailLogs = await cleanupService.deleteOldEmailLogs()
+    const deletedMessages = await cleanupService.deleteOldSoftDeletedMessages()
 
     res.status(200).json({
       success: true,
-      data: { deletedNotifications, deletedEvents, deletedEmailLogs },
-      message: `Cleanup complete: ${deletedNotifications} notifications, ${deletedEvents} events, ${deletedEmailLogs} email logs deleted`,
+      data: { deletedNotifications, deletedEvents, deletedEmailLogs, deletedMessages },
+      message: `Cleanup complete: ${deletedNotifications} notifications, ${deletedEvents} events, ${deletedEmailLogs} email logs, ${deletedMessages} messages deleted`,
     })
   } catch (error) {
     console.error('[POST /api/admin/cleanup] Cleanup error:', error)
