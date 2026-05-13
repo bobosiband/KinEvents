@@ -131,7 +131,6 @@ const swaggerDocument: OpenAPIV3_0 = {
           content: { type: 'string' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
-          editedAt: { type: 'string', format: 'date-time' },
           readBy: { type: 'array', items: { type: 'string', format: 'uuid' } },
           type: { type: 'string', enum: ['text'] },
         },
@@ -1259,11 +1258,11 @@ const swaggerDocument: OpenAPIV3_0 = {
       delete: {
         tags: ['Chat'],
         summary: 'Delete a message',
-        description: 'Soft-delete a message (owner or admin)',
+        description: 'Soft-delete a message (owner or admin). The message is marked with deletedAt now and permanently removed by the cleanup job after 24 hours.',
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
         responses: {
-          '200': { description: 'Message deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '200': { description: 'Message soft-deleted; cleanup will permanently remove it after 24 hours', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
           '401': { description: 'Unauthorized' },
           '403': { description: 'Forbidden' },
           '404': { description: 'Not found' },
@@ -1283,6 +1282,6 @@ const swaggerDocument: OpenAPIV3_0 = {
       },
     },
   },
-}
+  };
 
 export default swaggerDocument

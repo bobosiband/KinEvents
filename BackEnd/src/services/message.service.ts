@@ -64,7 +64,7 @@ class MessageService {
       content,
       createdAt: now,
       updatedAt: now,
-      readBy: [],
+      readBy: [input.from],
       type: 'text',
     }
 

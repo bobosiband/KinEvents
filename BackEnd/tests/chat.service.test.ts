@@ -84,6 +84,15 @@ describe('Message Service', () => {
       const count = await messageService.getUnreadCount(user)
       expect(count).toBe(0)
     })
+
+    it('does not count a sender’s own messages as unread', async () => {
+      const sender = randomUUID()
+
+      await messageService.createMessage({ from: sender, content: 'sender message' })
+
+      const count = await messageService.getUnreadCount(sender)
+      expect(count).toBe(0)
+    })
   })
 
   describe('deleteMessage', () => {

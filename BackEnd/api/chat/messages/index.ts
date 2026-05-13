@@ -11,7 +11,7 @@ const listSchema = z.object({
 })
 
 const createSchema = z.object({
-  content: z.string().min(1).max(2000),
+  content: z.string().trim().min(1).max(2000),
 })
 
 async function handler(req: RequestWithUser, res: VercelResponse) {

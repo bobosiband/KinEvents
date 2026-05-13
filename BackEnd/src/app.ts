@@ -57,6 +57,8 @@ export const routes = [
   { method: 'all', path: '/api/notifications/send', handler: notificationSendHandler },
   { method: 'all', path: '/api/notifications/:id/read', handler: notificationReadHandler },
   { method: 'all', path: '/api/notifications/:id', handler: notificationByIdHandler },
+  // Keep /read ahead of the message collection route so the static path does not get
+  // captured by the dynamic /api/chat/messages/:id handler.
   { method: 'all', path: '/api/chat/messages/read', handler: chatMessagesReadHandler },
   { method: 'all', path: '/api/chat/messages', handler: chatMessagesHandler },
   { method: 'all', path: '/api/chat/messages/:id', handler: chatMessageByIdHandler },

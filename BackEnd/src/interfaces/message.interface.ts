@@ -4,7 +4,6 @@ export interface IMessage {
   content: string
   createdAt: string
   updatedAt: string
-  editedAt?: string
   readBy: string[]
   deletedAt?: string
   type: 'text'

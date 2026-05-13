@@ -151,7 +151,8 @@ describe('Chat Handlers', () => {
     const readHandler = require('../api/chat/messages/read').default
     const unreadHandler = require('../api/chat/unread-count').default
     const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
-    seedDb({ users: [mockMember] })
+    const adminToken = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+    seedDb({ users: [mockMember, mockAdmin] })
 
     const createReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${token}` }, body: { content: 'r1' } })
     const createRes = createMockResponse()
@@ -161,9 +162,19 @@ describe('Chat Handlers', () => {
     const unreadReq1 = createMockRequest({ method: 'GET', headers: { authorization: `Bearer ${token}` } })
     const unreadRes1 = createMockResponse()
     await unreadHandler(unreadReq1, unreadRes1)
-    expect((unreadRes1.json as any).mock.calls[0][0].data.count).toBeGreaterThanOrEqual(1)
+    expect((unreadRes1.json as any).mock.calls[0][0].data.count).toBe(0)
 
-    const readReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${token}` }, body: { messageIds: [msg.id] } })
+    const adminCreateReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${adminToken}` }, body: { content: 'admin note' } })
+    const adminCreateRes = createMockResponse()
+    await messagesHandler(adminCreateReq, adminCreateRes)
+    const adminMsg = (adminCreateRes.json as any).mock.calls[0][0].data
+
+    const unreadReqBeforeRead = createMockRequest({ method: 'GET', headers: { authorization: `Bearer ${token}` } })
+    const unreadResBeforeRead = createMockResponse()
+    await unreadHandler(unreadReqBeforeRead, unreadResBeforeRead)
+    expect((unreadResBeforeRead.json as any).mock.calls[0][0].data.count).toBeGreaterThanOrEqual(1)
+
+    const readReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${token}` }, body: { messageIds: [adminMsg.id] } })
     const readRes = createMockResponse()
     await readHandler(readReq, readRes)
     expect(readRes.status).toHaveBeenCalledWith(200)
