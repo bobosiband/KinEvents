@@ -25,7 +25,7 @@ export function ChatMessage({
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isOwn = message.from === currentUserId
-  const canDelete = isOwn || currentUserRole === 'admin'
+  const canDelete = !message.deletedAt && !message.id.startsWith('temp-') && (isOwn || currentUserRole === 'admin')
   const timestamp = format(new Date(message.createdAt), 'h:mm a')
 
   const clearTouchTimer = () => {
@@ -49,6 +49,7 @@ export function ChatMessage({
 
   const handleDelete = () => {
     if (!onDelete) return
+    if (!message.id || message.id.startsWith('temp-')) return
     onDelete(message.id)
     setShowActions(false)
   }

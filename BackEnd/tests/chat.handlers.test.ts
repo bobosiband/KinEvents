@@ -103,10 +103,38 @@ describe('Chat Handlers', () => {
     await messagesHandler(createReq, createRes)
     const msg = (createRes.json as any).mock.calls[0][0].data
 
+    const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${token}` }, params: { id: msg.id } })
+    const delRes = createMockResponse()
+    await deleteHandler(delReq, delRes)
+    expect(delRes.status).toHaveBeenCalledWith(200)
+  })
+
+  it('DELETE /api/chat/messages/:id also works with query id', async () => {
+    const messagesHandler = require('../api/chat/messages/index').default
+    const deleteHandler = require('../api/chat/messages/[id]').default
+    const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+    seedDb({ users: [mockMember] })
+
+    const createReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${token}` }, body: { content: 'delme-query' } })
+    const createRes = createMockResponse()
+    await messagesHandler(createReq, createRes)
+    const msg = (createRes.json as any).mock.calls[0][0].data
+
     const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${token}` }, query: { id: msg.id } })
     const delRes = createMockResponse()
     await deleteHandler(delReq, delRes)
     expect(delRes.status).toHaveBeenCalledWith(200)
+  })
+
+  it('DELETE /api/chat/messages/:id returns 400 without an id', async () => {
+    const deleteHandler = require('../api/chat/messages/[id]').default
+    const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+    seedDb({ users: [mockMember] })
+
+    const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${token}` } })
+    const delRes = createMockResponse()
+    await deleteHandler(delReq, delRes)
+    expect(delRes.status).toHaveBeenCalledWith(400)
   })
 
   it('DELETE /api/chat/messages/:id by non-owner member returns 403', async () => {
@@ -122,7 +150,7 @@ describe('Chat Handlers', () => {
     await messagesHandler(createReq, createRes)
     const msg = (createRes.json as any).mock.calls[0][0].data
 
-    const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${tokenOther}` }, query: { id: msg.id } })
+    const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${tokenOther}` }, params: { id: msg.id } })
     const delRes = createMockResponse()
     await deleteHandler(delReq, delRes)
     expect(delRes.status).toHaveBeenCalledWith(403)
@@ -140,10 +168,32 @@ describe('Chat Handlers', () => {
     await messagesHandler(createReq, createRes)
     const msg = (createRes.json as any).mock.calls[0][0].data
 
-    const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${tokenAdmin}` }, query: { id: msg.id } })
+    const delReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${tokenAdmin}` }, params: { id: msg.id } })
     const delRes = createMockResponse()
     await deleteHandler(delReq, delRes)
     expect(delRes.status).toHaveBeenCalledWith(200)
+  })
+
+  it('DELETE /api/chat/messages/:id returns 404 for an already deleted message', async () => {
+    const messagesHandler = require('../api/chat/messages/index').default
+    const deleteHandler = require('../api/chat/messages/[id]').default
+    const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+    seedDb({ users: [mockMember] })
+
+    const createReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${token}` }, body: { content: 'delete-twice' } })
+    const createRes = createMockResponse()
+    await messagesHandler(createReq, createRes)
+    const msg = (createRes.json as any).mock.calls[0][0].data
+
+    const firstDeleteReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${token}` }, params: { id: msg.id } })
+    const firstDeleteRes = createMockResponse()
+    await deleteHandler(firstDeleteReq, firstDeleteRes)
+    expect(firstDeleteRes.status).toHaveBeenCalledWith(200)
+
+    const secondDeleteReq = createMockRequest({ method: 'DELETE', headers: { authorization: `Bearer ${token}` }, params: { id: msg.id } })
+    const secondDeleteRes = createMockResponse()
+    await deleteHandler(secondDeleteReq, secondDeleteRes)
+    expect(secondDeleteRes.status).toHaveBeenCalledWith(404)
   })
 
   it('POST /api/chat/messages/read marks messages read and GET /api/chat/unread-count returns count', async () => {
@@ -183,5 +233,28 @@ describe('Chat Handlers', () => {
     const unreadRes2 = createMockResponse()
     await unreadHandler(unreadReq2, unreadRes2)
     expect((unreadRes2.json as any).mock.calls[0][0].data.count).toBe(0)
+  })
+
+  it('POST /api/chat/messages/read ignores temp and duplicate ids safely', async () => {
+    const messagesHandler = require('../api/chat/messages/index').default
+    const readHandler = require('../api/chat/messages/read').default
+    const token = jwt.sign(mockMember, JWT_SECRET, { expiresIn: '7d' })
+    const adminToken = jwt.sign(mockAdmin, JWT_SECRET, { expiresIn: '7d' })
+    seedDb({ users: [mockMember, mockAdmin] })
+
+    const createReq = createMockRequest({ method: 'POST', headers: { authorization: `Bearer ${adminToken}` }, body: { content: 'read-safe' } })
+    const createRes = createMockResponse()
+    await messagesHandler(createReq, createRes)
+    const msg = (createRes.json as any).mock.calls[0][0].data
+
+    const readReq = createMockRequest({
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: { messageIds: ['temp-123', msg.id, msg.id, 'missing-id'] },
+    })
+    const readRes = createMockResponse()
+    await readHandler(readReq, readRes)
+    expect(readRes.status).toHaveBeenCalledWith(200)
+    expect((readRes.json as any).mock.calls[0][0].data.updated).toBe(1)
   })
 })

@@ -226,6 +226,25 @@ export async function persistData(): Promise<void> {
   return persistQueue
 }
 
+let mutationQueue: Promise<unknown> = Promise.resolve()
+
+export async function mutateData<T>(mutator: (db: DbSchema) => T | Promise<T>): Promise<T> {
+  const run = async () => {
+    await waitForDb()
+    const db = await readData()
+    const result = await mutator(db)
+    await persistData()
+    return result
+  }
+
+  const next = mutationQueue.then(run, run)
+  mutationQueue = next.then(
+    () => undefined,
+    () => undefined,
+  )
+  return next
+}
+
 async function _doPersist(): Promise<void> {
   if (isTestMode) return
 

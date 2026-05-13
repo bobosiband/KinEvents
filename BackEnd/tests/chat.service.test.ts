@@ -26,6 +26,22 @@ describe('Message Service', () => {
       const long = 'a'.repeat(2001)
       await expect(messageService.createMessage({ from: randomUUID(), content: long })).rejects.toThrow()
     })
+
+    it('serializes concurrent creates without losing messages', async () => {
+      const userA = randomUUID()
+      const userB = randomUUID()
+
+      const [msgA, msgB] = await Promise.all([
+        messageService.createMessage({ from: userA, content: 'concurrent-a' }),
+        messageService.createMessage({ from: userB, content: 'concurrent-b' }),
+      ])
+
+      expect(msgA.id).toBeTruthy()
+      expect(msgB.id).toBeTruthy()
+
+      const list = await messageService.listMessages({ limit: 10 })
+      expect(list.messages.map((message) => message.content)).toEqual(expect.arrayContaining(['concurrent-a', 'concurrent-b']))
+    })
   })
 
   describe('listMessages', () => {
@@ -92,6 +108,34 @@ describe('Message Service', () => {
 
       const count = await messageService.getUnreadCount(sender)
       expect(count).toBe(0)
+    })
+
+    it('handles concurrent read and delete mutations safely', async () => {
+      const owner = randomUUID()
+      const readerA = randomUUID()
+      const readerB = randomUUID()
+
+      const first = await messageService.createMessage({ from: owner, content: 'race-a' })
+      const second = await messageService.createMessage({ from: owner, content: 'race-b' })
+
+      await expect(
+        Promise.all([
+          messageService.markAsRead([first.id, second.id, 'temp-1', 'missing-id'], readerA),
+          messageService.deleteMessage(first.id, owner, 'member'),
+        ])
+      ).resolves.toBeDefined()
+
+      await expect(
+        Promise.all([
+          messageService.markAsRead([first.id, second.id], readerB),
+          messageService.markAsRead([first.id], readerA),
+        ])
+      ).resolves.toBeDefined()
+
+      const dbState = await messageService.listMessages({ limit: 10 })
+      expect(dbState.messages.length).toBeGreaterThanOrEqual(1)
+      expect(dbState.messages.every((message) => Array.isArray(message.readBy))).toBe(true)
+      expect(dbState.messages.some((message) => message.id === second.id)).toBe(true)
     })
   })
 

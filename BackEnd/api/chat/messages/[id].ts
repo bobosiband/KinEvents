@@ -9,14 +9,23 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     return
   }
 
-  const id = req.query.id as string | undefined
-  if (!id) {
+  const id =
+    typeof req.query.id === 'string'
+      ? req.query.id
+      : typeof (req as any).params?.id === 'string'
+        ? (req as any).params.id
+        : Array.isArray(req.query.id)
+          ? req.query.id[0]
+          : undefined
+
+  const messageId = id?.trim()
+  if (!messageId) {
     res.status(400).json({ success: false, message: 'Missing id' })
     return
   }
 
   try {
-    const deleted = await messageService.deleteMessage(id, req.user!.id, req.user!.role)
+    const deleted = await messageService.deleteMessage(messageId, req.user!.id, req.user!.role)
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Not found' })
       return

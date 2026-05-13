@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { useUsers } from '@/features/users/hooks/useUsers'
@@ -25,6 +25,7 @@ export function Messages() {
   const markRead = useMarkRead()
   const deleteMutation = useDeleteMessage()
   const sendMutation = useSendMessage(currentUserId)
+  const lastMarkedUnreadSignatureRef = useRef('')
 
   const baseMessages = useMemo(() => {
     return (messagesQuery.data?.pages ?? []).flatMap((page) => page.messages)
@@ -58,15 +59,30 @@ export function Messages() {
 
   const unreadIds = useMemo(() => {
     if (!currentUserId) return []
-    return flatMessages
+    return Array.from(new Set(
+      flatMessages
       .filter(message => !message.deletedAt && !message.readBy.includes(currentUserId))
-      .map(message => message.id)
+        .filter(message => !message.id.startsWith('temp-'))
+        .map(message => message.id)
+    ))
   }, [flatMessages, currentUserId])
 
   const markUnreadAsRead = useCallback(() => {
-    if (!unreadIds.length) return
-    markRead.mutate(unreadIds)
-  }, [markRead, unreadIds])
+    if (!unreadIds.length || markRead.isPending) {
+      if (!unreadIds.length) lastMarkedUnreadSignatureRef.current = ''
+      return
+    }
+
+    const signature = unreadIds.join('|')
+    if (signature === lastMarkedUnreadSignatureRef.current) return
+
+    lastMarkedUnreadSignatureRef.current = signature
+    markRead.mutate(unreadIds, {
+      onError: () => {
+        lastMarkedUnreadSignatureRef.current = ''
+      },
+    })
+  }, [markRead, markRead.isPending, unreadIds])
 
   useEffect(() => {
     markUnreadAsRead()
@@ -94,6 +110,11 @@ export function Messages() {
   }, [sendMutation])
 
   const handleDelete = useCallback((id: string) => {
+    if (!id || id.startsWith('temp-')) {
+      toast.error('This message cannot be deleted yet')
+      return
+    }
+
     const confirmed = window.confirm('Delete this message?')
     if (!confirmed) return
 
