@@ -8,7 +8,9 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     return
   }
 
-  const eventId = typeof req.query.eventId === 'string' ? req.query.eventId : undefined
+  const queryEventId = typeof req.query.eventId === 'string' ? req.query.eventId : undefined
+  const paramsEventId = (req as unknown as { params?: Record<string, unknown> }).params?.eventId
+  const eventId = queryEventId ?? (typeof paramsEventId === 'string' ? paramsEventId : undefined)
   if (!eventId) {
     res.status(400).json({ success: false, message: 'Missing eventId' })
     return

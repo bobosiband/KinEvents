@@ -8,6 +8,9 @@ export interface IGiftPool {
   createdBy: string
   createdAt: string
   updatedAt: string
+  receivedAt?: string
+  confirmedBy?: string
+  giftDescription?: string
 }
 
 export interface IGiftContribution {

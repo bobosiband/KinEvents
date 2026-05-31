@@ -30,7 +30,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     res.status(201).json({
       success: true,
       data: result.events,
-      message: `Generated ${result.events.length} birthday events (${result.skipped} skipped as duplicates)`,
+        message: `Generated ${result.events.length} birthday events (${result.skipped} skipped as duplicates or past birthdays)`,
     })
   } catch (error) {
     res.status(400).json({ success: false, message: (error as Error).message })

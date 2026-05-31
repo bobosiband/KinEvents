@@ -19,6 +19,10 @@ export interface BirthdayGenerationResult {
   skipped: number
 }
 
+function toUtcMidnight(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+}
+
 function extractMonthDay(birthday: string): { month: string; day: string } | null {
   const parts = birthday.split('-')
   if (parts.length === 3) {
@@ -73,12 +77,13 @@ export class BirthdayService {
       .slice(0, limit)
   }
 
-  async generateBirthdayEvents(year = new Date().getFullYear()): Promise<BirthdayGenerationResult> {
+  async generateBirthdayEvents(year = new Date().getFullYear(), referenceDate = new Date()): Promise<BirthdayGenerationResult> {
     const db = await readData()
     const now = new Date().toISOString()
     const created: IEvent[] = []
     let skipped = 0
     const targetYear = String(year)
+    const todayUTC = toUtcMidnight(referenceDate)
 
     for (const user of db.users) {
       if (!user.birthday) continue
@@ -86,6 +91,13 @@ export class BirthdayService {
       if (!parts) continue
 
       const title = `${user.name}'s Birthday`
+      const eventDate = new Date(Date.UTC(year, Number(parts.month) - 1, Number(parts.day)))
+
+      if (eventDate < todayUTC) {
+        skipped += 1
+        continue
+      }
+
       const duplicateExists = db.events.some(
         (event) => event.type === EVENT_TYPES.BIRTHDAY && event.title === title && event.date.startsWith(targetYear)
       )
