@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/feedback/EmptyState/EmptyState'
 import { Loader } from '@/components/feedback/Loader/Loader'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Modal } from '@/components/ui/Modal'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/store/authStore'
@@ -53,6 +54,7 @@ export function Birthdays() {
   const reminders = useSendBirthdayReminders()
   const profile = useProfile(user?.id || '')
   const permissions = usePermissions()
+  const [confirmGenerate, setConfirmGenerate] = useState(false)
   const [birthdayDraft, setBirthdayDraft] = useState(user?.birthday || '')
   const [birthdayError, setBirthdayError] = useState('')
 
@@ -180,15 +182,42 @@ export function Birthdays() {
 
       {permissions.canCreateEvent || permissions.canManageUsers ? (
         <div>
-          <Button
-            loading={generate.isPending}
-            onClick={() => generate.mutate(undefined, {
-              onSuccess: () => toast.success('Birthday events generated'),
-              onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Failed to generate'),
-            })}
-          >
-            Generate birthday events
+          <Button onClick={() => setConfirmGenerate(true)}>
+            Generate All {new Date().getFullYear()} Birthday Events
           </Button>
+          <Modal
+            title="Generate Birthday Events"
+            open={confirmGenerate}
+            onClose={() => setConfirmGenerate(false)}
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                This will create a birthday event for every family member who has a birthday
+                set on their profile, for the year {new Date().getFullYear()}.
+                Events that already exist will be skipped automatically.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  loading={generate.isPending}
+                  onClick={() =>
+                    generate.mutate(undefined, {
+                      onSuccess: () => {
+                        toast.success('Birthday events generated')
+                        setConfirmGenerate(false)
+                      },
+                      onError: (err: unknown) =>
+                        toast.error(err instanceof Error ? err.message : 'Failed to generate'),
+                    })
+                  }
+                >
+                  Yes, Generate
+                </Button>
+                <Button variant="secondary" onClick={() => setConfirmGenerate(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Modal>
         </div>
       ) : null}
 

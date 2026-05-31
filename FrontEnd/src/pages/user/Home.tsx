@@ -1,25 +1,60 @@
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarPlus, Cake, Users, Bell, Heart } from 'lucide-react'
+import { CalendarPlus, Cake, Users, Bell, Heart, Phone } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { useEvents } from '@/features/events/hooks/useEvents'
 import { useBirthdays } from '@/features/birthdays/hooks/useBirthdays'
 import { useUsers } from '@/features/users/hooks/useUsers'
+import { useProfile } from '@/features/users/hooks/useProfile'
+import { useAuthStore } from '@/features/auth/store/authStore'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { EventCard } from '@/components/cards/EventCard'
 import { BirthdayCard } from '@/components/cards/BirthdayCard'
 import { Loader } from '@/components/feedback/Loader'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { getInitials, nameToColor } from '@/utils/avatarUtils'
+import { useState } from 'react'
 
 export function Home() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const token = useAuthStore(state => state.token)
+  const setAuth = useAuthStore(state => state.setAuth)
   const events = useEvents()
   const birthdays = useBirthdays(5)
   const users = useUsers()
+  const profile = useProfile(user?.id || '')
+  const [phoneDismissed, setPhoneDismissed] = useState(false)
+  const [phoneDraft, setPhoneDraft] = useState('')
+  const [phoneError, setPhoneError] = useState('')
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const shouldPromptPhone = Boolean(user && !user.phone && !phoneDismissed)
+
+  const submitPhone = () => {
+    if (!user) return
+
+    if (!/^\+[1-9]\d{7,14}$/.test(phoneDraft)) {
+      setPhoneError('Use international format e.g. +447700900123')
+      return
+    }
+
+    setPhoneError('')
+    profile.mutate(
+      { phone: phoneDraft, notificationPrefs: user.notificationPrefs },
+      {
+        onSuccess: response => {
+          if (token) setAuth(response.user, token)
+          toast.success('Phone number saved')
+          setPhoneDismissed(true)
+        },
+        onError: err => toast.error(err.message || 'Failed to save phone'),
+      },
+    )
+  }
 
   const quickActions = [
     { icon: CalendarPlus, label: 'New Event', color: 'var(--warm-mint)', onClick: () => navigate('/events/create') },
@@ -41,6 +76,63 @@ export function Home() {
           {user?.name?.split(' ')[0] ?? 'Family'}
         </h1>
       </motion.div>
+
+      {shouldPromptPhone && (
+        <Card className="space-y-4 border-blue-500/20 bg-blue-500/5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-500/15 p-2 text-blue-600">
+                <Phone className="h-4 w-4" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="font-semibold text-sm">Add your phone number</h2>
+                <p className="text-xs text-muted-foreground">
+                  Used for gift reminders and important family notifications.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPhoneDismissed(true)}
+              className="text-muted-foreground hover:text-foreground text-lg leading-none"
+              aria-label="Dismiss phone prompt"
+            >
+              ×
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <label className="space-y-1.5">
+              <span className="text-sm font-medium">Phone number</span>
+              <input
+                type="tel"
+                value={phoneDraft}
+                onChange={e => setPhoneDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') submitPhone() }}
+                placeholder="+447700900123"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </label>
+            <div className="flex items-end">
+              <Button
+                type="button"
+                size="sm"
+                loading={profile.isPending}
+                onClick={submitPhone}
+                icon={<Phone className="h-4 w-4" />}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+          {phoneError ? (
+            <p className="text-xs text-destructive">{phoneError}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Include country code e.g. +44 for UK, +1 for US
+            </p>
+          )}
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {quickActions.map((action, index) => {
