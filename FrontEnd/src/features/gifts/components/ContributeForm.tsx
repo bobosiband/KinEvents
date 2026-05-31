@@ -7,6 +7,8 @@ import { useContribute } from '../hooks/useGifts'
 import type { GiftPool } from '../types/gift.types'
 import type { User } from '@/features/auth/types/auth.types'
 
+const GIFT_CURRENCY = 'AUD'
+
 interface ContributeFormProps {
   pool: GiftPool
   currentUser: User
@@ -65,7 +67,7 @@ export function ContributeForm({ pool, currentUser, allUsers, eventId, onSuccess
       </p>
 
       <Input
-        label={`Amount (${pool.currency})`}
+        label={`Amount (${GIFT_CURRENCY})`}
         type="number"
         min="0.01"
         step="0.01"
@@ -75,7 +77,7 @@ export function ContributeForm({ pool, currentUser, allUsers, eventId, onSuccess
       />
       {perPerson ? (
         <p className="text-xs text-muted-foreground">
-          ≈ {pool.currency} {perPerson} per person ({peopleCount} people)
+          ≈ {GIFT_CURRENCY} {perPerson} per person ({peopleCount} people)
         </p>
       ) : null}
 

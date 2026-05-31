@@ -10,6 +10,8 @@ import type { User } from '@/features/auth/types/auth.types'
 import { useClosePool, useConfirmReceived, useCreatePool, useGiftPool } from '../hooks/useGifts'
 import { ContributeForm } from './ContributeForm'
 
+const GIFT_CURRENCY = 'AUD'
+
 interface GiftPoolWidgetProps {
   eventId: string
   birthdayUserId: string
@@ -53,7 +55,7 @@ export function GiftPoolWidget({
           loading={createPool.isPending}
           onClick={() =>
             createPool.mutate(
-              { eventId, birthdayUserId },
+              { eventId, birthdayUserId, currency: 'AUD' },
               {
                 onSuccess: () => toast.success('Gift pool created'),
                 onError: err => toast.error(err instanceof Error ? err.message : 'Failed to create pool'),
@@ -157,7 +159,7 @@ export function GiftPoolWidget({
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl bg-muted p-3 text-center">
           <p className="text-lg font-bold">
-            {pool.currency} {totalRaised.toFixed(2)}
+            {GIFT_CURRENCY} {totalRaised.toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground">Raised</p>
         </div>
@@ -178,7 +180,7 @@ export function GiftPoolWidget({
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Fundraising goal</span>
             <span>
-              {pool.currency} {pool.targetAmount?.toFixed(2)}
+              {GIFT_CURRENCY} {pool.targetAmount?.toFixed(2)}
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -201,7 +203,7 @@ export function GiftPoolWidget({
                 <div className="flex justify-between gap-2">
                   <span className="font-medium">{payer?.name ?? 'Unknown'}</span>
                   <span className="font-bold text-primary">
-                    {pool.currency} {contribution.amount.toFixed(2)}
+                    {GIFT_CURRENCY} {contribution.amount.toFixed(2)}
                   </span>
                 </div>
                 {coveredOthers.length > 0 ? (

@@ -30,7 +30,7 @@ export class GiftPoolService {
       eventId: input.eventId,
       birthdayUserId: input.birthdayUserId,
       targetAmount: input.targetAmount,
-      currency: input.currency || 'GBP',
+      currency: input.currency || 'AUD',
       status: 'open',
       createdBy: input.createdBy,
       createdAt: new Date().toISOString(),

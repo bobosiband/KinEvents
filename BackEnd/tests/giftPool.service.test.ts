@@ -47,11 +47,11 @@ describe('GiftPoolService', () => {
       ).rejects.toThrow('already exists')
     })
 
-    it('defaults currency to GBP when not specified', async () => {
+    it('defaults currency to AUD when not specified', async () => {
       const pool = await giftPoolService.createPool({
         eventId: randomUUID(), birthdayUserId: randomUUID(), createdBy: randomUUID(),
       })
-      expect(pool.currency).toBe('GBP')
+      expect(pool.currency).toBe('AUD')
     })
   })
 

@@ -145,7 +145,7 @@ const swaggerDocument: OpenAPIV3_0 = {
           eventId: { type: 'string', format: 'uuid' },
           birthdayUserId: { type: 'string', format: 'uuid' },
           targetAmount: { type: 'number' },
-          currency: { type: 'string', example: 'GBP' },
+          currency: { type: 'string', example: 'AUD' },
           status: { type: 'string', enum: ['open', 'closed'] },
           createdBy: { type: 'string', format: 'uuid' },
           createdAt: { type: 'string', format: 'date-time' },
@@ -927,7 +927,7 @@ const swaggerDocument: OpenAPIV3_0 = {
               eventId: { type: 'string', format: 'uuid' },
               birthdayUserId: { type: 'string', format: 'uuid' },
               targetAmount: { type: 'number' },
-              currency: { type: 'string', example: 'GBP' }
+              currency: { type: 'string', example: 'AUD' }
             }
           } } }
         },
