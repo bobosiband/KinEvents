@@ -35,6 +35,10 @@ import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
 import chatUnreadCountHandler from '../api/chat/unread-count'
 import { corsMiddleware } from './middleware/cors'
+import giftPoolsHandler from '../api/gift-pools/index'
+import giftPoolByIdHandler from '../api/gift-pools/[id]'
+import giftPoolContributeHandler from '../api/gift-pools/[id]/contribute'
+import giftPoolByEventHandler from '../api/gift-pools/by-event/[eventId]'
 
 type VercelHandler = (req: VercelRequest, res: VercelResponse) => void | Promise<void>
 
@@ -57,6 +61,11 @@ export const routes = [
   { method: 'all', path: '/api/notifications/send', handler: notificationSendHandler },
   { method: 'all', path: '/api/notifications/:id/read', handler: notificationReadHandler },
   { method: 'all', path: '/api/notifications/:id', handler: notificationByIdHandler },
+  // Gift Pools — specific paths MUST come before /:id to avoid Express shadowing them
+  { method: 'all', path: '/api/gift-pools/by-event/:eventId', handler: giftPoolByEventHandler },
+  { method: 'all', path: '/api/gift-pools/:id/contribute', handler: giftPoolContributeHandler },
+  { method: 'all', path: '/api/gift-pools/:id', handler: giftPoolByIdHandler },
+  { method: 'all', path: '/api/gift-pools', handler: giftPoolsHandler },
   // Keep /read ahead of the message collection route so the static path does not get
   // captured by the dynamic /api/chat/messages/:id handler.
   { method: 'all', path: '/api/chat/messages/read', handler: chatMessagesReadHandler },

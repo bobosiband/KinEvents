@@ -94,7 +94,7 @@ describe('Coverage Improvements', () => {
 
     expect(notificationSpy).toHaveBeenCalledTimes(1)
     expect(notificationSpy).toHaveBeenCalledWith({
-      type: 'event_reminder',
+      type: 'rsvp_received',
       recipientId: creatorId,
       payload: {
         eventId: event.id,
@@ -144,7 +144,7 @@ describe('Coverage Improvements', () => {
     await eventService.setRsvp(event.id, rsvpUserId, 'no')
 
     expect(notificationSpy).toHaveBeenCalledWith({
-      type: 'event_reminder',
+      type: 'rsvp_received',
       recipientId: creatorId,
       payload: {
         eventId: event.id,

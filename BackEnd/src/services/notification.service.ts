@@ -60,6 +60,7 @@ export class NotificationService {
           event_reminder: 'event-reminder',
           birthday_reminder: 'birthday-reminder',
           birthday_today: 'birthday-today',
+          rsvp_received: 'rsvp-confirmation',
           access_approved: 'access-approved',
           access_rejected: 'access-rejected',
         }

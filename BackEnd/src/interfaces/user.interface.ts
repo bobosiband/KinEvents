@@ -18,6 +18,8 @@ export interface IUser {
   role: UserRole
   accessStatus: AccessStatus
   birthday?: string
+  phone?: string
+  phoneVerified?: boolean
   capabilities: string[]
   notificationPrefs: INotificationPrefs
   createdAt: string

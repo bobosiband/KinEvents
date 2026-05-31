@@ -6,4 +6,5 @@ export const NOTIFICATION_TYPES = {
   BIRTHDAY_TODAY: 'birthday_today',
   ACCESS_APPROVED: 'access_approved',
   ACCESS_REJECTED: 'access_rejected',
+  RSVP_RECEIVED: 'rsvp_received',
 } as const

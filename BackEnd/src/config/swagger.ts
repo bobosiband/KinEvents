@@ -40,6 +40,8 @@ const swaggerDocument: OpenAPIV3_0 = {
           role: { type: 'string', enum: ['admin', 'manager', 'member'] },
           accessStatus: { type: 'string', enum: ['pending', 'approved', 'rejected', 'revoked'] },
           birthday: { type: 'string', format: 'date' },
+          phone: { type: 'string', description: 'E.164 phone number e.g. +447700900123' },
+          phoneVerified: { type: 'boolean', description: 'True only after OTP verification (future)' },
           capabilities: { type: 'array', items: { type: 'string' } },
           notificationPrefs: {
             type: 'object',
@@ -65,6 +67,7 @@ const swaggerDocument: OpenAPIV3_0 = {
           type: { type: 'string', enum: ['birthday', 'custom'] },
           locked: { type: 'boolean' },
           createdBy: { type: 'string', format: 'uuid' },
+          birthdayUserId: { type: 'string', format: 'uuid' },
           rsvps: { type: 'object', additionalProperties: { type: 'string' } },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
@@ -89,7 +92,7 @@ const swaggerDocument: OpenAPIV3_0 = {
           id: { type: 'string', format: 'uuid' },
           type: {
             type: 'string',
-            enum: ['event_created', 'event_updated', 'event_reminder', 'birthday_reminder', 'birthday_today', 'access_approved', 'access_rejected'],
+            enum: ['event_created', 'event_updated', 'event_reminder', 'birthday_reminder', 'birthday_today', 'access_approved', 'access_rejected', 'rsvp_received'],
           },
           recipientId: { type: 'string', format: 'uuid' },
           payload: { type: 'object' },
@@ -133,6 +136,34 @@ const swaggerDocument: OpenAPIV3_0 = {
           updatedAt: { type: 'string', format: 'date-time' },
           readBy: { type: 'array', items: { type: 'string', format: 'uuid' } },
           type: { type: 'string', enum: ['text'] },
+        },
+      },
+      GiftPool: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          eventId: { type: 'string', format: 'uuid' },
+          birthdayUserId: { type: 'string', format: 'uuid' },
+          targetAmount: { type: 'number' },
+          currency: { type: 'string', example: 'GBP' },
+          status: { type: 'string', enum: ['open', 'closed'] },
+          createdBy: { type: 'string', format: 'uuid' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      GiftContribution: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          poolId: { type: 'string', format: 'uuid' },
+          paidBy: { type: 'string', format: 'uuid' },
+          onBehalfOf: { type: 'array', items: { type: 'string', format: 'uuid' } },
+          amount: { type: 'number' },
+          paymentMethod: { type: 'string', enum: ['bank_transfer', 'cash', 'paypal', 'other'] },
+          reference: { type: 'string' },
+          note: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
         },
       },
     },
@@ -872,6 +903,82 @@ const swaggerDocument: OpenAPIV3_0 = {
           },
         },
       },
+    },
+    '/api/gift-pools': {
+      get: {
+        tags: ['Gift Pools'],
+        summary: 'List all gift pools (admin only)',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'List of pools' }, '403': { description: 'Admin required' } },
+      },
+      post: {
+        tags: ['Gift Pools'],
+        summary: 'Create a gift pool (admin only)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: {
+            type: 'object',
+            required: ['eventId', 'birthdayUserId'],
+            properties: {
+              eventId: { type: 'string', format: 'uuid' },
+              birthdayUserId: { type: 'string', format: 'uuid' },
+              targetAmount: { type: 'number' },
+              currency: { type: 'string', example: 'GBP' }
+            }
+          } } }
+        },
+        responses: { '201': { description: 'Pool created' }, '400': { description: 'Duplicate pool or validation error' }, '403': { description: 'Admin required' } }
+      }
+    },
+    '/api/gift-pools/by-event/{eventId}': {
+      get: {
+        tags: ['Gift Pools'],
+        summary: 'Get pool status by event ID',
+        description: 'Returns null data (not 404) when no pool exists for the event',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'eventId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: { '200': { description: 'Pool status or null' } }
+      }
+    },
+    '/api/gift-pools/{id}': {
+      get: {
+        tags: ['Gift Pools'],
+        summary: 'Get pool status by pool ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: { '200': { description: 'Pool status' }, '404': { description: 'Not found' } }
+      },
+      patch: {
+        tags: ['Gift Pools'],
+        summary: 'Close a pool (admin only)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: { '200': { description: 'Pool closed' }, '403': { description: 'Admin required' }, '404': { description: 'Not found' } }
+      }
+    },
+    '/api/gift-pools/{id}/contribute': {
+      post: {
+        tags: ['Gift Pools'],
+        summary: 'Record a contribution',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: {
+            type: 'object',
+            required: ['amount'],
+            properties: {
+              onBehalfOf: { type: 'array', items: { type: 'string', format: 'uuid' } },
+              amount: { type: 'number' },
+              paymentMethod: { type: 'string', enum: ['bank_transfer', 'cash', 'paypal', 'other'] },
+              reference: { type: 'string' },
+              note: { type: 'string' }
+            }
+          } } }
+        },
+        responses: { '201': { description: 'Contribution recorded' }, '400': { description: 'Validation error or pool closed' } }
+      }
     },
     '/api/notifications/send': {
       post: {

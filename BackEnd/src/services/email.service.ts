@@ -16,6 +16,16 @@ export class EmailService {
    */
   async send(payload: EmailPayload, meta: { templateName: EmailTemplateName; recipientId: string }): Promise<boolean> {
     if (process.env.NODE_ENV === 'test') {
+      const to = Array.isArray(payload.to) ? payload.to[0] : payload.to
+      await this.logEmail({
+        templateName: meta.templateName,
+        recipientId: meta.recipientId,
+        recipientEmail: to.email,
+        subject: payload.subject,
+        status: 'skipped',
+        createdAt: new Date().toISOString(),
+        retryCount: 0,
+      })
       return true
     }
 

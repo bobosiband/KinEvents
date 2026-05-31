@@ -5,7 +5,16 @@ import { notificationService } from '../../src/services/notification.service'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 const sendNotificationSchema = z.object({
-  type: z.enum(['event_created', 'event_updated', 'event_reminder', 'birthday_reminder', 'birthday_today', 'access_approved', 'access_rejected']),
+  type: z.enum([
+    'event_created',
+    'event_updated',
+    'event_reminder',
+    'birthday_reminder',
+    'birthday_today',
+    'access_approved',
+    'access_rejected',
+    'rsvp_received',
+  ]),
   recipientId: z.string().uuid(),
   payload: z.record(z.string()),
 })

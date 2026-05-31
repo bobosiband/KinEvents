@@ -8,6 +8,7 @@ const updateUserSchema = z.object({
   name: z.string().optional(),
   email: z.string().email().optional(),
   birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  phone: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(),
   notificationPrefs: z.object({
     level: z.enum(['all', 'important', 'none']).optional(),
     channels: z.array(z.enum(['email', 'push'])).optional(),
@@ -53,11 +54,20 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     const db = await readData()
-    const updateData: any = { updatedAt: new Date().toISOString() }
+
+    // Single lookup — fail fast if user not found
+    const user = db.users.find((item) => item.id === id)
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' })
+      return
+    }
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() }
+
     if (parseResult.data.name) updateData.name = parseResult.data.name
+
     if (parseResult.data.email) {
       const normalizedEmail = parseResult.data.email.trim().toLowerCase()
-      // Prevent duplicate email assignment across users.
       const conflict = db.users.find(
         (u) => u.email.trim().toLowerCase() === normalizedEmail && u.id !== id,
       )
@@ -67,19 +77,20 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       }
       updateData.email = normalizedEmail
     }
+
     if (parseResult.data.birthday) updateData.birthday = parseResult.data.birthday
-    if (parseResult.data.notificationPrefs) {
-      const existing = db.users.find((item) => item.id === id)
-      updateData.notificationPrefs = {
-        level: parseResult.data.notificationPrefs.level ?? existing?.notificationPrefs.level,
-        channels: parseResult.data.notificationPrefs.channels ?? existing?.notificationPrefs.channels,
-      }
+
+    if (parseResult.data.phone !== undefined) {
+      updateData.phone = parseResult.data.phone
+      updateData.phoneVerified = false
     }
 
-    const user = db.users.find((item) => item.id === id)
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' })
-      return
+    if (parseResult.data.notificationPrefs) {
+      // Use the already-found `user` — no second lookup needed
+      updateData.notificationPrefs = {
+        level: parseResult.data.notificationPrefs.level ?? user.notificationPrefs.level,
+        channels: parseResult.data.notificationPrefs.channels ?? user.notificationPrefs.channels,
+      }
     }
 
     Object.assign(user, updateData)

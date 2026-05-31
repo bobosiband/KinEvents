@@ -10,6 +10,7 @@ import type { INotification } from '../interfaces/notification.interface'
 import type { IUser } from '../interfaces/user.interface'
 import type { IMessage } from '../interfaces/message.interface'
 import type { EmailLogEntry } from '../interfaces/email.interface'
+import type { IGiftPool, IGiftContribution } from '../interfaces/gift.interface'
 
 export interface DbSchema {
   users: IUser[]
@@ -20,6 +21,8 @@ export interface DbSchema {
   content: IContentBlock[]
   emailLogs: EmailLogEntry[]
   messages: IMessage[]
+  giftPools: IGiftPool[]
+  giftContributions: IGiftContribution[]
 }
 
 const isTestMode = process.env.NODE_ENV === 'test'
@@ -42,6 +45,8 @@ let data: DbSchema = {
   content: [],
   emailLogs: [],
   messages: [],
+  giftPools: [],
+  giftContributions: [],
 }
 
 let isConnected = false
@@ -74,6 +79,8 @@ function normalizeDataShape(saved: Partial<DbSchema> = {}): DbSchema {
     content: Array.isArray(saved.content) ? saved.content : [],
     emailLogs: Array.isArray(saved.emailLogs) ? saved.emailLogs : [],
     messages: Array.isArray(saved.messages) ? saved.messages : [],
+    giftPools: Array.isArray(saved.giftPools) ? saved.giftPools : [],
+    giftContributions: Array.isArray(saved.giftContributions) ? saved.giftContributions : [],
   }
 }
 
