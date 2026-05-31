@@ -16,6 +16,8 @@ export interface CreateEventInput {
   onlineLink?: string
   imageUrl?: string
   type?: IEvent['type']
+  silent?: boolean
+  birthdayUserId?: string
 }
 
 export class EventService {
@@ -43,6 +45,7 @@ export class EventService {
       type: input.type ?? EVENT_TYPES.CUSTOM,
       locked: false,
       createdBy: input.createdBy,
+      birthdayUserId: input.birthdayUserId,
       rsvps: {},
       createdAt: now,
       updatedAt: now,
@@ -50,24 +53,26 @@ export class EventService {
     db.events.push(event)
     await persistData()
 
-    // Auto-trigger notification
-    await notificationService.createNotification({
-      type: 'event_created',
-      recipientId: event.createdBy,
-      payload: {
-        eventId: event.id,
-        title: event.title,
-        date: event.date,
-      },
-    })
+    // Auto-trigger notification and emails unless silent
+    if (!input.silent) {
+      await notificationService.createNotification({
+        type: 'event_created',
+        recipientId: event.createdBy,
+        payload: {
+          eventId: event.id,
+          title: event.title,
+          date: event.date,
+        },
+      })
 
-    // Send emails to all approved users (non-blocking)
-    try {
-      const allApprovedUsers = db.users.filter((user) => user.accessStatus === 'approved')
-      await emailDispatcher.onEventCreated(event, allApprovedUsers)
-    } catch (error) {
-      console.error('[EventService] Email dispatch failed:', error)
-      // Don't throw - email failures don't affect the primary operation
+      // Send emails to all approved users (non-blocking)
+      try {
+        const allApprovedUsers = db.users.filter((user) => user.accessStatus === 'approved')
+        await emailDispatcher.onEventCreated(event, allApprovedUsers)
+      } catch (error) {
+        console.error('[EventService] Email dispatch failed:', error)
+        // Don't throw - email failures don't affect the primary operation
+      }
     }
 
     return event
@@ -135,7 +140,7 @@ export class EventService {
 
     if (userId !== event.createdBy) {
       await notificationService.createNotification({
-        type: 'event_reminder',
+        type: 'rsvp_received',
         recipientId: event.createdBy,
         payload: {
           eventId: event.id,

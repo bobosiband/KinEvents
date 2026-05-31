@@ -105,18 +105,7 @@ export class AuthService {
       console.error('[AuthService] Email dispatch failed:', error)
     }
 
-    // Also send a simple approval email (fire-and-forget)
-    emailService
-      .send(
-        {
-          to: { name: user.name, email: user.email },
-          subject: 'Your KinEvents access has been approved',
-          text: `Welcome ${user.name}! Your access to KinEvents has been approved. Sign in at ${env.APP_URL}/login`,
-          html: `<h2>Welcome to KinEvents! 🏠</h2><p>Hi <strong>${user.name}</strong>, your access has been approved.</p><p><a href="${env.APP_URL}/login">Sign In Now</a></p>`,
-        },
-        { templateName: 'access-approved', recipientId: user.id }
-      )
-      .catch((err) => console.error('[AUTH] Approval email error:', err))
+    // Email dispatch handled by emailDispatcher above; do not send raw email here
 
     return { request, user }
   }

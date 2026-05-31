@@ -2,7 +2,7 @@ import type { NextFunction, Response } from 'express'
 
 import { ROLE_CAPABILITIES } from '../constants/roles'
 import type { IUser, UserRole } from '../interfaces/user.interface'
-import type { RequestWithUser } from './authenticate'
+import type { RequestWithUser } from './withAuth'
 
 type AuthorizationRequirement = UserRole | string
 

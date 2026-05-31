@@ -6,6 +6,7 @@ export type NotificationType =
   | 'birthday_today'
   | 'access_approved'
   | 'access_rejected'
+  | 'rsvp_received'
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed'
 

@@ -6,6 +6,7 @@ import type { IEvent } from '../interfaces/event.interface'
 import type { IUser } from '../interfaces/user.interface'
 import { notificationService } from './notification.service'
 import { emailDispatcher } from './email-dispatcher.service'
+import { eventService } from './event.service'
 import type { INotification } from '../interfaces/notification.interface'
 
 export interface BirthdayPreview {
@@ -94,20 +95,17 @@ export class BirthdayService {
         continue
       }
 
-      const event: IEvent = {
-        id: randomUUID(),
+      // Create via EventService so we can opt into silent mode (no family-wide emails/notifications)
+      const createdEvent = await eventService.createEvent({
         title,
         description: `Birthday celebration for ${user.name}`,
         date: `${targetYear}-${parts.month}-${parts.day}`,
         type: EVENT_TYPES.BIRTHDAY,
-        locked: true,
         createdBy: user.id,
-        rsvps: {},
-        createdAt: now,
-        updatedAt: now,
-      }
-      db.events.push(event)
-      created.push(event)
+        silent: true,
+        birthdayUserId: user.id,
+      })
+      created.push(createdEvent)
     }
 
     if (created.length > 0) {
@@ -119,7 +117,14 @@ export class BirthdayService {
   async generateBirthdayReminders(daysAhead: number = 7, referenceDate = new Date()): Promise<INotification[]> {
     const db = await readData()
     const created: INotification[] = []
-    const currentYear = referenceDate.getFullYear()
+    const currentYear = referenceDate.getUTCFullYear()
+
+    // Normalise reference date to UTC midnight so time-of-day doesn't affect daysUntil
+    const todayUTC = new Date(Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth(),
+      referenceDate.getUTCDate(),
+    ))
 
     // Get all users with birthdays
     const usersWithBirthdays = db.users.filter((user) => Boolean(user.birthday))
@@ -131,7 +136,7 @@ export class BirthdayService {
 
       const birthdayThisYear = `${currentYear}-${parts.month}-${parts.day}`
       const birthdayDate = new Date(`${birthdayThisYear}T00:00:00Z`)
-      const daysUntilBirthday = Math.floor((birthdayDate.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24))
+      const daysUntilBirthday = Math.floor((birthdayDate.getTime() - todayUTC.getTime()) / (1000 * 60 * 60 * 24))
 
       // Check if birthday falls within the next daysAhead days (inclusive of today)
       if (daysUntilBirthday >= 0 && daysUntilBirthday <= daysAhead) {
