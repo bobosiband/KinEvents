@@ -7,6 +7,8 @@ export type NotificationType =
   | 'access_approved'
   | 'access_rejected'
   | 'rsvp_received'
+  | 'contribution_verified'
+  | 'contribution_rejected'
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed'
 

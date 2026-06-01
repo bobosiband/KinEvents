@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import type { User } from '@/features/auth/types/auth.types'
-import { useClosePool, useConfirmReceived, useCreatePool, useGiftPool } from '../hooks/useGifts'
+import { useClosePool, useConfirmReceived, useCreatePool, useGiftPool, useApproveContribution, useRejectContribution } from '../hooks/useGifts'
 import { ContributeForm } from './ContributeForm'
 
 const GIFT_CURRENCY = 'AUD'
@@ -31,6 +31,8 @@ export function GiftPoolWidget({
   const createPool = useCreatePool()
   const closePool = useClosePool(eventId)
   const confirmReceived = useConfirmReceived(eventId)
+  const approve = useApproveContribution(eventId)
+  const reject = useRejectContribution(eventId)
   const [contributing, setContributing] = useState(false)
   const [showNonContributors, setShowNonContributors] = useState(false)
   const [confirmingReceipt, setConfirmingReceipt] = useState(false)
@@ -202,15 +204,35 @@ export function GiftPoolWidget({
               <div key={contribution.id} className="rounded-xl bg-muted p-3 text-sm space-y-1">
                 <div className="flex justify-between gap-2">
                   <span className="font-medium">{payer?.name ?? 'Unknown'}</span>
-                  <span className="font-bold text-primary">
-                    {GIFT_CURRENCY} {contribution.amount.toFixed(2)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-primary">{GIFT_CURRENCY} {contribution.amount.toFixed(2)}</span>
+                    {contribution.status === 'PENDING_VERIFICATION' ? (
+                      <Badge tone="secondary" pill>Pending Verification</Badge>
+                    ) : contribution.status === 'CONFIRMED' ? (
+                      <Badge tone="success" pill>Confirmed</Badge>
+                    ) : contribution.status === 'REJECTED' ? (
+                      <Badge tone="destructive" pill>Rejected</Badge>
+                    ) : null}
+                  </div>
                 </div>
                 {coveredOthers.length > 0 ? (
                   <p className="text-xs text-muted-foreground">Also covering: {coveredOthers.join(', ')}</p>
                 ) : null}
                 {contribution.reference ? <p className="text-xs text-muted-foreground">Ref: {contribution.reference}</p> : null}
                 {contribution.note ? <p className="text-xs text-muted-foreground italic">{contribution.note}</p> : null}
+                {isAdmin && contribution.status === 'PENDING_VERIFICATION' ? (
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={() => approve.mutate({ poolId: pool.id, contributionId: contribution.id })}>
+                      Approve
+                    </Button>
+                    <Button type="button" size="sm" variant="secondary" onClick={() => {
+                      const reason = prompt('Rejection reason (optional)') || undefined
+                      reject.mutate({ poolId: pool.id, contributionId: contribution.id, reason })
+                    }}>
+                      Reject
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             )
           })}

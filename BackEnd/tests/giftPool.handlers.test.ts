@@ -363,4 +363,76 @@ describe('Gift Pool Handlers', () => {
       expect(response.status).toHaveBeenCalledWith(400)
     })
   })
+
+  describe('Admin verification endpoints', () => {
+    it('GET pending contributions requires admin', async () => {
+      const handler = require('../api/gift-pools/[id]/pending-contributions').default
+      seedDb({ users: [mockMember] })
+      const response = res()
+      await handler(
+        req({ method: 'GET', headers: authHeader(memberToken()), query: { id: randomUUID() } }),
+        response,
+      )
+      expect(response.status).toHaveBeenCalledWith(403)
+    })
+
+    it('GET pending contributions returns items for admin', async () => {
+      const { giftPoolService } = require('../src/services/giftPool.service')
+      seedDb({ users: [mockAdmin] })
+      const pool = await giftPoolService.createPool({ eventId: randomUUID(), birthdayUserId: randomUUID(), createdBy: mockAdmin.id })
+      const c = await giftPoolService.addContribution({ poolId: pool.id, paidBy: mockMember.id, onBehalfOf: [], amount: 10 })
+
+      const handler = require('../api/gift-pools/[id]/pending-contributions').default
+      const response = res()
+      await handler(
+        req({ method: 'GET', headers: authHeader(adminToken()), query: { id: pool.id } }),
+        response,
+      )
+      expect(response.status).toHaveBeenCalledWith(200)
+      expect(response.json).toHaveBeenCalledWith(expect.objectContaining({ data: expect.arrayContaining([expect.objectContaining({ id: c.id })]) }))
+    })
+
+    it('POST approve contribution requires admin', async () => {
+      const handler = require('../api/gift-pools/[id]/approve-contribution').default
+      seedDb({ users: [mockMember] })
+      const response = res()
+      await handler(
+        req({ method: 'POST', headers: authHeader(memberToken()), query: { id: randomUUID() }, body: { contributionId: randomUUID() } }),
+        response,
+      )
+      expect(response.status).toHaveBeenCalledWith(403)
+    })
+
+    it('POST approve/reject contribution flow as admin', async () => {
+      const { giftPoolService } = require('../src/services/giftPool.service')
+      seedDb({ users: [mockAdmin, mockMember] })
+      const pool = await giftPoolService.createPool({ eventId: randomUUID(), birthdayUserId: randomUUID(), createdBy: mockAdmin.id })
+      const contribution = await giftPoolService.addContribution({ poolId: pool.id, paidBy: mockMember.id, onBehalfOf: [], amount: 15 })
+
+      const approveHandler = require('../api/gift-pools/[id]/approve-contribution').default
+      const approveRes = res()
+      await approveHandler(
+        req({ method: 'POST', headers: authHeader(adminToken()), query: { id: pool.id }, body: { contributionId: contribution.id } }),
+        approveRes,
+      )
+      expect(approveRes.status).toHaveBeenCalledWith(200)
+      // verify state
+      const updated = await giftPoolService.getContributionById(contribution.id)
+      expect(updated?.status).toBe('CONFIRMED')
+      expect(getData().auditLogs).toHaveLength(1)
+
+      // create another contribution and reject
+      const contribution2 = await giftPoolService.addContribution({ poolId: pool.id, paidBy: mockMember.id, onBehalfOf: [], amount: 5 })
+      const rejectHandler = require('../api/gift-pools/[id]/reject-contribution').default
+      const rejectRes = res()
+      await rejectHandler(
+        req({ method: 'POST', headers: authHeader(adminToken()), query: { id: pool.id }, body: { contributionId: contribution2.id, reason: 'Invalid reference' } }),
+        rejectRes,
+      )
+      expect(rejectRes.status).toHaveBeenCalledWith(200)
+      const updated2 = await giftPoolService.getContributionById(contribution2.id)
+      expect(updated2?.status).toBe('REJECTED')
+      expect((getData() as any).auditLogs.length).toBeGreaterThanOrEqual(2)
+    })
+  })
 })

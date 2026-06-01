@@ -418,6 +418,57 @@ const swaggerDocument: OpenAPIV3_0 = {
         },
       },
     },
+    '/api/gift-pools/{id}/pending-contributions': {
+      get: {
+        tags: ['GiftPools'],
+        summary: 'List pending contributions for a gift pool',
+        description: 'Admin only: returns contributions with status PENDING_VERIFICATION for a given pool',
+        security: [{ bearerAuth: [] }],
+        'x-required-role': 'admin',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: 'List of pending contributions', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'array', items: { $ref: '#/components/schemas/GiftContribution' } } } } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '403': { description: 'Forbidden', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+        },
+      },
+    },
+    '/api/gift-pools/{id}/approve-contribution': {
+      post: {
+        tags: ['GiftPools'],
+        summary: 'Approve a pending contribution',
+        description: 'Admin only: marks a contribution as CONFIRMED',
+        security: [{ bearerAuth: [] }],
+        'x-required-role': 'admin',
+        parameters: [ { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } } ],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['contributionId'], properties: { contributionId: { type: 'string', format: 'uuid' } } } } } },
+        responses: {
+          '200': { description: 'Contribution approved', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '400': { description: 'Bad request', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '403': { description: 'Forbidden', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+        },
+      },
+    },
+    '/api/gift-pools/{id}/reject-contribution': {
+      post: {
+        tags: ['GiftPools'],
+        summary: 'Reject a pending contribution',
+        description: 'Admin only: marks a contribution as REJECTED and records optional reason',
+        security: [{ bearerAuth: [] }],
+        'x-required-role': 'admin',
+        parameters: [ { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } } ],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['contributionId'], properties: { contributionId: { type: 'string', format: 'uuid' }, reason: { type: 'string' } } } } } },
+        responses: {
+          '200': { description: 'Contribution rejected', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '400': { description: 'Bad request', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '403': { description: 'Forbidden', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+        },
+      },
+    },
     '/api/users': {
       get: {
         tags: ['Users'],

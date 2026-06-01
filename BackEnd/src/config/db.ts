@@ -18,6 +18,7 @@ export interface DbSchema {
   accessRequests: IAccessRequest[]
   accessRequestHistory: IAccessRequest[]
   notifications: INotification[]
+  auditLogs?: any[]
   content: IContentBlock[]
   emailLogs: EmailLogEntry[]
   messages: IMessage[]
@@ -42,6 +43,7 @@ let data: DbSchema = {
   accessRequests: [],
   accessRequestHistory: [],
   notifications: [],
+  auditLogs: [],
   content: [],
   emailLogs: [],
   messages: [],
@@ -76,6 +78,7 @@ function normalizeDataShape(saved: Partial<DbSchema> = {}): DbSchema {
     accessRequests: Array.isArray(saved.accessRequests) ? saved.accessRequests : [],
     accessRequestHistory: Array.isArray(saved.accessRequestHistory) ? saved.accessRequestHistory : [],
     notifications: Array.isArray(saved.notifications) ? saved.notifications : [],
+    auditLogs: Array.isArray(saved.auditLogs) ? saved.auditLogs : [],
     content: Array.isArray(saved.content) ? saved.content : [],
     emailLogs: Array.isArray(saved.emailLogs) ? saved.emailLogs : [],
     messages: Array.isArray(saved.messages) ? saved.messages : [],

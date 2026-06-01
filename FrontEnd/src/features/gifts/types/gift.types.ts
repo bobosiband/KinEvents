@@ -27,6 +27,13 @@ export interface GiftContribution {
   reference?: string
   note?: string
   createdAt: string
+  status?: 'PENDING' | 'PENDING_VERIFICATION' | 'CONFIRMED' | 'REJECTED'
+  submittedAt?: string
+  verifiedBy?: string
+  verifiedAt?: string
+  rejectedBy?: string
+  rejectedAt?: string
+  rejectionReason?: string
 }
 
 export interface GiftPoolStatus {
