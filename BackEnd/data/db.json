@@ -24,7 +24,10 @@
     }
   ],
   "events": [],
+  "giftPools": [],
+  "giftContributions": [],
   "accessRequests": [],
   "notifications": [],
+  "auditLogs": [],
   "content": []
 }

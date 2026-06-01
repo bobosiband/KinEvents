@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { closePool, confirmReceived, contribute, createPool, getPoolByEvent } from '../api/gifts.api'
+import { closePool, confirmReceived, contribute, createPool, getPoolByEvent, approveContribution, rejectContribution } from '../api/gifts.api'
 import type { ConfirmReceivedPayload, ContributePayload } from '../types/gift.types'
 
 export function useGiftPool(eventId: string) {
@@ -45,6 +45,28 @@ export function useConfirmReceived(eventId: string) {
   return useMutation({
     mutationFn: ({ poolId, payload }: { poolId: string; payload: ConfirmReceivedPayload }) =>
       confirmReceived(poolId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gift-pool', eventId] })
+    },
+  })
+}
+
+export function useApproveContribution(eventId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ poolId, contributionId }: { poolId: string; contributionId: string }) =>
+      approveContribution(poolId, contributionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gift-pool', eventId] })
+    },
+  })
+}
+
+export function useRejectContribution(eventId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ poolId, contributionId, reason }: { poolId: string; contributionId: string; reason?: string }) =>
+      rejectContribution(poolId, contributionId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gift-pool', eventId] })
     },

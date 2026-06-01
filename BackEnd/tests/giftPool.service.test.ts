@@ -132,10 +132,18 @@ describe('GiftPoolService', () => {
       const pool = await giftPoolService.createPool({
         eventId: randomUUID(), birthdayUserId: randomUUID(), createdBy: randomUUID(),
       })
-      await giftPoolService.addContribution({ poolId: pool.id, paidBy: randomUUID(), onBehalfOf: [], amount: 20 })
-      await giftPoolService.addContribution({ poolId: pool.id, paidBy: randomUUID(), onBehalfOf: [], amount: 30 })
+      const c1 = await giftPoolService.addContribution({ poolId: pool.id, paidBy: randomUUID(), onBehalfOf: [], amount: 20 })
+      const c2 = await giftPoolService.addContribution({ poolId: pool.id, paidBy: randomUUID(), onBehalfOf: [], amount: 30 })
 
-      const status = await giftPoolService.getPoolStatus(pool.id)
+      // contributions are pending until approved
+      let status = await giftPoolService.getPoolStatus(pool.id)
+      expect(status.totalRaised).toBe(0)
+
+      // approve contributions
+      await giftPoolService.approveContribution(c1.id, randomUUID())
+      await giftPoolService.approveContribution(c2.id, randomUUID())
+
+      status = await giftPoolService.getPoolStatus(pool.id)
       expect(status.totalRaised).toBe(50)
     })
 

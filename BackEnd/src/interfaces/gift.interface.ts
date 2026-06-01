@@ -23,4 +23,12 @@ export interface IGiftContribution {
   reference?: string
   note?: string
   createdAt: string
+  // Verification workflow
+  status?: 'PENDING' | 'PENDING_VERIFICATION' | 'CONFIRMED' | 'REJECTED'
+  submittedAt?: string
+  verifiedBy?: string
+  verifiedAt?: string
+  rejectedBy?: string
+  rejectedAt?: string
+  rejectionReason?: string
 }

@@ -25,6 +25,18 @@ export function contribute(poolId: string, payload: ContributePayload): Promise<
   return postData<GiftContribution, ContributePayload>(ENDPOINTS.GIFT_POOL_CONTRIBUTE(poolId), payload)
 }
 
+export function listPendingContributions(poolId: string): Promise<GiftContribution[]> {
+  return getData<GiftContribution[]>(ENDPOINTS.GIFT_POOL_PENDING_CONTRIBUTIONS(poolId))
+}
+
+export function approveContribution(poolId: string, contributionId: string): Promise<GiftContribution> {
+  return postData<GiftContribution, { contributionId: string }>(ENDPOINTS.GIFT_POOL_APPROVE_CONTRIBUTION(poolId), { contributionId })
+}
+
+export function rejectContribution(poolId: string, contributionId: string, reason?: string): Promise<GiftContribution> {
+  return postData<GiftContribution, { contributionId: string; reason?: string }>(ENDPOINTS.GIFT_POOL_REJECT_CONTRIBUTION(poolId), { contributionId, reason })
+}
+
 export function closePool(poolId: string): Promise<GiftPool> {
   return patchData<GiftPool, Record<string, never>>(ENDPOINTS.GIFT_POOL_CLOSE(poolId), {})
 }

@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { readData, persistData } from '../config/db'
 import type { IGiftPool, IGiftContribution } from '../interfaces/gift.interface'
 import type { IUser } from '../interfaces/user.interface'
+import { notificationService } from './notification.service'
 
 export interface GiftPoolStatus {
   pool: IGiftPool
@@ -87,6 +88,9 @@ export class GiftPoolService {
       reference: input.reference,
       note: input.note,
       createdAt: new Date().toISOString(),
+      // mark as pending verification until an admin approves
+      status: 'PENDING_VERIFICATION',
+      submittedAt: new Date().toISOString(),
     }
 
     db.giftContributions.push(contribution)
@@ -104,7 +108,8 @@ export class GiftPoolService {
 
     const contributions = db.giftContributions.filter(c => c.poolId === poolId)
     const contributorIds = [...new Set(contributions.flatMap(c => c.onBehalfOf))]
-    const totalRaised = contributions.reduce((sum, c) => sum + c.amount, 0)
+    // Only CONFIRMED contributions count towards totals
+    const totalRaised = contributions.filter(c => c.status === 'CONFIRMED').reduce((sum, c) => sum + c.amount, 0)
 
     // Non-contributors: approved, not the birthday person, not already covered
     const nonContributors = db.users.filter(u =>
@@ -114,6 +119,98 @@ export class GiftPoolService {
     )
 
     return { pool, contributions, totalRaised, contributorIds, nonContributors }
+  }
+
+  async getContributionById(contributionId: string): Promise<IGiftContribution | null> {
+    const db = await readData()
+    return db.giftContributions.find(c => c.id === contributionId) ?? null
+  }
+
+  async listPendingContributions(poolId?: string): Promise<IGiftContribution[]> {
+    const db = await readData()
+    let items = db.giftContributions.filter(c => c.status === 'PENDING_VERIFICATION')
+    if (poolId) items = items.filter(c => c.poolId === poolId)
+    return items
+  }
+
+  async approveContribution(contributionId: string, adminUserId: string): Promise<IGiftContribution> {
+    const db = await readData()
+    const contribution = db.giftContributions.find(c => c.id === contributionId)
+    if (!contribution) throw new Error('Contribution not found')
+    if (contribution.status === 'CONFIRMED') throw new Error('Contribution already confirmed')
+
+    contribution.status = 'CONFIRMED'
+    contribution.verifiedBy = adminUserId
+    contribution.verifiedAt = new Date().toISOString()
+
+    const pool = db.giftPools.find(p => p.id === contribution.poolId)
+    if (pool) pool.updatedAt = new Date().toISOString()
+
+    // audit log
+    db.auditLogs = db.auditLogs ?? []
+    db.auditLogs.push({
+      id: randomUUID(),
+      action: 'contribution.approved',
+      actorId: adminUserId,
+      contributionId: contribution.id,
+      poolId: contribution.poolId,
+      timestamp: new Date().toISOString(),
+    })
+
+    await persistData()
+
+    // Notify contributor
+    try {
+      await notificationService.createNotification({
+        type: 'contribution_verified',
+        recipientId: contribution.paidBy,
+        payload: { amount: String(contribution.amount), poolId: contribution.poolId },
+      })
+    } catch (err) {
+      // ignore notify failures
+    }
+
+    return contribution
+  }
+
+  async rejectContribution(contributionId: string, adminUserId: string, reason?: string): Promise<IGiftContribution> {
+    const db = await readData()
+    const contribution = db.giftContributions.find(c => c.id === contributionId)
+    if (!contribution) throw new Error('Contribution not found')
+    if (contribution.status === 'REJECTED') throw new Error('Contribution already rejected')
+
+    contribution.status = 'REJECTED'
+    contribution.rejectedBy = adminUserId
+    contribution.rejectedAt = new Date().toISOString()
+    contribution.rejectionReason = reason?.trim() || undefined
+
+    const pool = db.giftPools.find(p => p.id === contribution.poolId)
+    if (pool) pool.updatedAt = new Date().toISOString()
+
+    db.auditLogs = db.auditLogs ?? []
+    db.auditLogs.push({
+      id: randomUUID(),
+      action: 'contribution.rejected',
+      actorId: adminUserId,
+      contributionId: contribution.id,
+      poolId: contribution.poolId,
+      reason: contribution.rejectionReason,
+      timestamp: new Date().toISOString(),
+    })
+
+    await persistData()
+
+    try {
+      await notificationService.createNotification({
+        type: 'contribution_rejected',
+        recipientId: contribution.paidBy,
+        payload: { amount: String(contribution.amount), poolId: contribution.poolId, reason: contribution.rejectionReason ?? '' },
+      })
+    } catch (err) {
+      // ignore
+    }
+
+    return contribution
   }
 
   async closePool(poolId: string): Promise<IGiftPool> {
