@@ -211,7 +211,7 @@ export function GiftPoolWidget({
                     ) : contribution.status === 'CONFIRMED' ? (
                       <Badge tone="success" pill>Confirmed</Badge>
                     ) : contribution.status === 'REJECTED' ? (
-                      <Badge tone="destructive" pill>Rejected</Badge>
+                      <Badge tone="danger" pill>Rejected</Badge>
                     ) : null}
                   </div>
                 </div>
