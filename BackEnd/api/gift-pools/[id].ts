@@ -3,7 +3,9 @@ import { giftPoolService } from '../../src/services/giftPool.service'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
 async function handler(req: RequestWithUser, res: VercelResponse) {
-  const id = typeof req.query.id === 'string' ? req.query.id : undefined
+  const queryId = typeof req.query.id === 'string' ? req.query.id : undefined
+  const paramsId = (req as unknown as { params?: Record<string, unknown> }).params?.id
+  const id = queryId ?? (typeof paramsId === 'string' ? paramsId : undefined)
   if (!id) {
     res.status(400).json({ success: false, message: 'Missing pool id' })
     return

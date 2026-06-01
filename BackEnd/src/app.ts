@@ -37,6 +37,7 @@ import chatUnreadCountHandler from '../api/chat/unread-count'
 import { corsMiddleware } from './middleware/cors'
 import giftPoolsHandler from '../api/gift-pools/index'
 import giftPoolByIdHandler from '../api/gift-pools/[id]'
+import giftPoolConfirmReceivedHandler from '../api/gift-pools/[id]/confirm-received'
 import giftPoolContributeHandler from '../api/gift-pools/[id]/contribute'
 import giftPoolByEventHandler from '../api/gift-pools/by-event/[eventId]'
 
@@ -63,6 +64,7 @@ export const routes = [
   { method: 'all', path: '/api/notifications/:id', handler: notificationByIdHandler },
   // Gift Pools — specific paths MUST come before /:id to avoid Express shadowing them
   { method: 'all', path: '/api/gift-pools/by-event/:eventId', handler: giftPoolByEventHandler },
+  { method: 'all', path: '/api/gift-pools/:id/confirm-received', handler: giftPoolConfirmReceivedHandler },
   { method: 'all', path: '/api/gift-pools/:id/contribute', handler: giftPoolContributeHandler },
   { method: 'all', path: '/api/gift-pools/:id', handler: giftPoolByIdHandler },
   { method: 'all', path: '/api/gift-pools', handler: giftPoolsHandler },
@@ -137,7 +139,7 @@ export function createApp() {
   })
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument as unknown as swaggerUi.SwaggerUiOptions))
-
+  
   for (const route of routes) {
     app[route.method](route.path, toVercelHandler(route.handler))
   }

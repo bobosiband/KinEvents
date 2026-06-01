@@ -1,0 +1,150 @@
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { useContribute } from '../hooks/useGifts'
+import type { GiftPool } from '../types/gift.types'
+import type { User } from '@/features/auth/types/auth.types'
+
+const GIFT_CURRENCY = 'AUD'
+
+interface ContributeFormProps {
+  pool: GiftPool
+  currentUser: User
+  allUsers: User[]
+  eventId: string
+  onSuccess: () => void
+}
+
+export function ContributeForm({ pool, currentUser, allUsers, eventId, onSuccess }: ContributeFormProps) {
+  const contribution = useContribute(pool.id, eventId)
+  const [amount, setAmount] = useState('')
+  const [selectedOnBehalf, setSelectedOnBehalf] = useState<string[]>([])
+  const [paymentMethod, setPaymentMethod] = useState('bank_transfer')
+  const [reference, setReference] = useState('')
+  const [note, setNote] = useState('')
+  const [error, setError] = useState('')
+
+  const others = allUsers.filter(user => user.id !== currentUser.id)
+
+  const toggleOnBehalf = (userId: string) => {
+    setSelectedOnBehalf(current =>
+      current.includes(userId) ? current.filter(id => id !== userId) : [...current, userId],
+    )
+  }
+
+  const amountNumber = Number(amount)
+  const peopleCount = selectedOnBehalf.length + 1
+  const perPerson = amountNumber > 0 && selectedOnBehalf.length > 0 ? (amountNumber / peopleCount).toFixed(2) : null
+
+  const submit = () => {
+    if (!amount || Number.isNaN(amountNumber) || amountNumber <= 0) {
+      setError('Please enter a valid amount greater than zero')
+      return
+    }
+
+    setError('')
+    contribution.mutate(
+      {
+        onBehalfOf: selectedOnBehalf,
+        amount: amountNumber,
+        paymentMethod: paymentMethod as 'bank_transfer' | 'cash' | 'paypal' | 'other',
+        reference: reference.trim() || undefined,
+        note: note.trim() || undefined,
+      },
+      {
+        onSuccess,
+        onError: err => toast.error(err instanceof Error ? err.message : 'Failed to record contribution'),
+      },
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Your payment is recorded on your behalf. You can also cover others who asked you to pay for them.
+      </p>
+
+      <Input
+        label={`Amount (${GIFT_CURRENCY})`}
+        type="number"
+        min="0.01"
+        step="0.01"
+        value={amount}
+        onChange={event => setAmount(event.target.value)}
+        fullWidth
+      />
+      {perPerson ? (
+        <p className="text-xs text-muted-foreground">
+          ≈ {GIFT_CURRENCY} {perPerson} per person ({peopleCount} people)
+        </p>
+      ) : null}
+
+      {others.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Also covering (optional)</p>
+          <p className="text-xs text-muted-foreground">Select family members whose share you are paying.</p>
+          <div className="grid gap-2 max-h-48 overflow-y-auto pr-1">
+            {others.map(user => (
+              <label
+                key={user.id}
+                className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5 cursor-pointer hover:bg-muted transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedOnBehalf.includes(user.id)}
+                  onChange={() => toggleOnBehalf(user.id)}
+                  className="h-4 w-4 rounded"
+                />
+                <span className="text-sm">{user.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Payment method</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(['bank_transfer', 'cash', 'paypal', 'other'] as const).map(method => (
+            <button
+              key={method}
+              type="button"
+              onClick={() => setPaymentMethod(method)}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-medium capitalize transition ${
+                paymentMethod === method
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {method.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Input
+        label="Payment reference (optional)"
+        value={reference}
+        onChange={event => setReference(event.target.value)}
+        hint="Bank ref or transaction ID"
+        fullWidth
+      />
+
+      <Textarea
+        label="Note (optional)"
+        value={note}
+        onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setNote(event.target.value)}
+        hint="Any message for the group"
+        fullWidth
+      />
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      <Button type="button" loading={contribution.isPending} onClick={submit} fullWidth>
+        Record Contribution
+      </Button>
+    </div>
+  )
+}

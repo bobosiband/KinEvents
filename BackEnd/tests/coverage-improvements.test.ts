@@ -188,9 +188,43 @@ describe('Coverage Improvements', () => {
     expect(upcoming).toHaveLength(1)
     expect(upcoming[0]?.birthdayThisYear).toBe('2026-11-03')
 
-    const created = await birthdayService.generateBirthdayEvents(2026)
+    const created = await birthdayService.generateBirthdayEvents(2026, new Date('2026-06-01T00:00:00.000Z'))
     expect(created.events).toHaveLength(1)
     expect(created.skipped).toBe(0)
+    expect(created.events[0]?.date).toBe('2026-11-03')
+  })
+
+  it('skips birthday events that are already in the past', async () => {
+    getData().users.push({
+      id: randomUUID(),
+      name: 'Past Birthday User',
+      email: 'past@example.com',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
+      capabilities: [],
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
+      birthday: '1998-01-03',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    getData().users.push({
+      id: randomUUID(),
+      name: 'Future Birthday User',
+      email: 'future@example.com',
+      role: 'member' as const,
+      accessStatus: 'approved' as const,
+      capabilities: [],
+      notificationPrefs: { level: 'all' as const, channels: ['email' as const] },
+      birthday: '1998-11-03',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    const created = await birthdayService.generateBirthdayEvents(2026, new Date('2026-06-01T00:00:00.000Z'))
+
+    expect(created.events).toHaveLength(1)
+    expect(created.skipped).toBe(1)
     expect(created.events[0]?.date).toBe('2026-11-03')
   })
 

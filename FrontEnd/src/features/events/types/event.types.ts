@@ -12,6 +12,7 @@ export interface Event {
   type: EventType
   locked: boolean
   createdBy: string
+  birthdayUserId?: string
   rsvps: Record<string, RSVPStatus>
   createdAt: string
   updatedAt: string

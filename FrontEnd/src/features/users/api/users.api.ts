@@ -6,6 +6,7 @@ export interface ProfilePayload {
   name?: string
   email?: string
   birthday?: string
+  phone?: string
   notificationPrefs: NotificationPrefs
 }
 

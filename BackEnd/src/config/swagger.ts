@@ -145,11 +145,14 @@ const swaggerDocument: OpenAPIV3_0 = {
           eventId: { type: 'string', format: 'uuid' },
           birthdayUserId: { type: 'string', format: 'uuid' },
           targetAmount: { type: 'number' },
-          currency: { type: 'string', example: 'GBP' },
+          currency: { type: 'string', example: 'AUD' },
           status: { type: 'string', enum: ['open', 'closed'] },
           createdBy: { type: 'string', format: 'uuid' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
+          receivedAt: { type: 'string', format: 'date-time', description: 'Set when admin confirms the gift was received' },
+          confirmedBy: { type: 'string', format: 'uuid', description: 'userId of admin who confirmed receipt' },
+          giftDescription: { type: 'string', description: 'Optional note about the gift e.g. Amazon voucher + card' },
         },
       },
       GiftContribution: {
@@ -924,7 +927,7 @@ const swaggerDocument: OpenAPIV3_0 = {
               eventId: { type: 'string', format: 'uuid' },
               birthdayUserId: { type: 'string', format: 'uuid' },
               targetAmount: { type: 'number' },
-              currency: { type: 'string', example: 'GBP' }
+              currency: { type: 'string', example: 'AUD' }
             }
           } } }
         },
@@ -956,6 +959,41 @@ const swaggerDocument: OpenAPIV3_0 = {
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
         responses: { '200': { description: 'Pool closed' }, '403': { description: 'Admin required' }, '404': { description: 'Not found' } }
       }
+    },
+    '/api/gift-pools/{id}/confirm-received': {
+      post: {
+        tags: ['Gift Pools'],
+        summary: 'Confirm gift received (admin only)',
+        description: 'Admin records that the birthday person has received their gift. Also closes the pool.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+        }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  giftDescription: {
+                    type: 'string',
+                    maxLength: 300,
+                    description: 'Optional description e.g. Amazon voucher + birthday card',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Receipt confirmed and pool closed' },
+          '400': { description: 'Already confirmed or pool not found' },
+          '403': { description: 'Admin required' },
+        },
+      },
     },
     '/api/gift-pools/{id}/contribute': {
       post: {

@@ -15,6 +15,8 @@ export interface User {
   role: UserRole
   accessStatus: AccessStatus
   birthday?: string
+  phone?: string
+  phoneVerified?: boolean
   capabilities: string[]
   notificationPrefs: NotificationPrefs
   createdAt: string

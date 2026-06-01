@@ -16,6 +16,8 @@ import { useRsvp } from '@/features/events/hooks/useRsvp'
 import { useDeleteEvent, useUpdateEvent } from '@/features/events/hooks/useCreateEvent'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useUsers } from '@/features/users/hooks/useUsers'
+import { GiftPoolWidget } from '@/features/gifts/components/GiftPoolWidget'
 import type { EventPayload, RSVPStatus } from '@/features/events/types/event.types'
 
 type ValidationErrorLike = {
@@ -38,6 +40,7 @@ export function EventDetail() {
   const permissions = usePermissions()
   const event = useEvent(id)
   const rsvp = useRsvp(id, user?.id || '')
+  const { data: allUsers = [] } = useUsers()
   const deleteEvent = useDeleteEvent()
   const updateEvent = useUpdateEvent(id)
   const [editing, setEditing] = useState(false)
@@ -120,6 +123,16 @@ export function EventDetail() {
         </div>
         <p className="text-sm text-muted-foreground">{attendees} family members going</p>
       </Card>
+
+      {event.data.type === 'birthday' && user && (
+        <GiftPoolWidget
+          eventId={event.data.id}
+          birthdayUserId={event.data.birthdayUserId ?? event.data.createdBy}
+          currentUser={user}
+          allUsers={allUsers}
+          isAdmin={user.role === 'admin'}
+        />
+      )}
 
       <Modal title="Edit Event" open={editing} onClose={() => setEditing(false)}>
         {event.data ? <EventForm event={event.data} loading={updateEvent.isPending} onSubmit={handleUpdate} fieldErrors={fieldErrors} /> : null}

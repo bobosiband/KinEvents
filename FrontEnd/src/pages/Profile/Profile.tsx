@@ -24,6 +24,7 @@ export function Profile() {
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
   const [birthday, setBirthday] = useState(user?.birthday || '')
+  const [phone, setPhone] = useState(user?.phone || '')
   const [level, setLevel] = useState<NotificationLevel>(user?.notificationPrefs.level || 'important')
   const [channels, setChannels] = useState<NotificationChannel[]>(user?.notificationPrefs.channels || ['email'])
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -32,6 +33,7 @@ export function Profile() {
     setName(user?.name || '')
     setEmail(user?.email || '')
     setBirthday(user?.birthday || '')
+    setPhone(user?.phone || '')
     setLevel(user?.notificationPrefs.level || 'important')
     setChannels(user?.notificationPrefs.channels || ['email'])
   }, [user])
@@ -54,6 +56,9 @@ export function Profile() {
     if (birthday && !/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
       newErrors.birthday = 'Use YYYY-MM-DD format.'
     }
+    if (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+      newErrors.phone = 'Use international format e.g. +447700900123'
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -64,7 +69,7 @@ export function Profile() {
     if (!validate()) return
 
     mutation.mutate(
-      { name, email: email.trim().toLowerCase(), birthday, notificationPrefs: { level, channels } },
+      { name, email: email.trim().toLowerCase(), birthday, phone: phone.trim() || undefined, notificationPrefs: { level, channels } },
       {
         onSuccess: (response) => {
           const updatedUser = response.user
@@ -132,6 +137,15 @@ export function Profile() {
           onChange={(event) => setBirthday(event.target.value)}
           error={errors.birthday}
           hint="YYYY-MM-DD"
+          fullWidth
+        />
+        <Input
+          label="Phone Number"
+          type="tel"
+          value={phone}
+          onChange={event => setPhone(event.target.value)}
+          error={errors.phone}
+          hint="International format: +447700900123"
           fullWidth
         />
         <label className="space-y-2 block">

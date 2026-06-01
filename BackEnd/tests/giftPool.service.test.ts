@@ -47,11 +47,11 @@ describe('GiftPoolService', () => {
       ).rejects.toThrow('already exists')
     })
 
-    it('defaults currency to GBP when not specified', async () => {
+    it('defaults currency to AUD when not specified', async () => {
       const pool = await giftPoolService.createPool({
         eventId: randomUUID(), birthdayUserId: randomUUID(), createdBy: randomUUID(),
       })
-      expect(pool.currency).toBe('GBP')
+      expect(pool.currency).toBe('AUD')
     })
   })
 
@@ -188,6 +188,64 @@ describe('GiftPoolService', () => {
 
     it('throws for unknown pool id', async () => {
       await expect(giftPoolService.closePool(randomUUID())).rejects.toThrow('not found')
+    })
+  })
+
+  describe('confirmReceived', () => {
+    it('marks the pool as received, sets all fields, and closes it', async () => {
+      const pool = await giftPoolService.createPool({
+        eventId: randomUUID(),
+        birthdayUserId: randomUUID(),
+        createdBy: randomUUID(),
+      })
+      const adminId = randomUUID()
+
+      const confirmed = await giftPoolService.confirmReceived(pool.id, adminId, 'Amazon voucher + card')
+
+      expect(confirmed.receivedAt).toBeTruthy()
+      expect(confirmed.confirmedBy).toBe(adminId)
+      expect(confirmed.giftDescription).toBe('Amazon voucher + card')
+      expect(confirmed.status).toBe('closed')
+    })
+
+    it('works without a giftDescription', async () => {
+      const pool = await giftPoolService.createPool({
+        eventId: randomUUID(),
+        birthdayUserId: randomUUID(),
+        createdBy: randomUUID(),
+      })
+      const confirmed = await giftPoolService.confirmReceived(pool.id, randomUUID())
+      expect(confirmed.receivedAt).toBeTruthy()
+      expect(confirmed.giftDescription).toBeUndefined()
+      expect(confirmed.status).toBe('closed')
+    })
+
+    it('trims whitespace-only giftDescription and treats it as undefined', async () => {
+      const pool = await giftPoolService.createPool({
+        eventId: randomUUID(),
+        birthdayUserId: randomUUID(),
+        createdBy: randomUUID(),
+      })
+      const confirmed = await giftPoolService.confirmReceived(pool.id, randomUUID(), '   ')
+      expect(confirmed.giftDescription).toBeUndefined()
+    })
+
+    it('throws if pool is already confirmed', async () => {
+      const pool = await giftPoolService.createPool({
+        eventId: randomUUID(),
+        birthdayUserId: randomUUID(),
+        createdBy: randomUUID(),
+      })
+      await giftPoolService.confirmReceived(pool.id, randomUUID())
+      await expect(
+        giftPoolService.confirmReceived(pool.id, randomUUID())
+      ).rejects.toThrow('already confirmed')
+    })
+
+    it('throws for unknown pool id', async () => {
+      await expect(
+        giftPoolService.confirmReceived(randomUUID(), randomUUID())
+      ).rejects.toThrow('not found')
     })
   })
 

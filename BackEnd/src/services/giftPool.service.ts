@@ -30,7 +30,7 @@ export class GiftPoolService {
       eventId: input.eventId,
       birthdayUserId: input.birthdayUserId,
       targetAmount: input.targetAmount,
-      currency: input.currency || 'GBP',
+      currency: input.currency || 'AUD',
       status: 'open',
       createdBy: input.createdBy,
       createdAt: new Date().toISOString(),
@@ -122,6 +122,26 @@ export class GiftPoolService {
     if (!pool) throw new Error('Gift pool not found')
     pool.status = 'closed'
     pool.updatedAt = new Date().toISOString()
+    await persistData()
+    return pool
+  }
+
+  async confirmReceived(
+    poolId: string,
+    confirmedBy: string,
+    giftDescription?: string,
+  ): Promise<IGiftPool> {
+    const db = await readData()
+    const pool = db.giftPools.find(p => p.id === poolId)
+    if (!pool) throw new Error('Gift pool not found')
+    if (pool.receivedAt) throw new Error('Gift receipt already confirmed')
+
+    pool.receivedAt = new Date().toISOString()
+    pool.confirmedBy = confirmedBy
+    if (giftDescription?.trim()) pool.giftDescription = giftDescription.trim()
+    pool.status = 'closed'
+    pool.updatedAt = new Date().toISOString()
+
     await persistData()
     return pool
   }
