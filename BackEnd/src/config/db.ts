@@ -12,6 +12,9 @@ import type { IMessage } from '../interfaces/message.interface'
 import type { EmailLogEntry } from '../interfaces/email.interface'
 import type { IGiftPool, IGiftContribution } from '../interfaces/gift.interface'
 
+/**
+ * inter
+ */
 export interface AuditLogEntry {
   id: string
   action: string
