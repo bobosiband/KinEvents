@@ -55,6 +55,15 @@ The KinEvents Team`
   }
 }
 
+/*
+ *
+ * Helper function to escape HTML special characters to prevent XSS attacks.
+ * This is important since the input may come from user-generated content.
+ *
+ * @param text The input string to escape.
+ * @returns The escaped string safe for HTML rendering.
+ */
+
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
     '&': '&amp;',
