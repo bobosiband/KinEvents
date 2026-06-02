@@ -9,9 +9,15 @@ const updateUserSchema = z.object({
   email: z.string().email().optional(),
   birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   phone: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(),
+  phoneNumber: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(),
   notificationPrefs: z.object({
     level: z.enum(['all', 'important', 'none']).optional(),
-    channels: z.array(z.enum(['email', 'push'])).optional(),
+    channels: z.array(z.enum(['email', 'whatsapp', 'push'])).optional(),
+  }).optional(),
+  notificationPreferences: z.object({
+    email: z.boolean().optional(),
+    whatsapp: z.boolean().optional(),
+    push: z.boolean().optional(),
   }).optional(),
 })
 
@@ -80,8 +86,10 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
     if (parseResult.data.birthday) updateData.birthday = parseResult.data.birthday
 
-    if (parseResult.data.phone !== undefined) {
-      updateData.phone = parseResult.data.phone
+    if (parseResult.data.phone !== undefined || parseResult.data.phoneNumber !== undefined) {
+      const normalizedPhone = parseResult.data.phone ?? parseResult.data.phoneNumber
+      updateData.phone = normalizedPhone
+      updateData.phoneNumber = normalizedPhone
       updateData.phoneVerified = false
     }
 
@@ -90,6 +98,13 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       updateData.notificationPrefs = {
         level: parseResult.data.notificationPrefs.level ?? user.notificationPrefs.level,
         channels: parseResult.data.notificationPrefs.channels ?? user.notificationPrefs.channels,
+      }
+    }
+
+    if (parseResult.data.notificationPreferences) {
+      updateData.notificationPreferences = {
+        ...user.notificationPreferences,
+        ...parseResult.data.notificationPreferences,
       }
     }
 

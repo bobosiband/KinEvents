@@ -44,6 +44,12 @@ export function buildEmailContent(
         text: `Today is ${ctx.birthdayName}'s birthday! Don't forget to wish them well.`,
         html: `<h2>Happy Birthday! 🎉</h2><p>Today is <strong>${ctx.birthdayName}</strong>'s birthday!</p>`,
       }
+    case 'gift_pool_reminder':
+      return {
+        subject: `Gift pool reminder for ${ctx.birthdayName}`,
+        text: `A gift pool reminder has been created for ${ctx.birthdayName}.`,
+        html: `<h2>Gift Pool Reminder 🎁</h2><p>A gift pool reminder has been created for <strong>${ctx.birthdayName}</strong>.</p>`,
+      }
     case 'access_approved':
       return {
         subject: 'Your KinEvents access has been approved',

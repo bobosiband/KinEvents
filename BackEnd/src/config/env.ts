@@ -27,6 +27,9 @@ const envSchema = z.object({
   EMAIL_PASS: z.string().optional(),
   EMAIL_FROM_NAME: z.string().default('KinEvents'),
   EMAIL_ENABLED: z.enum(['true', 'false']).default('true'),
+  WHATSAPP_PHONE_ID: z.string().optional(),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
+  WHATSAPP_TOKEN: z.string().optional(),
 })
 
 export const env = envSchema.parse({
@@ -41,6 +44,9 @@ export const env = envSchema.parse({
   EMAIL_PASS: process.env.EMAIL_PASS,
   EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
   EMAIL_ENABLED: process.env.EMAIL_ENABLED,
+  WHATSAPP_PHONE_ID: process.env.WHATSAPP_PHONE_ID,
+  WHATSAPP_BUSINESS_ACCOUNT_ID: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
+  WHATSAPP_TOKEN: process.env.WHATSAPP_TOKEN,
 })
 
 // Warn when SENDGRID key looks invalid in production (helps catch placeholder keys)

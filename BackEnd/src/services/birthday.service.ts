@@ -5,7 +5,6 @@ import { EVENT_TYPES } from '../constants/events'
 import type { IEvent } from '../interfaces/event.interface'
 import type { IUser } from '../interfaces/user.interface'
 import { notificationService } from './notification.service'
-import { emailDispatcher } from './email-dispatcher.service'
 import { eventService } from './event.service'
 import type { INotification } from '../interfaces/notification.interface'
 
@@ -152,36 +151,42 @@ export class BirthdayService {
 
       // Check if birthday falls within the next daysAhead days (inclusive of today)
       if (daysUntilBirthday >= 0 && daysUntilBirthday <= daysAhead) {
-        const notificationType = daysUntilBirthday === 0 ? 'birthday_today' : 'birthday_reminder'
-
-        const notification = await notificationService.createNotification({
-          type: notificationType,
-          recipientId: user.id,
-          payload: {
-            name: user.name,
-            birthdayDate: birthdayThisYear,
-            daysUntil: daysUntilBirthday.toString(),
-          },
-        })
-        created.push(notification)
-
-        // Send emails (non-blocking)
         try {
           if (daysUntilBirthday === 0) {
             // Birthday today - send to the birthday user
-            await emailDispatcher.onBirthdayToday(user)
+            const notification = await notificationService.createNotification({
+              type: 'birthday_today',
+              recipientId: user.id,
+              payload: {
+                name: user.name,
+                birthdayDate: birthdayThisYear,
+                daysUntil: String(daysUntilBirthday),
+              },
+            })
+            created.push(notification)
           } else {
             // Birthday reminder - send to all other approved users
             const otherApprovedUsers = allUsers.filter(
               (u) => u.id !== user.id && u.accessStatus === 'approved'
             )
-            for (const notifyUser of otherApprovedUsers) {
-              await emailDispatcher.onBirthdayReminder(user, notifyUser, daysUntilBirthday)
+            const recipients = otherApprovedUsers.length > 0 ? otherApprovedUsers : [user]
+
+            for (const notifyUser of recipients) {
+              const notification = await notificationService.createNotification({
+                type: 'birthday_reminder',
+                recipientId: notifyUser.id,
+                payload: {
+                  name: user.name,
+                  birthdayDate: birthdayThisYear,
+                  daysUntil: String(daysUntilBirthday),
+                },
+              })
+              created.push(notification)
             }
           }
         } catch (error) {
-          console.error('[BirthdayService] Email dispatch failed:', error)
-          // Don't throw - email failures don't affect the primary operation
+          console.error('[BirthdayService] Notification dispatch failed:', error)
+          // Don't throw - notification failures don't affect the primary operation
         }
       }
     }

@@ -29,7 +29,7 @@ async function startServer() {
             'manage_users',
             'edit_content',
           ],
-          notificationPrefs: { level: 'all', channels: ['email'] },
+          notificationPrefs: { level: 'all', channels: ['email', 'whatsapp'] },
           createdAt: now,
           updatedAt: now,
         },
