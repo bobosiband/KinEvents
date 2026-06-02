@@ -129,7 +129,7 @@ export class GiftPoolService {
   async listPendingContributions(poolId?: string): Promise<IGiftContribution[]> {
     const db = await readData()
     let items = db.giftContributions.filter(c => c.status === 'PENDING_VERIFICATION')
-    if (poolId) items = items.filter(c => c.poolId === poolId)
+    if (poolId && poolId.trim().length > 0) items = items.filter(c => c.poolId === poolId)
     return items
   }
 
@@ -147,7 +147,6 @@ export class GiftPoolService {
     if (pool) pool.updatedAt = new Date().toISOString()
 
     // audit log
-    db.auditLogs = db.auditLogs ?? []
     db.auditLogs.push({
       id: randomUUID(),
       action: 'contribution.approved',
@@ -187,7 +186,6 @@ export class GiftPoolService {
     const pool = db.giftPools.find(p => p.id === contribution.poolId)
     if (pool) pool.updatedAt = new Date().toISOString()
 
-    db.auditLogs = db.auditLogs ?? []
     db.auditLogs.push({
       id: randomUUID(),
       action: 'contribution.rejected',

@@ -78,7 +78,9 @@ export function GiftPoolWidget({
   const isConfirmed = Boolean(pool.receivedAt)
   const progressPct = pool.targetAmount ? Math.min(100, Math.round((totalRaised / pool.targetAmount) * 100)) : null
   const usersById = new Map(allUsers.map(user => [user.id, user]))
-  const usersForContribute = allUsers.filter(user => user.id !== birthdayUserId)
+  const usersForContribute = allUsers.filter(
+    user => birthdayUserId ? user.id !== birthdayUserId : true
+  )
 
   const handleConfirmReceipt = () => {
     confirmReceived.mutate(
