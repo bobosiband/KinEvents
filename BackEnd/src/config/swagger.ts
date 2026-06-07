@@ -41,13 +41,22 @@ const swaggerDocument: OpenAPIV3_0 = {
           accessStatus: { type: 'string', enum: ['pending', 'approved', 'rejected', 'revoked'] },
           birthday: { type: 'string', format: 'date' },
           phone: { type: 'string', description: 'E.164 phone number e.g. +447700900123' },
+          phoneNumber: { type: 'string', description: 'Alias for phone stored in E.164 format' },
           phoneVerified: { type: 'boolean', description: 'True only after OTP verification (future)' },
           capabilities: { type: 'array', items: { type: 'string' } },
           notificationPrefs: {
             type: 'object',
             properties: {
               level: { type: 'string', enum: ['all', 'important', 'none'] },
-              channels: { type: 'array', items: { type: 'string', enum: ['email', 'push'] } },
+              channels: { type: 'array', items: { type: 'string', enum: ['email', 'whatsapp', 'push'] } },
+            },
+          },
+          notificationPreferences: {
+            type: 'object',
+            properties: {
+              email: { type: 'boolean' },
+              whatsapp: { type: 'boolean' },
+              push: { type: 'boolean' },
             },
           },
           createdAt: { type: 'string', format: 'date-time' },
@@ -92,7 +101,7 @@ const swaggerDocument: OpenAPIV3_0 = {
           id: { type: 'string', format: 'uuid' },
           type: {
             type: 'string',
-            enum: ['event_created', 'event_updated', 'event_reminder', 'birthday_reminder', 'birthday_today', 'access_approved', 'access_rejected', 'rsvp_received'],
+            enum: ['event_created', 'event_updated', 'event_reminder', 'birthday_reminder', 'birthday_today', 'gift_pool_reminder', 'access_approved', 'access_rejected', 'rsvp_received'],
           },
           recipientId: { type: 'string', format: 'uuid' },
           payload: { type: 'object' },

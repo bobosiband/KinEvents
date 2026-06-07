@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       capabilities: [...ROLE_CAPABILITIES.admin],
       notificationPrefs: {
         level: 'all',
-        channels: ['email'],
+        channels: ['email', 'whatsapp'],
       },
       createdAt: now,
       updatedAt: now,

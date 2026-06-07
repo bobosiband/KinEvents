@@ -4,6 +4,7 @@ export type NotificationType =
   | 'event_reminder'
   | 'birthday_reminder'
   | 'birthday_today'
+  | 'gift_pool_reminder'
   | 'access_approved'
   | 'access_rejected'
   | 'rsvp_received'

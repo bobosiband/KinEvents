@@ -15,6 +15,7 @@ export function resetDb(): void {
     messages: [],
     giftPools: [],
     giftContributions: [],
+    auditLogs: [],
   })
 }
 
@@ -34,5 +35,6 @@ export function seedDb(partialData: Partial<DbSchema>): void {
     messages: partialData.messages ?? [],
     giftPools: partialData.giftPools ?? [],
     giftContributions: partialData.giftContributions ?? [],
+    auditLogs: partialData.auditLogs ?? [],
   })
 }

@@ -27,7 +27,10 @@
   "giftPools": [],
   "giftContributions": [],
   "accessRequests": [],
+  "accessRequestHistory": [],
   "notifications": [],
-  "auditLogs": [],
-  "content": []
+  "content": [],
+  "emailLogs": [],
+  "messages": [],
+  "auditLogs": []
 }

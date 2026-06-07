@@ -5,7 +5,7 @@ import { EVENT_TYPES } from '../constants/events'
 import type { IEvent, RSVPStatus } from '../interfaces/event.interface'
 import type { INotification } from '../interfaces/notification.interface'
 import { notificationService } from './notification.service'
-import { emailDispatcher } from './email-dispatcher.service'
+import { notificationDispatcher } from './notification-dispatcher.service'
 
 export interface CreateEventInput {
   title: string
@@ -68,10 +68,10 @@ export class EventService {
       // Send emails to all approved users (non-blocking)
       try {
         const allApprovedUsers = db.users.filter((user) => user.accessStatus === 'approved')
-        await emailDispatcher.onEventCreated(event, allApprovedUsers)
+        await notificationDispatcher.onEventCreated(event, allApprovedUsers)
       } catch (error) {
-        console.error('[EventService] Email dispatch failed:', error)
-        // Don't throw - email failures don't affect the primary operation
+        console.error('[EventService] Notification dispatch failed:', error)
+        // Don't throw - notification failures don't affect the primary operation
       }
     }
 
@@ -103,10 +103,10 @@ export class EventService {
         .map(([userId]) => userId)
       const rsvpYesUsers = db.users.filter((user) => rsvpYesUserIds.includes(user.id))
       const changes = Object.keys(patch).filter((key) => key !== 'updatedAt')
-      await emailDispatcher.onEventUpdated(event, rsvpYesUsers, changes)
+      await notificationDispatcher.onEventUpdated(event, rsvpYesUsers, changes)
     } catch (error) {
-      console.error('[EventService] Email dispatch failed:', error)
-      // Don't throw - email failures don't affect the primary operation
+      console.error('[EventService] Notification dispatch failed:', error)
+      // Don't throw - notification failures don't affect the primary operation
     }
 
     return event
@@ -155,11 +155,11 @@ export class EventService {
     try {
       const user = db.users.find((u) => u.id === userId)
       if (user) {
-        await emailDispatcher.onRsvpConfirmed(event, user, status)
+        await notificationDispatcher.onRsvpConfirmed(event, user, status)
       }
     } catch (error) {
-      console.error('[EventService] Email dispatch failed:', error)
-      // Don't throw - email failures don't affect the primary operation
+      console.error('[EventService] Notification dispatch failed:', error)
+      // Don't throw - notification failures don't affect the primary operation
     }
 
     return event

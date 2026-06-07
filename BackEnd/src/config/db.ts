@@ -12,13 +12,26 @@ import type { IMessage } from '../interfaces/message.interface'
 import type { EmailLogEntry } from '../interfaces/email.interface'
 import type { IGiftPool, IGiftContribution } from '../interfaces/gift.interface'
 
+/**
+ * inter
+ */
+export interface AuditLogEntry {
+  id: string
+  action: string
+  actorId: string
+  contributionId?: string
+  poolId?: string
+  reason?: string
+  timestamp: string
+}
+
 export interface DbSchema {
   users: IUser[]
   events: IEvent[]
   accessRequests: IAccessRequest[]
   accessRequestHistory: IAccessRequest[]
   notifications: INotification[]
-  auditLogs?: any[]
+  auditLogs: AuditLogEntry[]
   content: IContentBlock[]
   emailLogs: EmailLogEntry[]
   messages: IMessage[]

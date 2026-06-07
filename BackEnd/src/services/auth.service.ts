@@ -4,9 +4,8 @@ import { readData, persistData } from '../config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../constants/roles'
 import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IUser } from '../interfaces/user.interface'
-import { emailDispatcher } from './email-dispatcher.service'
-import { emailService } from './email.service'
-import { env } from '../config/env'
+import { notificationDispatcher } from './notification-dispatcher.service'
+import { notificationService } from './notification.service'
 
 export interface RequestAccessInput {
   name: string
@@ -28,8 +27,7 @@ export class AuthService {
 
   async requestAccess(input: RequestAccessInput): Promise<IAccessRequest> {
     const db = await readData()
-    const { accessRequests } = db
-    const existing = accessRequests.find(
+    const existing = db.accessRequests.find(
       (request) => normalizeEmail(request.email) === normalizeEmail(input.email) && request.status === 'pending'
     )
     if (existing) return existing
@@ -43,12 +41,11 @@ export class AuthService {
       status: 'pending',
       requestedAt: now,
     }
+
     db.accessRequests.push(request)
     await persistData()
 
-    // Send notification to admins
-    await emailDispatcher.onAccessRequested(request)
-
+    await notificationDispatcher.onAccessRequested(request)
     return request
   }
 
@@ -82,30 +79,35 @@ export class AuthService {
         role: USER_ROLES.MEMBER,
         accessStatus: 'approved',
         capabilities: [...ROLE_CAPABILITIES.member],
-        notificationPrefs: { level: 'all', channels: ['email'] },
+        notificationPrefs: { level: 'all', channels: ['email', 'whatsapp'] },
         createdAt: now,
         updatedAt: now,
       }
       db.users.push(user)
     }
 
-    // Move resolved request from active to history
     db.accessRequests.splice(requestIndex, 1)
     db.accessRequestHistory.push(request)
-
     await persistData()
 
-    // Send notification emails (non-blocking)
     try {
-      emailDispatcher.onAccessApproved(user).catch((err) => console.error('[AuthService] emailDispatcher.onAccessApproved failed:', err))
+      notificationService.createNotification({
+        type: 'access_approved',
+        recipientId: user.id,
+        status: 'sent',
+        payload: {
+          recipientName: user.name,
+        },
+      }).catch((error: unknown) => console.error('[AuthService] access_approved notification failed:', error))
+
+      notificationDispatcher.onAccessApproved(user).catch((error: unknown) => console.error('[AuthService] notificationDispatcher.onAccessApproved failed:', error))
+
       if (isNewUser) {
-        emailDispatcher.onWelcome(user).catch((err) => console.error('[AuthService] emailDispatcher.onWelcome failed:', err))
+        notificationDispatcher.onWelcome(user).catch((error: unknown) => console.error('[AuthService] notificationDispatcher.onWelcome failed:', error))
       }
     } catch (error) {
-      console.error('[AuthService] Email dispatch failed:', error)
+      console.error('[AuthService] Notification dispatch failed:', error)
     }
-
-    // Email dispatch handled by emailDispatcher above; do not send raw email here
 
     return { request, user }
   }
@@ -128,22 +130,18 @@ export class AuthService {
     request.resolvedBy = resolvedBy
 
     try {
-      // Move resolved request from active to history
       db.accessRequests.splice(requestIndex, 1)
       db.accessRequestHistory.push(request)
-
       await persistData()
     } catch (error) {
       Object.assign(request, previousState)
       throw error
     }
 
-    // Send notification email (non-blocking)
     try {
-      await emailDispatcher.onAccessRejected(request)
+      await notificationDispatcher.onAccessRejected(request)
     } catch (error) {
-      console.error('[AuthService] Email dispatch failed:', error)
-      // Don't throw - email failures don't affect the primary operation
+      console.error('[AuthService] Notification dispatch failed:', error)
     }
 
     return request

@@ -436,7 +436,11 @@ class EmailDispatcherService {
     const { notificationPrefs } = user
 
     // Must have email in channels
-    if (!notificationPrefs.channels.includes('email')) {
+    if (!notificationPrefs?.channels?.includes('email')) {
+      return false
+    }
+
+    if (user.notificationPreferences?.email === false) {
       return false
     }
 

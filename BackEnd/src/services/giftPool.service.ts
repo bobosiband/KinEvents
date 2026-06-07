@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { readData, persistData } from '../config/db'
 import type { IGiftPool, IGiftContribution } from '../interfaces/gift.interface'
+import type { INotification } from '../interfaces/notification.interface'
 import type { IUser } from '../interfaces/user.interface'
 import { notificationService } from './notification.service'
 
@@ -129,7 +130,7 @@ export class GiftPoolService {
   async listPendingContributions(poolId?: string): Promise<IGiftContribution[]> {
     const db = await readData()
     let items = db.giftContributions.filter(c => c.status === 'PENDING_VERIFICATION')
-    if (poolId) items = items.filter(c => c.poolId === poolId)
+    if (poolId && poolId.trim().length > 0) items = items.filter(c => c.poolId === poolId)
     return items
   }
 
@@ -147,7 +148,6 @@ export class GiftPoolService {
     if (pool) pool.updatedAt = new Date().toISOString()
 
     // audit log
-    db.auditLogs = db.auditLogs ?? []
     db.auditLogs.push({
       id: randomUUID(),
       action: 'contribution.approved',
@@ -187,7 +187,6 @@ export class GiftPoolService {
     const pool = db.giftPools.find(p => p.id === contribution.poolId)
     if (pool) pool.updatedAt = new Date().toISOString()
 
-    db.auditLogs = db.auditLogs ?? []
     db.auditLogs.push({
       id: randomUUID(),
       action: 'contribution.rejected',
@@ -221,6 +220,44 @@ export class GiftPoolService {
     pool.updatedAt = new Date().toISOString()
     await persistData()
     return pool
+  }
+
+  async generateGiftPoolReminders(poolId: string): Promise<INotification[]> {
+    const db = await readData()
+    const pool = db.giftPools.find(p => p.id === poolId)
+    if (!pool) throw new Error('Gift pool not found')
+
+    const birthdayUser = db.users.find(u => u.id === pool.birthdayUserId)
+    if (!birthdayUser) throw new Error('Birthday user not found')
+
+    const contributions = db.giftContributions.filter(c => c.poolId === poolId)
+    const contributorIds = [...new Set(contributions.flatMap(c => c.onBehalfOf))]
+    const nonContributors = db.users.filter(u =>
+      u.accessStatus === 'approved' &&
+      u.id !== pool.birthdayUserId &&
+      !contributorIds.includes(u.id)
+    )
+    const notifications: INotification[] = []
+
+    for (const recipient of nonContributors) {
+      try {
+        const notification = await notificationService.createNotification({
+          type: 'gift_pool_reminder',
+          recipientId: recipient.id,
+          payload: {
+            poolId: pool.id,
+            birthdayUserId: birthdayUser.id,
+            name: birthdayUser.name,
+            birthdayPersonName: birthdayUser.name,
+          },
+        })
+        notifications.push(notification)
+      } catch (error) {
+        console.error(`[GiftPoolService] Gift pool reminder failed for ${recipient.id}:`, error)
+      }
+    }
+
+    return notifications
   }
 
   async confirmReceived(
