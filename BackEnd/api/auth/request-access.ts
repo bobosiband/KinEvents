@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 import { authService } from '../../src/services/auth.service'
 import { withAuth } from '../../src/middleware/withAuth'
+import { getClientIp, isRateLimited, maskEmail, recordAuthAttempt } from '../../src/services/authThrottle.service'
 
 const requestAccessSchema = z.object({
   name: z.string().min(1),
@@ -34,6 +35,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  const emailHint = maskEmail(parseResult.data.email)
+  const ip = getClientIp(req)
+
+  if (await isRateLimited({ prefix: 'request_access', emailHint, ip })) {
+    await recordAuthAttempt({ action: 'request_access.blocked', actorId: null, emailHint, ip, reason: 'rate_limited' })
+    res.status(429).json({ success: false, message: 'Too many requests. Please try again later.' })
+    return
+  }
+
   const accessRequest = await authService.requestAccess(parseResult.data)
+  await recordAuthAttempt({ action: 'request_access.success', actorId: null, emailHint, ip })
   res.status(201).json({ success: true, data: accessRequest })
 }

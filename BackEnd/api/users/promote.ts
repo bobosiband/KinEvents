@@ -4,6 +4,7 @@ import type { VercelResponse } from '@vercel/node'
 import { readData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../../src/constants/roles'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
+import { bumpTokenVersion } from '../../src/services/auth.service'
 
 const promoteUserSchema = z.object({
   userId: z.string().uuid(),
@@ -41,9 +42,16 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
+    const roleChanged = user.role !== parseResult.data.role
+
     user.role = parseResult.data.role
     user.capabilities = [...ROLE_CAPABILITIES[parseResult.data.role]]
     user.updatedAt = new Date().toISOString()
+
+    // Force a fresh session on an actual role change — bumping invalidates
+    // every token issued before this change.
+    if (roleChanged) bumpTokenVersion(user)
+
     await persistData()
 
     res.status(200).json({

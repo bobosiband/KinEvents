@@ -18,7 +18,7 @@ import type { IGiftPool, IGiftContribution } from '../interfaces/gift.interface'
 export interface AuditLogEntry {
   id: string
   action: string
-  actorId: string
+  actorId: string | null
   contributionId?: string
   poolId?: string
   reason?: string
