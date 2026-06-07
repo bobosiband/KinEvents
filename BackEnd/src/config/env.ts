@@ -32,6 +32,8 @@ const envSchema = z.object({
   WHATSAPP_TOKEN: z.string().optional(),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   LOGIN_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
+  AUTH_THROTTLE_SECRET: z.string().optional(),
+  AUTH_AUDIT_RETENTION_HOURS: z.coerce.number().int().positive().default(168),
 })
 
 export const env = envSchema.parse({
@@ -51,6 +53,8 @@ export const env = envSchema.parse({
   WHATSAPP_TOKEN: process.env.WHATSAPP_TOKEN,
   LOGIN_RATE_LIMIT_MAX: process.env.LOGIN_RATE_LIMIT_MAX,
   LOGIN_RATE_LIMIT_WINDOW_MINUTES: process.env.LOGIN_RATE_LIMIT_WINDOW_MINUTES,
+  AUTH_THROTTLE_SECRET: process.env.AUTH_THROTTLE_SECRET,
+  AUTH_AUDIT_RETENTION_HOURS: process.env.AUTH_AUDIT_RETENTION_HOURS,
 })
 
 // Warn when SENDGRID key looks invalid in production (helps catch placeholder keys)
