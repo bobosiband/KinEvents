@@ -33,3 +33,11 @@ export function promoteUser(userId: string, role: UserRole): Promise<User> {
 export function deleteUser(id: string): Promise<{ message: string }> {
   return deleteData<{ message: string }>(ENDPOINTS.USER_BY_ID(id))
 }
+
+/**
+ * Thin PATCH for the admin-only revoke/reinstate path — deliberately bypasses
+ * `updateUser`, whose `ProfilePayload` requires `notificationPrefs`.
+ */
+export function setUserAccessStatus(id: string, accessStatus: 'approved' | 'revoked'): Promise<UpdateUserResponse> {
+  return patchData<UpdateUserResponse, { accessStatus: 'approved' | 'revoked' }>(ENDPOINTS.USER_BY_ID(id), { accessStatus })
+}

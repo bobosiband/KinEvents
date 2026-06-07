@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteUser, getUser, getUsers, promoteUser } from '../api/users.api'
+import { deleteUser, getUser, getUsers, promoteUser, setUserAccessStatus } from '../api/users.api'
 import type { User, UserRole } from '../types/user.types'
 
 export function useUsers(params?: { role?: string; status?: string }) {
@@ -14,6 +14,14 @@ export function usePromoteUser() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: UserRole }) => promoteUser(userId, role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  })
+}
+
+export function useSetUserAccessStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, accessStatus }: { id: string; accessStatus: 'approved' | 'revoked' }) => setUserAccessStatus(id, accessStatus),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   })
 }

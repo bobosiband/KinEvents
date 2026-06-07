@@ -10,6 +10,8 @@ interface RowAction<T> {
   label: string
   onClick: (row: T) => void
   tone?: 'primary' | 'danger'
+  /** Per-row visibility, e.g. show "Revoke" only for approved users and "Reinstate" only for revoked ones. Visible when omitted. */
+  isVisible?: (row: T) => boolean
 }
 
 interface DataTableProps<T extends { id: string }> {
@@ -48,7 +50,7 @@ export function DataTable<T extends { id: string }>({ columns, data, loading = f
               {columns.map(column => <td key={String(column.key)} data-label={column.header} className="px-4 py-3 text-sm">{valueFor(row, column)}</td>)}
               <td data-label="Actions" className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
-                  {actions.map(action => (
+                  {actions.filter(action => !action.isVisible || action.isVisible(row)).map(action => (
                     <Button key={action.label} type="button" size="sm" variant={action.tone === 'danger' ? 'danger' : 'secondary'} onClick={() => action.onClick(row)}>
                       {action.label}
                     </Button>
