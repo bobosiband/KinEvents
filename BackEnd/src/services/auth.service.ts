@@ -1,5 +1,8 @@
 import { randomUUID } from 'crypto'
 
+import jwt from 'jsonwebtoken'
+
+import { env } from '../config/env'
 import { readData, persistData } from '../config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../constants/roles'
 import type { IAccessRequest } from '../interfaces/auth.interface'
@@ -17,7 +20,26 @@ function normalizeEmail(email: string): string {
   return String(email || '').trim().toLowerCase()
 }
 
+/**
+ * Increments a user's `tokenVersion`, invalidating every previously issued
+ * token for them on the next `withAuth` check. Caller is responsible for
+ * persisting (`persistData`/`mutateData`) after mutating the user record.
+ */
+export function bumpTokenVersion(user: IUser): void {
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1
+}
+
 export class AuthService {
+  /**
+   * Single signing path for all auth tokens. Keeps the JWT payload minimal
+   * (`id` + `tokenVersion`) — `withAuth` re-reads the live user from the DB
+   * for authorization, so the token never needs to carry user fields.
+   */
+  issueToken(user: IUser): string {
+    return jwt.sign({ id: user.id, tokenVersion: user.tokenVersion ?? 0 }, env.JWT_SECRET, { expiresIn: '7d' })
+  }
+
+
   async getApprovedUser(email: string): Promise<IUser | null> {
     const db = await readData()
     return db.users.find(

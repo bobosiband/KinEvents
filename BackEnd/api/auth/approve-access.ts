@@ -1,8 +1,6 @@
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
-import jwt from 'jsonwebtoken'
 
-import { env } from '../../src/config/env'
 import { authService } from '../../src/services/auth.service'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 
@@ -29,7 +27,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
 
   try {
     const { request, user } = await authService.approveAccess(parseResult.data.accessRequestId)
-    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
+    const token = authService.issueToken(user)
 
     res.status(200).json({
       success: true,

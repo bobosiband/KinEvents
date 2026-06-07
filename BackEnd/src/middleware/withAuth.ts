@@ -60,6 +60,17 @@ export function withAuth(
         return
       }
 
+      // Additive session check: a mismatch means the user's sessions were
+      // force-invalidated (role/email change, revocation) since this token
+      // was issued. Legacy tokens/users (no tokenVersion) both resolve to 0
+      // and keep working.
+      const tokenVersion = decoded.tokenVersion ?? 0
+      const liveTokenVersion = liveUser.tokenVersion ?? 0
+      if (tokenVersion !== liveTokenVersion) {
+        res.status(401).json({ success: false, message: 'Session expired' })
+        return
+      }
+
       const requestWithUser = req as RequestWithUser
       const user = liveUser
 

@@ -1,10 +1,9 @@
 import { z } from 'zod'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import jwt from 'jsonwebtoken'
 
-import { env } from '../../src/config/env'
 import { readData } from '../../src/config/db'
 import { authService } from '../../src/services/auth.service'
+import { getClientIp, isRateLimited, maskEmail, recordAuthAttempt } from '../../src/services/authThrottle.service'
 
 const loginSchema = z.object({
   email: z.preprocess(
@@ -48,13 +47,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const inputEmail = normalizeEmail(parseResult.data.email)
-    console.log(`[LOGIN] Looking up user with email: ${inputEmail}`)
+    const emailHint = maskEmail(inputEmail)
+    const ip = getClientIp(req)
+    console.log(`[LOGIN] Looking up user with email hint: ${emailHint}`)
+
+    if (await isRateLimited({ prefix: 'login', emailHint, ip })) {
+      await recordAuthAttempt({ action: 'login.blocked', actorId: null, emailHint, ip, reason: 'rate_limited' })
+      res.status(429).json({ success: false, message: 'Too many login attempts. Please try again later.' })
+      return
+    }
 
     const db = await readData()
     const existingUser = db.users.find((item) => item.email.trim().toLowerCase() === inputEmail)
 
     if (!existingUser) {
-      console.warn(`[LOGIN] User not found: ${inputEmail}`)
+      console.warn(`[LOGIN] User not found for hint: ${emailHint}`)
+      await recordAuthAttempt({ action: 'login.failure', actorId: null, emailHint, ip, reason: 'unknown_user' })
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
@@ -63,17 +71,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.warn(
         `[LOGIN] User not approved: ${existingUser.id} (status: ${existingUser.accessStatus})`
       )
+      await recordAuthAttempt({ action: 'login.failure', actorId: existingUser.id, emailHint, ip, reason: 'not_approved' })
       res.status(403).json({ success: false, message: 'User account is not approved' })
       return
     }
 
     const user = (await authService.getApprovedUser(inputEmail)) ?? existingUser
 
-    console.log(`[LOGIN] User found: ${user.id} (${user.email})`)
+    console.log(`[LOGIN] User found: ${user.id}`)
 
     console.log(`[LOGIN] User approved. Generating JWT token for ${user.id}`)
 
-    const token = jwt.sign(user, env.JWT_SECRET, { expiresIn: '7d' })
+    const token = authService.issueToken(user)
+
+    await recordAuthAttempt({ action: 'login.success', actorId: user.id, emailHint, ip })
 
     console.log(`[LOGIN] ✓ Login successful for ${user.id}`)
 

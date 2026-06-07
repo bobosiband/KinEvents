@@ -1,11 +1,10 @@
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import jwt from 'jsonwebtoken'
 
-import { env } from '../../src/config/env'
 import { readData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES } from '../../src/constants/roles'
+import { authService } from '../../src/services/auth.service'
 import type { IUser } from '../../src/interfaces/user.interface'
 
 const createAdminSchema = z.object({
@@ -70,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     db.users.push(admin)
     await persistData()
 
-    const token = jwt.sign(admin, env.JWT_SECRET, { expiresIn: '7d' })
+    const token = authService.issueToken(admin)
 
     res.status(201).json({
       success: true,

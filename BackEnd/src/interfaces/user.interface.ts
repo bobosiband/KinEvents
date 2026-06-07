@@ -30,6 +30,12 @@ export interface IUser {
   capabilities: string[]
   notificationPrefs: INotificationPrefs
   notificationPreferences?: INotificationPreferences
+  /**
+   * Incremented to invalidate all previously issued tokens for this user
+   * (e.g. on role change, email change, or revocation). Absent on legacy
+   * users/tokens, which are treated as version 0.
+   */
+  tokenVersion?: number
   createdAt: string
   updatedAt: string
 }

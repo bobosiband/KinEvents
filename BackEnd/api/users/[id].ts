@@ -3,6 +3,7 @@ import type { VercelResponse } from '@vercel/node'
 
 import { readData, persistData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
+import { bumpTokenVersion } from '../../src/services/auth.service'
 
 const updateUserSchema = z.object({
   name: z.string().optional(),
@@ -69,6 +70,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() }
+    let emailChanged = false
 
     if (parseResult.data.name) updateData.name = parseResult.data.name
 
@@ -81,6 +83,7 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
         res.status(409).json({ success: false, message: 'Email already in use' })
         return
       }
+      emailChanged = normalizedEmail !== user.email.trim().toLowerCase()
       updateData.email = normalizedEmail
     }
 
@@ -109,6 +112,11 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     Object.assign(user, updateData)
+
+    // Email changes are an intended invalidation point (the Profile page
+    // tells users this refreshes their session token) — force re-auth.
+    if (emailChanged) bumpTokenVersion(user)
+
     await persistData()
 
     res.status(200).json({ success: true, data: { user } })
