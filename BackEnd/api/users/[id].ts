@@ -1,9 +1,12 @@
+import { randomUUID } from 'crypto'
+
 import { z } from 'zod'
 import type { VercelResponse } from '@vercel/node'
 
 import { readData, persistData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 import { bumpTokenVersion } from '../../src/services/auth.service'
+import type { IAdminAuditEntry } from '../../src/interfaces/auth.interface'
 
 const updateUserSchema = z.object({
   name: z.string().optional(),
@@ -20,6 +23,9 @@ const updateUserSchema = z.object({
     whatsapp: z.boolean().optional(),
     push: z.boolean().optional(),
   }).optional(),
+  // Admin-only revoke/reinstate path for *approved* users — `pending`/`rejected`
+  // remain owned by the access-request flow (`POST /api/auth/revoke-access`).
+  accessStatus: z.enum(['approved', 'revoked']).optional(),
 })
 
 /**
@@ -60,6 +66,16 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
+    const nextAccessStatus = parseResult.data.accessStatus
+
+    // Revoking/reinstating is an admin-only action — stricter than the
+    // "admin or self" gate above, which still applies to the rest of this
+    // endpoint (profile edits, etc).
+    if (nextAccessStatus !== undefined && currentUser.role !== 'admin') {
+      res.status(403).json({ success: false, message: 'Only admins can change a user\'s access status' })
+      return
+    }
+
     const db = await readData()
 
     // Single lookup — fail fast if user not found
@@ -69,8 +85,29 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       return
     }
 
+    if (nextAccessStatus !== undefined) {
+      // Guard the floor first: refuse anything that would leave zero approved
+      // admins able to administer the system — including a sole admin trying
+      // to revoke themselves (caught here before the self-lockout check below
+      // so the more specific "last admin" message wins).
+      if (nextAccessStatus === 'revoked' && user.role === 'admin' && user.accessStatus === 'approved') {
+        const approvedAdminCount = db.users.filter((u) => u.role === 'admin' && u.accessStatus === 'approved').length
+        if (approvedAdminCount <= 1) {
+          res.status(400).json({ success: false, message: 'Cannot revoke the last approved admin' })
+          return
+        }
+      }
+
+      // No self-revoke / self-lockout — an admin can't strand themselves.
+      if (currentUser.id === id) {
+        res.status(400).json({ success: false, message: 'You cannot change your own access status' })
+        return
+      }
+    }
+
     const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() }
     let emailChanged = false
+    let accessStatusChanged = false
 
     if (parseResult.data.name) updateData.name = parseResult.data.name
 
@@ -111,11 +148,33 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
       }
     }
 
+    if (nextAccessStatus !== undefined && nextAccessStatus !== user.accessStatus) {
+      updateData.accessStatus = nextAccessStatus
+      accessStatusChanged = true
+    }
+
     Object.assign(user, updateData)
 
     // Email changes are an intended invalidation point (the Profile page
     // tells users this refreshes their session token) — force re-auth.
     if (emailChanged) bumpTokenVersion(user)
+
+    if (accessStatusChanged) {
+      // Kill any live sessions immediately — revoking relies on this plus the
+      // existing `withAuth` accessStatus check and the login 403; reinstating
+      // bumps too, which is harmless and just forces a fresh token.
+      bumpTokenVersion(user)
+
+      db.auditLogs = db.auditLogs ?? []
+      const adminAuditEntry: IAdminAuditEntry = {
+        id: randomUUID(),
+        action: nextAccessStatus === 'revoked' ? 'user.access_revoked' : 'user.access_reinstated',
+        actorId: currentUser.id,
+        targetUserId: user.id,
+        timestamp: new Date().toISOString(),
+      }
+      db.auditLogs.push(adminAuditEntry)
+    }
 
     await persistData()
 

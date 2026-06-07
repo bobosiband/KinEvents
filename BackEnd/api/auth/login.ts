@@ -47,12 +47,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const inputEmail = normalizeEmail(parseResult.data.email)
-    const emailHint = maskEmail(inputEmail)
     const ip = getClientIp(req)
-    console.log(`[LOGIN] Looking up user with email hint: ${emailHint}`)
+    console.log(`[LOGIN] Looking up user with email hint: ${maskEmail(inputEmail)}`)
 
-    if (await isRateLimited({ prefix: 'login', emailHint, ip })) {
-      await recordAuthAttempt({ action: 'login.blocked', actorId: null, emailHint, ip, reason: 'rate_limited' })
+    if (await isRateLimited({ prefix: 'login', email: inputEmail, ip })) {
+      await recordAuthAttempt({ action: 'login.blocked', actorId: null, email: inputEmail, ip, reason: 'rate_limited' })
       res.status(429).json({ success: false, message: 'Too many login attempts. Please try again later.' })
       return
     }
@@ -61,8 +60,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const existingUser = db.users.find((item) => item.email.trim().toLowerCase() === inputEmail)
 
     if (!existingUser) {
-      console.warn(`[LOGIN] User not found for hint: ${emailHint}`)
-      await recordAuthAttempt({ action: 'login.failure', actorId: null, emailHint, ip, reason: 'unknown_user' })
+      console.warn(`[LOGIN] User not found for hint: ${maskEmail(inputEmail)}`)
+      await recordAuthAttempt({ action: 'login.failure', actorId: null, email: inputEmail, ip, reason: 'unknown_user' })
       res.status(404).json({ success: false, message: 'User not found' })
       return
     }
@@ -71,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.warn(
         `[LOGIN] User not approved: ${existingUser.id} (status: ${existingUser.accessStatus})`
       )
-      await recordAuthAttempt({ action: 'login.failure', actorId: existingUser.id, emailHint, ip, reason: 'not_approved' })
+      await recordAuthAttempt({ action: 'login.failure', actorId: existingUser.id, email: inputEmail, ip, reason: 'not_approved' })
       res.status(403).json({ success: false, message: 'User account is not approved' })
       return
     }
@@ -84,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const token = authService.issueToken(user)
 
-    await recordAuthAttempt({ action: 'login.success', actorId: user.id, emailHint, ip })
+    await recordAuthAttempt({ action: 'login.success', actorId: user.id, email: inputEmail, ip })
 
     console.log(`[LOGIN] ✓ Login successful for ${user.id}`)
 
