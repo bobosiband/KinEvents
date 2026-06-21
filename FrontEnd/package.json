@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
+    "@vercel/analytics": "^2.0.1",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.14.0",
