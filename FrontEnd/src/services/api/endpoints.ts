@@ -18,6 +18,7 @@ export const ENDPOINTS = {
   GIFT_POOL_REJECT_CONTRIBUTION: (poolId: string) => `/api/gift-pools/${poolId}/reject-contribution`,
   GIFT_POOL_CLOSE: (poolId: string) => `/api/gift-pools/${poolId}`,
   GIFT_POOL_CONFIRM_RECEIVED: (poolId: string) => `/api/gift-pools/${poolId}/confirm-received`,
+  GIFT_POOL_RECORD_CONTRIBUTION: (poolId: string) => `/api/gift-pools/${poolId}/record-contribution`,
   BIRTHDAYS_UPCOMING: '/api/birthdays/upcoming',
   BIRTHDAYS_GENERATE: '/api/birthdays/generate',
   BIRTHDAYS_REMINDERS: '/api/birthdays/reminders',

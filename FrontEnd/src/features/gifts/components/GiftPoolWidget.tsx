@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import type { User } from '@/features/auth/types/auth.types'
 import { useClosePool, useConfirmReceived, useCreatePool, useGiftPool, useApproveContribution, useRejectContribution } from '../hooks/useGifts'
 import { ContributeForm } from './ContributeForm'
+import { RecordPaymentForm } from './RecordPaymentForm'
 
 const GIFT_CURRENCY = 'AUD'
 
@@ -34,6 +35,7 @@ export function GiftPoolWidget({
   const approve = useApproveContribution(eventId)
   const reject = useRejectContribution(eventId)
   const [contributing, setContributing] = useState(false)
+  const [recordingPayment, setRecordingPayment] = useState(false)
   const [showNonContributors, setShowNonContributors] = useState(false)
   const [confirmingReceipt, setConfirmingReceipt] = useState(false)
   const [giftDescription, setGiftDescription] = useState('')
@@ -113,21 +115,32 @@ export function GiftPoolWidget({
         {isAdmin && !isConfirmed ? (
           <div className="flex gap-2 flex-wrap">
             {pool.status === 'open' ? (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                loading={closePool.isPending}
-                onClick={() =>
-                  closePool.mutate(pool.id, {
-                    onSuccess: () => toast.success('Pool closed'),
-                    onError: err => toast.error(err instanceof Error ? err.message : 'Failed to close pool'),
-                  })
-                }
-                icon={<Lock className="h-3.5 w-3.5" />}
-              >
-                Close Pool
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setRecordingPayment(true)}
+                  icon={<Gift className="h-3.5 w-3.5" />}
+                >
+                  Record a payment
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={closePool.isPending}
+                  onClick={() =>
+                    closePool.mutate(pool.id, {
+                      onSuccess: () => toast.success('Pool closed'),
+                      onError: err => toast.error(err instanceof Error ? err.message : 'Failed to close pool'),
+                    })
+                  }
+                  icon={<Lock className="h-3.5 w-3.5" />}
+                >
+                  Close Pool
+                </Button>
+              </>
             ) : null}
             <Button
               type="button"
@@ -289,6 +302,19 @@ export function GiftPoolWidget({
           This is your gift pool 🎂 — family members are contributing for you!
         </p>
       ) : null}
+
+      <Modal title="Record a payment" open={recordingPayment} onClose={() => setRecordingPayment(false)}>
+        <RecordPaymentForm
+          pool={pool}
+          allUsers={usersForContribute}
+          birthdayUserId={birthdayUserId}
+          eventId={eventId}
+          onSuccess={() => {
+            setRecordingPayment(false)
+            toast.success('Payment recorded and confirmed!')
+          }}
+        />
+      </Modal>
 
       <Modal title="Record Gift Contribution" open={contributing} onClose={() => setContributing(false)}>
         <ContributeForm

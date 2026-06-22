@@ -34,6 +34,7 @@ export interface GiftContribution {
   rejectedBy?: string
   rejectedAt?: string
   rejectionReason?: string
+  recordedBy?: string
 }
 
 export interface GiftPoolStatus {
@@ -54,4 +55,13 @@ export interface ContributePayload {
 
 export interface ConfirmReceivedPayload {
   giftDescription?: string
+}
+
+export interface RecordContributionPayload {
+  paidBy: string
+  onBehalfOf: string[]
+  amount: number
+  paymentMethod?: PaymentMethod
+  reference?: string
+  note?: string
 }

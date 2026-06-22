@@ -6,6 +6,7 @@ import type {
   GiftContribution,
   GiftPool,
   GiftPoolStatus,
+  RecordContributionPayload,
 } from '../types/gift.types'
 
 export function getPoolByEvent(eventId: string): Promise<GiftPoolStatus | null> {
@@ -43,4 +44,8 @@ export function closePool(poolId: string): Promise<GiftPool> {
 
 export function confirmReceived(poolId: string, payload: ConfirmReceivedPayload): Promise<GiftPool> {
   return postData<GiftPool, ConfirmReceivedPayload>(ENDPOINTS.GIFT_POOL_CONFIRM_RECEIVED(poolId), payload)
+}
+
+export function recordContribution(poolId: string, payload: RecordContributionPayload): Promise<GiftContribution> {
+  return postData<GiftContribution, RecordContributionPayload>(ENDPOINTS.GIFT_POOL_RECORD_CONTRIBUTION(poolId), payload)
 }
