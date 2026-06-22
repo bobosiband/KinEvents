@@ -31,4 +31,5 @@ export interface IGiftContribution {
   rejectedBy?: string
   rejectedAt?: string
   rejectionReason?: string
+  recordedBy?: string // admin userId, set when an admin logs the payment on someone's behalf
 }

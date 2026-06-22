@@ -101,6 +101,78 @@ export class GiftPoolService {
     return contribution
   }
 
+  async recordContribution(input: {
+    poolId: string
+    paidBy: string
+    recordedBy: string
+    onBehalfOf?: string[]
+    amount: number
+    paymentMethod?: string
+    reference?: string
+    note?: string
+  }): Promise<IGiftContribution> {
+    const db = await readData()
+
+    const pool = db.giftPools.find(p => p.id === input.poolId)
+    if (!pool) throw new Error('Gift pool not found')
+    if (pool.status === 'closed') throw new Error('This gift pool is closed')
+    if (input.amount <= 0) throw new Error('Amount must be greater than zero')
+
+    const payer = db.users.find(u => u.id === input.paidBy)
+    if (!payer || payer.accessStatus !== 'approved') {
+      throw new Error('Payer must be an approved family member')
+    }
+
+    const onBehalfOf = [...new Set([input.paidBy, ...(input.onBehalfOf ?? [])])]
+    if (input.paidBy === pool.birthdayUserId || onBehalfOf.includes(pool.birthdayUserId)) {
+      throw new Error('The birthday person cannot contribute to their own pool')
+    }
+
+    const now = new Date().toISOString()
+    const contribution: IGiftContribution = {
+      id: randomUUID(),
+      poolId: input.poolId,
+      paidBy: input.paidBy,
+      onBehalfOf,
+      amount: input.amount,
+      paymentMethod: input.paymentMethod as IGiftContribution['paymentMethod'],
+      reference: input.reference,
+      note: input.note,
+      createdAt: now,
+      status: 'CONFIRMED',
+      submittedAt: now,
+      recordedBy: input.recordedBy,
+      verifiedBy: input.recordedBy,
+      verifiedAt: now,
+    }
+
+    db.giftContributions.push(contribution)
+    pool.updatedAt = now
+
+    db.auditLogs.push({
+      id: randomUUID(),
+      action: 'contribution.recorded',
+      actorId: input.recordedBy,
+      contributionId: contribution.id,
+      poolId: contribution.poolId,
+      timestamp: now,
+    })
+
+    await persistData()
+
+    try {
+      await notificationService.createNotification({
+        type: 'contribution_verified',
+        recipientId: contribution.paidBy,
+        payload: { amount: String(contribution.amount), poolId: contribution.poolId },
+      })
+    } catch (err) {
+      // ignore notify failures
+    }
+
+    return contribution
+  }
+
   async getPoolStatus(poolId: string): Promise<GiftPoolStatus> {
     const db = await readData()
 

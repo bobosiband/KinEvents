@@ -478,6 +478,41 @@ const swaggerDocument: OpenAPIV3_0 = {
         },
       },
     },
+    '/api/gift-pools/{id}/record-contribution': {
+      post: {
+        tags: ['GiftPools'],
+        summary: 'Record a payment on behalf of a family member',
+        description: 'Admin only: logs a contribution that is auto-confirmed (skips verification queue). Use when a family member sends proof of payment directly to the admin.',
+        security: [{ bearerAuth: [] }],
+        'x-required-role': 'admin',
+        parameters: [ { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } } ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['paidBy', 'amount'],
+                properties: {
+                  paidBy: { type: 'string', format: 'uuid', description: 'Approved family member who made the payment' },
+                  onBehalfOf: { type: 'array', items: { type: 'string', format: 'uuid' }, description: 'Additional members covered by this payment' },
+                  amount: { type: 'number', minimum: 0.01 },
+                  paymentMethod: { type: 'string', enum: ['bank_transfer', 'cash', 'paypal', 'other'] },
+                  reference: { type: 'string', maxLength: 100 },
+                  note: { type: 'string', maxLength: 300 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: 'Payment recorded and confirmed', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiSuccess' } } } },
+          '400': { description: 'Bad request', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+          '403': { description: 'Forbidden', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiError' } } } },
+        },
+      },
+    },
     '/api/users': {
       get: {
         tags: ['Users'],

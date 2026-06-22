@@ -43,6 +43,7 @@ import giftPoolByEventHandler from '../api/gift-pools/by-event/[eventId]'
 import giftPoolPendingContributionsHandler from '../api/gift-pools/[id]/pending-contributions'
 import giftPoolApproveContributionHandler from '../api/gift-pools/[id]/approve-contribution'
 import giftPoolRejectContributionHandler from '../api/gift-pools/[id]/reject-contribution'
+import giftPoolRecordContributionHandler from '../api/gift-pools/[id]/record-contribution'
 
 type VercelHandler = (req: VercelRequest, res: VercelResponse) => void | Promise<void>
 
@@ -71,6 +72,7 @@ export const routes = [
   { method: 'all', path: '/api/gift-pools/:id/pending-contributions', handler: giftPoolPendingContributionsHandler },
   { method: 'all', path: '/api/gift-pools/:id/approve-contribution', handler: giftPoolApproveContributionHandler },
   { method: 'all', path: '/api/gift-pools/:id/reject-contribution', handler: giftPoolRejectContributionHandler },
+  { method: 'all', path: '/api/gift-pools/:id/record-contribution', handler: giftPoolRecordContributionHandler },
   { method: 'all', path: '/api/gift-pools/:id/contribute', handler: giftPoolContributeHandler },
   { method: 'all', path: '/api/gift-pools/:id', handler: giftPoolByIdHandler },
   { method: 'all', path: '/api/gift-pools', handler: giftPoolsHandler },
