@@ -8,7 +8,7 @@ const swaggerDocument: OpenAPIV3_0 = {
     description: 'Comprehensive API for managing events, users, and notifications for family gatherings',
     contact: {
       name: 'KinEvents Support',
-      url: 'https://3cdmbtnqg7.execute-api.ap-southeast-2.amazonaws.com/Prod/',
+      url: 'https://3cdmbtnqg7.execute-api.ap-southeast-2.amazonaws.com/Prod',
     },
   },
   servers: [
@@ -17,7 +17,7 @@ const swaggerDocument: OpenAPIV3_0 = {
       description: 'Local development server',
     },
     {
-      url: 'https://3cdmbtnqg7.execute-api.ap-southeast-2.amazonaws.com/Prod/',
+      url: 'https://3cdmbtnqg7.execute-api.ap-southeast-2.amazonaws.com/Prod',
       description: 'Production server',
     },
   ],
