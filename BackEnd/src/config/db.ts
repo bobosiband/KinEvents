@@ -128,6 +128,7 @@ export async function initData(): Promise<void> {
           client = new MongoClient(mongoUri, {
             serverSelectionTimeoutMS: 8000,
             connectTimeoutMS: 8000,
+            maxPoolSize: 1,
           })
         } catch (err) {
           console.error('[DB] Invalid MONGODB_URI, falling back to in-memory store', err)
@@ -245,7 +246,7 @@ let persistQueue: Promise<void> = Promise.resolve()
 
 export async function persistData(): Promise<void> {
   // Chain onto the existing queue so writes are serialised
-  persistQueue = persistQueue.then(() => _doPersist()).catch(() => _doPersist())
+  persistQueue = persistQueue.then(_doPersist, _doPersist)
   return persistQueue
 }
 

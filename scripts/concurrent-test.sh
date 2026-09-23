@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-BASE_URL="${INTEGRATION_BASE_URL:-https://3lnnoggn81.execute-api.us-east-1.amazonaws.com/Prod}"
+BASE_URL="${INTEGRATION_BASE_URL:-https://3cdmbtnqg7.execute-api.ap-southeast-2.amazonaws.com/Prod}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-your-admin@example.com}"
 ADMIN_TOKEN="${ADMIN_TOKEN:-}"
 
