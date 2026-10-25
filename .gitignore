@@ -47,3 +47,6 @@ db.json
 
 # docsdocs/dist/
 docs/
+
+# ai model instructions/settings
+./claude

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   deleteMessage,
   getMessages,
@@ -20,6 +21,7 @@ const CHAT_MESSAGES_KEY = ['chat-messages'] as const
 const CHAT_UNREAD_KEY = ['chat-unread'] as const
 
 export function useMessages(limit = 30) {
+  const token = useAuthStore((state) => state.token)
   return useInfiniteQuery<MessagesPage>({
     queryKey: CHAT_MESSAGES_KEY,
     queryFn: ({ pageParam }) =>
@@ -36,16 +38,19 @@ export function useMessages(limit = 30) {
       return allMessages[0]?.createdAt
     },
     initialPageParam: undefined,
+    enabled: Boolean(token),
   })
 }
 
 export function useNewMessages(cursor: string | undefined, enabled = true) {
   const queryClient = useQueryClient()
+  const token = useAuthStore((state) => state.token)
+  const authed = Boolean(token)
   const query = useQuery<MessagesPage>({
     queryKey: ['chat-new', cursor],
     queryFn: () => getMessages({ direction: 'after', cursor }),
-    enabled: Boolean(cursor) && enabled,
-    refetchInterval: enabled ? 5000 : false,
+    enabled: Boolean(cursor) && enabled && authed,
+    refetchInterval: enabled && authed ? 5000 : false,
   })
 
   useEffect(() => {
@@ -89,10 +94,13 @@ export function useNewMessages(cursor: string | undefined, enabled = true) {
 }
 
 export function useUnreadCount() {
+  const token = useAuthStore((state) => state.token)
+  const authed = Boolean(token)
   return useQuery({
     queryKey: CHAT_UNREAD_KEY,
     queryFn: getUnreadCount,
-    refetchInterval: 10000,
+    enabled: authed,
+    refetchInterval: authed ? 10000 : false,
     select: (data) => data.count,
   })
 }
