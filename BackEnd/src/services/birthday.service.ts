@@ -76,6 +76,26 @@ export class BirthdayService {
       .slice(0, limit)
   }
 
+  /**
+   * Thin shared helper used by both the admin "Generate birthdays" button and
+   * the daily BirthdayEventJob. Only creates events whose date falls within
+   * the next `withinDays` from `referenceDate`, and spans the year boundary so
+   * a run on Dec 20 will catch a Jan 2 birthday.
+   */
+  async generateUpcomingBirthdayEvents(withinDays: number = 30, referenceDate: Date = new Date()): Promise<BirthdayGenerationResult> {
+    const thisYear = await this.generateBirthdayEvents(referenceDate.getFullYear(), referenceDate, withinDays)
+    const horizonMs = withinDays * 24 * 60 * 60 * 1000
+    const horizonEnd = new Date(referenceDate.getTime() + horizonMs)
+    if (horizonEnd.getFullYear() === referenceDate.getFullYear()) {
+      return thisYear
+    }
+    const nextYear = await this.generateBirthdayEvents(horizonEnd.getFullYear(), referenceDate, withinDays)
+    return {
+      events: [...thisYear.events, ...nextYear.events],
+      skipped: thisYear.skipped + nextYear.skipped,
+    }
+  }
+
   async generateBirthdayEvents(year = new Date().getFullYear(), referenceDate = new Date(), withinDays?: number): Promise<BirthdayGenerationResult> {
     const db = await readData()
     const now = new Date().toISOString()
