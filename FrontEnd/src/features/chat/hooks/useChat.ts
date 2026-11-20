@@ -50,7 +50,14 @@ export function useNewMessages(cursor: string | undefined, enabled = true) {
     queryKey: ['chat-new', cursor],
     queryFn: () => getMessages({ direction: 'after', cursor }),
     enabled: Boolean(cursor) && enabled && authed,
-    refetchInterval: enabled && authed ? 5000 : false,
+    // Pause when tab hidden; back off on error up to 8x
+    refetchIntervalInBackground: false,
+    refetchInterval: enabled && authed
+      ? (q): number | false => {
+          const failures = q.state.fetchFailureCount ?? 0
+          return 5000 * Math.pow(2, Math.min(failures, 3))
+        }
+      : false,
   })
 
   useEffect(() => {
@@ -100,7 +107,14 @@ export function useUnreadCount() {
     queryKey: CHAT_UNREAD_KEY,
     queryFn: getUnreadCount,
     enabled: authed,
-    refetchInterval: authed ? 10000 : false,
+    // Pause polling when the tab is hidden; back off on error
+    refetchIntervalInBackground: false,
+    refetchInterval: authed
+      ? (q): number | false => {
+          const failures = q.state.fetchFailureCount ?? 0
+          return 10000 * Math.pow(2, Math.min(failures, 3))
+        }
+      : false,
     select: (data) => data.count,
   })
 }
