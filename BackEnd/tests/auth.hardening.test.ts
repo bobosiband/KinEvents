@@ -191,7 +191,7 @@ describe('Login audit logging', () => {
     expect(entries[0].actorId).toBe(pendingUser.id)
   })
 
-  it('logs login.success with the user id as actor on a successful login', async () => {
+  it('does NOT persist login.success to auditLogs (hotfix 2026-11-20: 1559 success rows per day bloated the datastore)', async () => {
     const loginHandler = require('../api/auth/login').default
     const user = makeUser()
     seedDb({ users: [user] })
@@ -201,26 +201,18 @@ describe('Login audit logging', () => {
     await loginHandler(req, res)
 
     expect(res.status).toHaveBeenCalledWith(200)
-    const entries = authAuditEntries('login.success')
-    expect(entries).toHaveLength(1)
-    expect(entries[0].actorId).toBe(user.id)
-    expect(entries[0].emailHint).toMatch(/^.•••@example\.com$/)
+    expect(authAuditEntries('login.success')).toHaveLength(0)
   })
 
-  it('never persists the issued token or the full email address in the audit log', async () => {
+  it('never persists the full email address in audit logs — failures use the masked hint only', async () => {
     const loginHandler = require('../api/auth/login').default
-    const user = makeUser({ email: 'fulladdress@example.com' })
-    seedDb({ users: [user] })
 
-    const req = createMockRequest({ body: { email: user.email } })
+    // Failure path (unknown email) is what actually writes to auditLogs now
+    const req = createMockRequest({ body: { email: 'fulladdress@example.com' } })
     const res = createMockResponse()
     await loginHandler(req, res)
 
-    const issuedToken = (res.json as jest.Mock).mock.calls[0][0]?.data?.token
-    expect(typeof issuedToken).toBe('string')
-
     const serializedLogs = JSON.stringify(getData().auditLogs)
-    expect(serializedLogs).not.toContain(issuedToken)
     expect(serializedLogs).not.toContain('fulladdress@example.com')
     expect(serializedLogs).toContain('f•••@example.com')
   })

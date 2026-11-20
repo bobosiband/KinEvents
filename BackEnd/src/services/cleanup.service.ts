@@ -4,6 +4,8 @@ export class CleanupService {
   private static readonly ReadNotificationRetentionDays: number = 30
   private static readonly AccessRequestHistoryRetentionDays: number = 30
   private static readonly EmailLogRetentionDays: number = 30
+  private static readonly AuditLogRetentionDays: number = 30
+  private static readonly LoginSuccessRetentionDays: number = 7
 
   /**
    * Deletes only READ notifications older than 30 days. Unread notifications
@@ -98,6 +100,42 @@ export class CleanupService {
       }
     }
 
+    return deleted
+  }
+
+  /**
+   * Nightly sweep over `auditLogs`: drops any `login.success` entry older
+   * than 7 days (those are never read — rate limiting only looks at failures
+   * and blocked) and trims everything else past the retention window. Belt
+   * and suspenders against the 2026-11-20 incident where 1559 login.success
+   * entries bloated the datastore and slowed every read to 5s+.
+   */
+  async deleteOldAuditLogs(): Promise<number> {
+    const db = await readData()
+    const auditLogs = (db.auditLogs ?? []) as { readonly action?: string; readonly timestamp?: string }[]
+    const now = Date.now()
+    const successCutoff = new Date(now - CleanupService.LoginSuccessRetentionDays * 24 * 60 * 60 * 1000).toISOString()
+    const generalCutoff = new Date(now - CleanupService.AuditLogRetentionDays * 24 * 60 * 60 * 1000).toISOString()
+
+    const before = auditLogs.length
+    const previous = [...auditLogs]
+
+    const kept = auditLogs.filter((entry) => {
+      const ts = entry.timestamp ?? ''
+      if (entry.action === 'login.success') return ts > successCutoff
+      return ts > generalCutoff
+    })
+
+    const deleted = before - kept.length
+    if (deleted > 0) {
+      db.auditLogs = kept as typeof db.auditLogs
+      try {
+        await persistData()
+      } catch (error) {
+        db.auditLogs = previous as typeof db.auditLogs
+        throw error
+      }
+    }
     return deleted
   }
 }
