@@ -13,6 +13,12 @@ describe('Notification flows', () => {
   beforeEach(() => {
     resetDb()
     jest.restoreAllMocks()
+    jest.useFakeTimers({ doNotFake: ['nextTick'] })
+    jest.setSystemTime(new Date('2026-06-01T00:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
   })
 
   it('sends birthday reminder notifications to other approved users', async () => {
