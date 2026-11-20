@@ -1,0 +1,7 @@
+process.env.NODE_ENV = 'test'
+process.env.EMAIL_SERVICE_API_KEY = 'test-api-key'
+process.env.GMAIL_USER = 'test@example.com'
+process.env.GMAIL_APP_PASSWORD = 'test-password'
+process.env.EMAIL_FROM_NAME = 'KinEvents'
+process.env.EMAIL_LOGS_TABLE = 'EmailLogs-test'
+process.env.AWS_REGION = 'ap-southeast-2'
