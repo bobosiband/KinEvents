@@ -83,7 +83,39 @@ Resources:
             Path: /
             Method: ANY
 
+  ScheduledJobRunnerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: dist/src/lambda-scheduler.handler
+      CodeUri: .lambda-pkg/
+      Timeout: 300
+      Environment:
+        Variables:
+          NODE_ENV: production
+          JWT_SECRET: !Ref JwtSecret
+          SENDGRID_API_KEY: !Ref SendgridApiKey
+          APP_URL: !Ref AppUrl
+          MONGODB_URI: !Ref MongoDbUri
+          MONGODB_DB_NAME: !Ref MongoDbName
+          GMAIL_USER: !Ref GmailUser
+          GMAIL_APP_PASSWORD: !Ref GmailAppPassword
+          RESEND_API_KEY: !Ref ResendApiKey
+          EMAIL_FROM_NAME: !Ref EmailFromName
+          EMAIL_SERVICE_URL: !Ref EmailServiceUrl
+          EMAIL_SERVICE_API_KEY: !Ref EmailServiceApiKey
+      Events:
+        Daily07Sydney:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: "cron(0 7 * * ? *)"
+            ScheduleExpressionTimezone: "Australia/Sydney"
+            State: ENABLED
+            Description: "Runs KinEvents daily scheduled jobs at 07:00 Australia/Sydney"
+
 Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  ScheduledJobRunnerArn:
+    Description: "ARN of the scheduled job runner Lambda"
+    Value: !GetAtt ScheduledJobRunnerFunction.Arn
