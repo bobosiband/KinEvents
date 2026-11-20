@@ -12,6 +12,7 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import { useProfile } from '@/features/users/hooks/useProfile'
 import type { NotificationChannel, NotificationLevel } from '@/features/auth/types/auth.types'
 import { Shield, LogOut } from 'lucide-react'
+import { isValidPhone, normalizePhoneOptional, formatPhoneAsYouType } from '@/utils/phone'
 
 export function Profile() {
   const navigate = useNavigate()
@@ -56,8 +57,8 @@ export function Profile() {
     if (birthday && !/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
       newErrors.birthday = 'Use YYYY-MM-DD format.'
     }
-    if (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) {
-      newErrors.phone = 'Use international format e.g. +447700900123'
+    if (phone && !isValidPhone(phone)) {
+      newErrors.phone = 'Enter a valid Australian or international number'
     }
 
     setErrors(newErrors)
@@ -69,7 +70,7 @@ export function Profile() {
     if (!validate()) return
 
     mutation.mutate(
-      { name, email: email.trim().toLowerCase(), birthday, phone: phone.trim() || undefined, notificationPrefs: { level, channels } },
+      { name, email: email.trim().toLowerCase(), birthday, phone: normalizePhoneOptional(phone.trim()), notificationPrefs: { level, channels } },
       {
         onSuccess: (response) => {
           const updatedUser = response.user
@@ -143,9 +144,11 @@ export function Profile() {
           label="Phone Number"
           type="tel"
           value={phone}
-          onChange={event => setPhone(event.target.value)}
+          onChange={event => setPhone(formatPhoneAsYouType(event.target.value))}
           error={errors.phone}
-          hint="International format: +447700900123"
+          hint="e.g. 0412 345 678 or +61 412 345 678"
+          inputMode="tel"
+          autoComplete="tel"
           fullWidth
         />
         <label className="space-y-2 block">

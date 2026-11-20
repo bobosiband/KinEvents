@@ -6,14 +6,15 @@ import type { VercelResponse } from '@vercel/node'
 import { readData, persistData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 import { bumpTokenVersion } from '../../src/services/auth.service'
+import { PhoneValidator } from '../../src/phone/PhoneValidator'
 import type { IAdminAuditEntry } from '../../src/interfaces/auth.interface'
 
 const updateUserSchema = z.object({
   name: z.string().optional(),
   email: z.string().email().optional(),
   birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  phone: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(),
-  phoneNumber: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(),
+  phone: z.string().optional(),
+  phoneNumber: z.string().optional(),
   notificationPrefs: z.object({
     level: z.enum(['all', 'important', 'none']).optional(),
     channels: z.array(z.enum(['email', 'whatsapp', 'push'])).optional(),
@@ -127,10 +128,16 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     if (parseResult.data.birthday) updateData.birthday = parseResult.data.birthday
 
     if (parseResult.data.phone !== undefined || parseResult.data.phoneNumber !== undefined) {
-      const normalizedPhone = parseResult.data.phone ?? parseResult.data.phoneNumber
-      updateData.phone = normalizedPhone
-      updateData.phoneNumber = normalizedPhone
-      updateData.phoneVerified = false
+      const rawPhone = parseResult.data.phone ?? parseResult.data.phoneNumber ?? ''
+      try {
+        const normalizedPhone = rawPhone === '' ? '' : PhoneValidator.normalize(rawPhone)
+        updateData.phone = normalizedPhone || undefined
+        updateData.phoneNumber = normalizedPhone || undefined
+        updateData.phoneVerified = false
+      } catch {
+        res.status(400).json({ success: false, message: `Invalid phone number: ${rawPhone}` })
+        return
+      }
     }
 
     if (parseResult.data.notificationPrefs) {
