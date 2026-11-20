@@ -8,9 +8,10 @@ import { resetDb } from './helpers/db.helper'
 describe('Cleanup Service', () => {
   beforeEach(() => resetDb())
 
-  it('should delete all notifications older than 1 hour regardless of read status', async () => {
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+  it('deletes only read notifications older than 30 days; unread stay forever', async () => {
+    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
+    const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+    const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
 
     getData().notifications.push(
       {
@@ -19,7 +20,7 @@ describe('Cleanup Service', () => {
         recipientId: 'user-1',
         payload: {},
         status: 'sent',
-        createdAt: twoHoursAgo,
+        createdAt: yearAgo,
       },
       {
         id: randomUUID(),
@@ -27,8 +28,8 @@ describe('Cleanup Service', () => {
         recipientId: 'user-2',
         payload: {},
         status: 'sent',
-        createdAt: twoHoursAgo,
-        readAt: twoHoursAgo,
+        createdAt: fortyDaysAgo,
+        readAt: fortyDaysAgo,
         readBy: ['user-2'],
       },
       {
@@ -36,19 +37,24 @@ describe('Cleanup Service', () => {
         type: 'event_created',
         recipientId: 'user-3',
         payload: {},
-        status: 'pending',
-        createdAt: thirtyMinsAgo,
+        status: 'sent',
+        createdAt: tenDaysAgo,
+        readAt: tenDaysAgo,
+        readBy: ['user-3'],
       },
     )
 
     const deleted = await cleanupService.deleteOldReadNotifications()
 
-    expect(deleted).toBe(2)
-    expect(getData().notifications).toHaveLength(1)
+    expect(deleted).toBe(1)
+    expect(getData().notifications).toHaveLength(2)
+    expect(getData().notifications.find((n) => n.recipientId === 'user-1')).toBeDefined()
+    expect(getData().notifications.find((n) => n.recipientId === 'user-2')).toBeUndefined()
+    expect(getData().notifications.find((n) => n.recipientId === 'user-3')).toBeDefined()
   })
 
-  it('should delete non-locked past events', async () => {
-    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  it('never auto-deletes past events — they are history', async () => {
+    const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
     getData().events.push(
@@ -56,25 +62,13 @@ describe('Cleanup Service', () => {
         id: randomUUID(),
         title: 'Old Custom Event',
         description: 'Past',
-        date: twoDaysAgo,
+        date: yearAgo,
         type: 'custom',
         locked: false,
         createdBy: 'user-1',
         rsvps: {},
-        createdAt: twoDaysAgo,
-        updatedAt: twoDaysAgo,
-      },
-      {
-        id: randomUUID(),
-        title: 'Old Birthday Event',
-        description: 'Locked birthday',
-        date: twoDaysAgo,
-        type: 'birthday',
-        locked: true,
-        createdBy: 'user-1',
-        rsvps: {},
-        createdAt: twoDaysAgo,
-        updatedAt: twoDaysAgo,
+        createdAt: yearAgo,
+        updatedAt: yearAgo,
       },
       {
         id: randomUUID(),
@@ -92,56 +86,45 @@ describe('Cleanup Service', () => {
 
     const deleted = await cleanupService.deleteOldEvents()
 
-    expect(deleted).toBe(1)
+    expect(deleted).toBe(0)
     expect(getData().events).toHaveLength(2)
   })
 
-  it('should delete email logs older than 1 day', async () => {
-    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  it('deletes legacy Mongo email logs older than 30 days', async () => {
+    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
     const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
 
-    const oldLog1: EmailLogEntry = {
+    const oldLog: EmailLogEntry = {
       id: randomUUID(),
       templateName: 'event-created',
       recipientId: 'user-1',
       recipientEmail: 'user1@example.com',
-      subject: 'Old Log 1',
+      subject: 'Old',
       status: 'sent',
-      createdAt: twoDaysAgo,
+      createdAt: fortyDaysAgo,
       retryCount: 0,
     }
-
-    const oldLog2: EmailLogEntry = {
-      id: randomUUID(),
-      templateName: 'event-updated',
-      recipientId: 'user-2',
-      recipientEmail: 'user2@example.com',
-      subject: 'Old Log 2',
-      status: 'failed',
-      createdAt: twoDaysAgo,
-      retryCount: 1,
-    }
-
     const recentLog: EmailLogEntry = {
       id: randomUUID(),
       templateName: 'birthday-reminder',
       recipientId: 'user-3',
       recipientEmail: 'user3@example.com',
-      subject: 'Recent Log',
+      subject: 'Recent',
       status: 'sent',
       createdAt: sixHoursAgo,
       retryCount: 0,
     }
 
-    getData().emailLogs.push(oldLog1, oldLog2, recentLog)
+    getData().emailLogs.push(oldLog, recentLog)
 
     const deleted = await cleanupService.deleteOldEmailLogs()
 
-    expect(deleted).toBe(2)
+    expect(deleted).toBe(1)
     expect(getData().emailLogs).toHaveLength(1)
+    expect(getData().emailLogs[0].subject).toBe('Recent')
   })
 
-  it('should delete access request history older than 30 days', async () => {
+  it('deletes access request history older than 30 days', async () => {
     const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
     const thirtyOneDaysAgo = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString()
     const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
@@ -181,9 +164,8 @@ describe('Cleanup Service', () => {
     expect(getData().accessRequestHistory[0].email).toBe('recent@example.com')
   })
 
-  it('should hard-delete messages older than 7 days and keep recent soft-deleted messages', async () => {
-    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+  it('never auto-deletes chat messages — chat is history', async () => {
+    const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
     const now = new Date().toISOString()
 
     getData().messages.push(
@@ -191,35 +173,15 @@ describe('Cleanup Service', () => {
         id: randomUUID(),
         from: 'user-1',
         content: 'old active',
-        createdAt: eightDaysAgo,
-        updatedAt: eightDaysAgo,
+        createdAt: yearAgo,
+        updatedAt: yearAgo,
         readBy: [],
         type: 'text' as const,
       },
       {
         id: randomUUID(),
         from: 'user-2',
-        content: 'old deleted',
-        createdAt: eightDaysAgo,
-        updatedAt: eightDaysAgo,
-        deletedAt: twoHoursAgo,
-        readBy: [],
-        type: 'text' as const,
-      },
-      {
-        id: randomUUID(),
-        from: 'user-3',
-        content: 'recent deleted',
-        createdAt: twoHoursAgo,
-        updatedAt: twoHoursAgo,
-        deletedAt: twoHoursAgo,
-        readBy: [],
-        type: 'text' as const,
-      },
-      {
-        id: randomUUID(),
-        from: 'user-4',
-        content: 'active message',
+        content: 'recent',
         createdAt: now,
         updatedAt: now,
         readBy: [],
@@ -229,10 +191,7 @@ describe('Cleanup Service', () => {
 
     const deleted = await cleanupService.deleteOldMessages()
 
-    expect(deleted).toBe(2)
-    expect(getData().messages.find((m) => m.content === 'old active')).toBeUndefined()
-    expect(getData().messages.find((m) => m.content === 'old deleted')).toBeUndefined()
-    expect(getData().messages.find((m) => m.content === 'recent deleted')).toBeDefined()
-    expect(getData().messages.find((m) => m.content === 'active message')).toBeDefined()
+    expect(deleted).toBe(0)
+    expect(getData().messages).toHaveLength(2)
   })
 })

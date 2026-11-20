@@ -1,16 +1,25 @@
 import { readData, persistData } from '../config/db'
 
 export class CleanupService {
+  private static readonly ReadNotificationRetentionDays: number = 30
+  private static readonly AccessRequestHistoryRetentionDays: number = 30
+  private static readonly EmailLogRetentionDays: number = 30
+
   /**
-   * Deletes notifications older than 1 hour.
+   * Deletes only READ notifications older than 30 days. Unread notifications
+   * stay forever regardless of age so a quiet account never loses its backlog.
    */
   async deleteOldReadNotifications(): Promise<number> {
     const db = await readData()
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const cutoff = new Date(Date.now() - CleanupService.ReadNotificationRetentionDays * 24 * 60 * 60 * 1000).toISOString()
     const before = db.notifications.length
     const previousNotifications = [...db.notifications]
 
-    db.notifications = db.notifications.filter((n) => n.createdAt > oneHourAgo)
+    db.notifications = db.notifications.filter((n) => {
+      const isRead = Array.isArray(n.readBy) && n.readBy.length > 0
+      if (!isRead) return true
+      return n.createdAt > cutoff
+    })
 
     const deleted = before - db.notifications.length
     if (deleted > 0) {
@@ -26,44 +35,34 @@ export class CleanupService {
   }
 
   /**
-   * Deletes events whose date was more than 1 day ago.
-   * Keeps locked events.
+   * Past events are kept forever — they're history, not noise. This method
+   * stays so the admin cleanup button and existing callers keep working, but
+   * it never deletes anything.
    */
   async deleteOldEvents(): Promise<number> {
-    const db = await readData()
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    const before = db.events.length
-    const previousEvents = [...db.events]
-
-    db.events = db.events.filter((e) => {
-      if (e.date > oneDayAgo) return true
-      if (e.locked) return true
-      return false
-    })
-
-    const deleted = before - db.events.length
-    if (deleted > 0) {
-      try {
-        await persistData()
-      } catch (error) {
-        db.events = previousEvents
-        throw error
-      }
-    }
-
-    return deleted
+    return 0
   }
 
   /**
-   * Deletes email logs older than 1 day.
+   * Chat messages are history and are never auto-deleted. Kept as a no-op
+   * so the admin cleanup button keeps working.
+   */
+  async deleteOldMessages(): Promise<number> {
+    return 0
+  }
+
+  /**
+   * Deletes legacy Mongo email logs older than 30 days. New email logs live
+   * in the EmailService DynamoDB table with its own TTL, so this method only
+   * drains the old Mongo rows during the migration window.
    */
   async deleteOldEmailLogs(): Promise<number> {
     const db = await readData()
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const cutoff = new Date(Date.now() - CleanupService.EmailLogRetentionDays * 24 * 60 * 60 * 1000).toISOString()
     const before = db.emailLogs.length
     const previousEmailLogs = [...db.emailLogs]
 
-    db.emailLogs = db.emailLogs.filter((log) => log.createdAt > oneDayAgo)
+    db.emailLogs = db.emailLogs.filter((log) => log.createdAt > cutoff)
 
     const deleted = before - db.emailLogs.length
     if (deleted > 0) {
@@ -78,18 +77,15 @@ export class CleanupService {
     return deleted
   }
 
-  /**
-   * Hard-deletes access request history older than 30 days.
-   */
   async deleteOldAccessRequestHistory(): Promise<number> {
     const db = await readData()
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const cutoff = new Date(Date.now() - CleanupService.AccessRequestHistoryRetentionDays * 24 * 60 * 60 * 1000).toISOString()
     const before = db.accessRequestHistory.length
     const previousAccessRequestHistory = [...db.accessRequestHistory]
 
     db.accessRequestHistory = db.accessRequestHistory.filter((entry) => {
       const timestamp = entry.resolvedAt ?? entry.requestedAt
-      return timestamp > thirtyDaysAgo
+      return timestamp > cutoff
     })
 
     const deleted = before - db.accessRequestHistory.length
@@ -98,30 +94,6 @@ export class CleanupService {
         await persistData()
       } catch (error) {
         db.accessRequestHistory = previousAccessRequestHistory
-        throw error
-      }
-    }
-
-    return deleted
-  }
-
-  /**
-   * Hard-deletes messages older than 7 days.
-   */
-  async deleteOldMessages(): Promise<number> {
-    const db = await readData()
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const before = db.messages.length
-    const previousMessages = [...db.messages]
-
-    db.messages = db.messages.filter((message) => message.createdAt > sevenDaysAgo)
-
-    const deleted = before - db.messages.length
-    if (deleted > 0) {
-      try {
-        await persistData()
-      } catch (error) {
-        db.messages = previousMessages
         throw error
       }
     }
