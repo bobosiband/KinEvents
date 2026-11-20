@@ -36,6 +36,8 @@ import usersHandler from '../api/users/index'
 import promoteUserHandler from '../api/users/promote'
 import debugDbHandler from '../api/debug/db'
 import configFlagsHandler from '../api/config/flags'
+import icsFeedHandler from '../api/ics/feed'
+import icsRotateHandler from '../api/me/ics/rotate'
 import chatMessagesHandler from '../api/chat/messages/index'
 import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
@@ -102,6 +104,8 @@ export const routes = [
   { method: 'all', path: '/api/admin/invalid-phones', handler: invalidPhonesHandler },
   { method: 'all', path: '/api/debug/db', handler: debugDbHandler },
   { method: 'all', path: '/api/config/flags', handler: configFlagsHandler },
+  { method: 'all', path: '/api/ics/feed', handler: icsFeedHandler },
+  { method: 'all', path: '/api/me/ics/rotate', handler: icsRotateHandler },
 ] as const
 
 function toVercelHandler(handler: VercelHandler) {

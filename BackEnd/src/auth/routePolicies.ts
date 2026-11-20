@@ -80,6 +80,9 @@ export const ROUTE_POLICIES: Readonly<Record<string, IRouteRequirement>> = {
   // System
   '/api/debug/db': { policy: ADMIN_ONLY },
   '/api/config/flags': { policy: PublicRoute, notes: 'Non-sensitive flag snapshot' },
+  // Calendar sync (feature-flagged; routes return 404 when flag is off)
+  '/api/ics/feed': { policy: PublicRoute, notes: 'Token-authenticated ICS feed' },
+  '/api/me/ics/rotate': { policy: ANY_APPROVED, notes: 'Rotate own ICS token' },
 }
 
 export function policyFor(path: string): IRouteRequirement | null {
