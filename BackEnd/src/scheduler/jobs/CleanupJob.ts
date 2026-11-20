@@ -5,11 +5,12 @@ export class CleanupJob extends ScheduledJob {
   public readonly name: string = 'CleanupJob'
 
   protected async runInternal(): Promise<Record<string, number>> {
-    const [readNotifications, emailLogs, accessHistory] = await Promise.all([
+    const [readNotifications, emailLogs, accessHistory, auditLogs] = await Promise.all([
       cleanupService.deleteOldReadNotifications(),
       cleanupService.deleteOldEmailLogs(),
       cleanupService.deleteOldAccessRequestHistory(),
+      cleanupService.deleteOldAuditLogs(),
     ])
-    return { readNotifications, emailLogs, accessHistory }
+    return { readNotifications, emailLogs, accessHistory, auditLogs }
   }
 }

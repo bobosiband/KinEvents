@@ -121,7 +121,25 @@ interface RecordAuthAttemptInput {
  * masked `emailHint` (for human-readable logs) and the one-way `emailKey`
  * (for throttle matching) — never the full address or a token.
  */
+/**
+ * Which outcomes are persisted. Rate limiting only reads failures/blocked
+ * (see `COUNTABLE_ACTIONS` below), so recording successes buys nothing and
+ * — because every browser tab hits login on token refresh — can grow the
+ * single-document datastore by hundreds of KB per day and slow every
+ * subsequent read (incident 2026-11-20: 1559 login.success entries in 24h
+ * pushed p50 /health latency to 5.5s and caused login timeouts). Keep
+ * everything else so forensics on brute-force attempts remain intact.
+ */
+const PERSISTED_ACTIONS: ReadonlySet<AuthAuditAction> = new Set<AuthAuditAction>([
+  'login.failure',
+  'login.blocked',
+  'request_access.success',
+  'request_access.blocked',
+])
+
 export async function recordAuthAttempt(input: RecordAuthAttemptInput): Promise<void> {
+  if (!PERSISTED_ACTIONS.has(input.action)) return
+
   const db = await readData()
   db.auditLogs = db.auditLogs ?? []
 
