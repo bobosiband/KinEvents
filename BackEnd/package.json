@@ -16,6 +16,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --runInBand",
     "test:integration": "jest tests/integration.real-user.test.ts --runInBand",
+    "migrate:split": "ts-node scripts/migrate-to-collections.ts",
     "ci": "npm run build && npm test -- --runInBand"
   },
   "dependencies": {
