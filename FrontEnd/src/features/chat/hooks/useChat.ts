@@ -20,6 +20,15 @@ import type { Message, MessagesPage } from '../types/chat.types'
 const CHAT_MESSAGES_KEY = ['chat-messages'] as const
 const CHAT_UNREAD_KEY = ['chat-unread'] as const
 
+const BASE_MESSAGES_INTERVAL_MS: number = 5000
+const BASE_UNREAD_INTERVAL_MS: number = 10000
+const MAX_BACKOFF_MS: number = 60000
+
+function computeBackoff(baseMs: number, failureCount: number): number {
+  const expo = baseMs * Math.pow(2, Math.min(failureCount, 6))
+  return Math.min(expo, MAX_BACKOFF_MS)
+}
+
 export function useMessages(limit = 30) {
   const token = useAuthStore((state) => state.token)
   return useInfiniteQuery<MessagesPage>({
@@ -55,7 +64,7 @@ export function useNewMessages(cursor: string | undefined, enabled = true) {
     refetchInterval: enabled && authed
       ? (q): number | false => {
           const failures = q.state.fetchFailureCount ?? 0
-          return 5000 * Math.pow(2, Math.min(failures, 3))
+          return computeBackoff(BASE_MESSAGES_INTERVAL_MS, failures)
         }
       : false,
   })
@@ -112,7 +121,7 @@ export function useUnreadCount() {
     refetchInterval: authed
       ? (q): number | false => {
           const failures = q.state.fetchFailureCount ?? 0
-          return 10000 * Math.pow(2, Math.min(failures, 3))
+          return computeBackoff(BASE_UNREAD_INTERVAL_MS, failures)
         }
       : false,
     select: (data) => data.count,
