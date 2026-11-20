@@ -1,6 +1,8 @@
 import type { VercelResponse } from '@vercel/node'
 import { giftPoolService } from '../../src/services/giftPool.service'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
+import { applyPolicy } from '../../src/middleware/applyPolicy'
+import { RolePolicy } from '../../src/auth/policies/RolePolicy'
 
 async function handler(req: RequestWithUser, res: VercelResponse) {
   const queryId = typeof req.query.id === 'string' ? req.query.id : undefined
@@ -22,9 +24,8 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 
   if (req.method === 'PATCH') {
-    // Close pool — admin only
-    if (req.user?.role !== 'admin') {
-      res.status(403).json({ success: false, message: 'Insufficient permissions' })
+    // Close pool — admin or manager via PermissionPolicy
+    if (!applyPolicy(req, res, new RolePolicy(['admin', 'manager']))) {
       return
     }
     try {

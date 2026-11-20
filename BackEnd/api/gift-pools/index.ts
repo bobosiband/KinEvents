@@ -38,4 +38,4 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   res.status(405).json({ success: false, message: 'Method not allowed' })
 }
 
-export default withAuth(handler, 'admin')
+export default withAuth(handler, ['admin', 'manager'])

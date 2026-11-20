@@ -24,4 +24,4 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
   }
 }
 
-export default withAuth(handler, 'admin')
+export default withAuth(handler, ['admin', 'manager'])
