@@ -1,7 +1,11 @@
-import type { EmailAddress, EmailTemplateName } from '../interfaces/email.interface'
+import type { EmailAddress, EmailLogEntry, EmailTemplateName } from '../interfaces/email.interface'
 
 export interface IEmailSender {
   sendTemplate(templateName: EmailTemplateName, data: Record<string, unknown>, recipient: EmailAddress, recipientId: string): Promise<boolean>
+}
+
+export interface IEmailLogReader {
+  fetchLogs(options?: { recipientId?: string; limit?: number }): Promise<readonly EmailLogEntry[]>
 }
 
 interface SendEmailResponseBody {
@@ -11,7 +15,12 @@ interface SendEmailResponseBody {
   readonly retryCount: number
 }
 
-export class EmailServiceClient implements IEmailSender {
+interface LogsResponseBody {
+  readonly logs: readonly EmailLogEntry[]
+  readonly count: number
+}
+
+export class EmailServiceClient implements IEmailSender, IEmailLogReader {
   private readonly baseUrl: string
   private readonly apiKey: string
 
@@ -58,6 +67,30 @@ export class EmailServiceClient implements IEmailSender {
       const message = error instanceof Error ? error.message : 'unknown'
       console.error(`[EMAIL] EmailService call failed for '${templateName}':`, message)
       return false
+    }
+  }
+
+  public async fetchLogs(options?: { recipientId?: string; limit?: number }): Promise<readonly EmailLogEntry[]> {
+    try {
+      const params = new URLSearchParams()
+      if (options?.recipientId) params.set('recipientId', options.recipientId)
+      if (options?.limit) params.set('limit', String(options.limit))
+      const url = `${this.baseUrl}/emails/logs${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'X-Api-Key': this.apiKey },
+      })
+      if (!response.ok) {
+        const body = await response.text().catch(() => '')
+        console.error(`[EMAIL] EmailService logs ${response.status}: ${body.substring(0, 200)}`)
+        return []
+      }
+      const parsed = (await response.json()) as LogsResponseBody
+      return parsed.logs ?? []
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown'
+      console.error('[EMAIL] EmailService logs call failed:', message)
+      return []
     }
   }
 }

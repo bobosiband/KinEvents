@@ -67,7 +67,7 @@ describe('Bugfix regressions', () => {
     notifySpy.mockRestore()
   })
 
-  test('BUG-05: emailService.send logs skipped in test mode', async () => {
+  test('BUG-05: emailService.send is a no-op in test mode and does not write to legacy emailLogs', async () => {
     process.env.NODE_ENV = 'test'
     const logBefore = getData().emailLogs.length
     const res = await emailService.send(
@@ -75,9 +75,7 @@ describe('Bugfix regressions', () => {
       { templateName: 'test_template' as any, recipientId: 'test-recipient' }
     )
     expect(res).toBe(true)
-    expect(getData().emailLogs.length).toBe(logBefore + 1)
-    const last = getData().emailLogs[getData().emailLogs.length - 1]
-    expect(last.status).toBe('skipped')
+    expect(getData().emailLogs.length).toBe(logBefore)
     process.env.NODE_ENV = undefined
   })
 
