@@ -50,13 +50,45 @@ cp package.json package-lock.json .lambda-pkg/
 (cd .lambda-pkg && npm ci --omit=dev --no-audit --no-fund)
 
 echo ">>> Running sam deploy"
+# SAM internally shlex-splits --parameter-overrides on whitespace in either the
+# shorthand or ParameterKey=/ParameterValue= form, which silently truncates
+# Gmail app passwords that contain spaces. To work around this reliably we:
+#   1. Deploy the stack with a placeholder for GmailAppPassword, so stack
+#      creation and all other resource wiring go through SAM normally.
+#   2. Immediately overwrite the Lambda env variables with the real values
+#      via `aws lambda update-function-configuration`, which accepts any
+#      string.
+# The real password NEVER appears on the SAM command line.
 sam deploy \
   --no-confirm-changeset \
   --parameter-overrides \
-    "GmailUser=$GMAIL_USER" \
-    "GmailAppPassword=$GMAIL_APP_PASSWORD" \
-    "EmailFromName=$EMAIL_FROM_NAME" \
-    "EmailServiceApiKey=$EMAIL_SERVICE_API_KEY" \
-    "EmailLogsRetentionDays=$EMAIL_LOGS_RETENTION_DAYS"
+    "ParameterKey=GmailUser,ParameterValue=$GMAIL_USER" \
+    "ParameterKey=GmailAppPassword,ParameterValue=placeholder-overridden-post-deploy" \
+    "ParameterKey=EmailFromName,ParameterValue=$EMAIL_FROM_NAME" \
+    "ParameterKey=EmailServiceApiKey,ParameterValue=$EMAIL_SERVICE_API_KEY" \
+    "ParameterKey=EmailLogsRetentionDays,ParameterValue=$EMAIL_LOGS_RETENTION_DAYS"
+
+STACK_NAME="kinevents-email-service"
+REGION="ap-southeast-2"
+echo ">>> Resolving Lambda function name from stack"
+FN_NAME=$(aws cloudformation describe-stack-resource \
+  --stack-name "$STACK_NAME" \
+  --region "$REGION" \
+  --logical-resource-id EmailServiceFunction \
+  --query 'StackResourceDetail.PhysicalResourceId' \
+  --output text)
+TABLE_NAME=$(aws cloudformation describe-stack-resource \
+  --stack-name "$STACK_NAME" \
+  --region "$REGION" \
+  --logical-resource-id EmailLogsTable \
+  --query 'StackResourceDetail.PhysicalResourceId' \
+  --output text)
+
+echo ">>> Overwriting Lambda env vars with the real GmailAppPassword"
+aws lambda update-function-configuration \
+  --function-name "$FN_NAME" \
+  --region "$REGION" \
+  --environment "Variables={NODE_ENV=production,GMAIL_USER=$GMAIL_USER,GMAIL_APP_PASSWORD=$GMAIL_APP_PASSWORD,EMAIL_FROM_NAME=$EMAIL_FROM_NAME,EMAIL_SERVICE_API_KEY=$EMAIL_SERVICE_API_KEY,EMAIL_LOGS_TABLE=$TABLE_NAME,EMAIL_LOGS_RETENTION_DAYS=$EMAIL_LOGS_RETENTION_DAYS}" \
+  --no-cli-pager >/dev/null
 
 echo ">>> Done."

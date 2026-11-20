@@ -71,19 +71,41 @@ cp package.json package-lock.json .lambda-pkg/
 (cd .lambda-pkg && npm ci --omit=dev --no-audit --no-fund)
 
 echo ">>> Running sam deploy"
+# SAM shlex-splits --parameter-overrides on whitespace. Any value with a
+# space in it (Gmail app passwords, secrets with punctuation, etc.) gets
+# silently truncated to the first whitespace-delimited token. We deploy
+# stack scaffolding with placeholders and then overwrite the Lambda env
+# directly via `aws lambda update-function-configuration`.
 sam deploy \
   --no-confirm-changeset \
   --parameter-overrides \
-    "JwtSecret=$JWT_SECRET" \
-    "SendgridApiKey=$SENDGRID_API_KEY" \
-    "AppUrl=$APP_URL" \
-    "MongoDbUri=$MONGODB_URI" \
-    "MongoDbName=$MONGODB_DB_NAME" \
-    "GmailUser=$GMAIL_USER" \
-    "GmailAppPassword=$GMAIL_APP_PASSWORD" \
-    "ResendApiKey=$RESEND_API_KEY" \
-    "EmailFromName=$EMAIL_FROM_NAME" \
-    "EmailServiceUrl=$EMAIL_SERVICE_URL" \
-    "EmailServiceApiKey=$EMAIL_SERVICE_API_KEY"
+    "ParameterKey=JwtSecret,ParameterValue=placeholder-overridden-post-deploy" \
+    "ParameterKey=SendgridApiKey,ParameterValue=placeholder-overridden-post-deploy" \
+    "ParameterKey=AppUrl,ParameterValue=$APP_URL" \
+    "ParameterKey=MongoDbUri,ParameterValue=placeholder-overridden-post-deploy" \
+    "ParameterKey=MongoDbName,ParameterValue=$MONGODB_DB_NAME" \
+    "ParameterKey=GmailUser,ParameterValue=$GMAIL_USER" \
+    "ParameterKey=GmailAppPassword,ParameterValue=placeholder-overridden-post-deploy" \
+    "ParameterKey=ResendApiKey,ParameterValue=placeholder-overridden-post-deploy" \
+    "ParameterKey=EmailFromName,ParameterValue=$EMAIL_FROM_NAME" \
+    "ParameterKey=EmailServiceUrl,ParameterValue=$EMAIL_SERVICE_URL" \
+    "ParameterKey=EmailServiceApiKey,ParameterValue=placeholder-overridden-post-deploy"
+
+STACK_NAME="kinevents-backend"
+REGION="ap-southeast-2"
+echo ">>> Resolving backend Lambda function name"
+FN_NAME=$(aws cloudformation describe-stack-resource \
+  --stack-name "$STACK_NAME" \
+  --region "$REGION" \
+  --logical-resource-id KinEventsFunction \
+  --query 'StackResourceDetail.PhysicalResourceId' \
+  --output text)
+
+echo ">>> Overwriting Lambda env vars with real values"
+aws lambda update-function-configuration \
+  --function-name "$FN_NAME" \
+  --region "$REGION" \
+  --environment "Variables={NODE_ENV=production,JWT_SECRET=$JWT_SECRET,SENDGRID_API_KEY=$SENDGRID_API_KEY,APP_URL=$APP_URL,MONGODB_URI=$MONGODB_URI,MONGODB_DB_NAME=$MONGODB_DB_NAME,GMAIL_USER=$GMAIL_USER,GMAIL_APP_PASSWORD=$GMAIL_APP_PASSWORD,RESEND_API_KEY=$RESEND_API_KEY,EMAIL_FROM_NAME=$EMAIL_FROM_NAME,EMAIL_SERVICE_URL=$EMAIL_SERVICE_URL,EMAIL_SERVICE_API_KEY=$EMAIL_SERVICE_API_KEY}" \
+  --no-cli-pager >/dev/null
 
 echo ">>> Done."
