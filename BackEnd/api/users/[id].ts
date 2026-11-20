@@ -7,6 +7,7 @@ import { readData, persistData } from '../../src/config/db'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 import { bumpTokenVersion } from '../../src/services/auth.service'
 import { PhoneValidator } from '../../src/phone/PhoneValidator'
+import { OwnerPolicy, OwnerProtectedError } from '../../src/auth/OwnerPolicy'
 import type { IAdminAuditEntry } from '../../src/interfaces/auth.interface'
 
 const updateUserSchema = z.object({
@@ -87,6 +88,18 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     if (nextAccessStatus !== undefined) {
+      // Never allow the configured owner admin to be revoked.
+      if (nextAccessStatus === 'revoked') {
+        try {
+          OwnerPolicy.enforceNotTargetingOwner(user, 'revoke')
+        } catch (error) {
+          if (error instanceof OwnerProtectedError) {
+            res.status(error.statusCode).json({ success: false, message: error.message })
+            return
+          }
+          throw error
+        }
+      }
       // Guard the floor first: refuse anything that would leave zero approved
       // admins able to administer the system — including a sole admin trying
       // to revoke themselves (caught here before the self-lockout check below
@@ -198,6 +211,17 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     if (index < 0) {
       res.status(404).json({ success: false, message: 'User not found' })
       return
+    }
+
+    // The configured owner admin is undeletable.
+    try {
+      OwnerPolicy.enforceNotTargetingOwner(db.users[index], 'delete')
+    } catch (error) {
+      if (error instanceof OwnerProtectedError) {
+        res.status(error.statusCode).json({ success: false, message: error.message })
+        return
+      }
+      throw error
     }
 
     const [removedUser] = db.users.splice(index, 1)
