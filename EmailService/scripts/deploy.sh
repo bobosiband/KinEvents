@@ -59,6 +59,10 @@ echo ">>> Running sam deploy"
 #      via `aws lambda update-function-configuration`, which accepts any
 #      string.
 # The real password NEVER appears on the SAM command line.
+#
+# Tolerate "No changes to deploy" — SAM exits non-zero even when the only
+# missing update is the Lambda env block that we patch directly below.
+set +e
 sam deploy \
   --no-confirm-changeset \
   --parameter-overrides \
@@ -67,6 +71,11 @@ sam deploy \
     "ParameterKey=EmailFromName,ParameterValue=$EMAIL_FROM_NAME" \
     "ParameterKey=EmailServiceApiKey,ParameterValue=$EMAIL_SERVICE_API_KEY" \
     "ParameterKey=EmailLogsRetentionDays,ParameterValue=$EMAIL_LOGS_RETENTION_DAYS"
+SAM_EXIT=$?
+set -e
+if [ "$SAM_EXIT" -ne 0 ]; then
+  echo ">>> sam deploy exited $SAM_EXIT (likely 'No changes to deploy') — continuing to env patch"
+fi
 
 STACK_NAME="kinevents-email-service"
 REGION="ap-southeast-2"

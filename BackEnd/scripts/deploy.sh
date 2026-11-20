@@ -76,6 +76,9 @@ echo ">>> Running sam deploy"
 # silently truncated to the first whitespace-delimited token. We deploy
 # stack scaffolding with placeholders and then overwrite the Lambda env
 # directly via `aws lambda update-function-configuration`.
+# Tolerate "No changes to deploy" — SAM exits non-zero even when the only
+# missing update is the Lambda env block that we patch directly below.
+set +e
 sam deploy \
   --no-confirm-changeset \
   --parameter-overrides \
@@ -90,22 +93,33 @@ sam deploy \
     "ParameterKey=EmailFromName,ParameterValue=$EMAIL_FROM_NAME" \
     "ParameterKey=EmailServiceUrl,ParameterValue=$EMAIL_SERVICE_URL" \
     "ParameterKey=EmailServiceApiKey,ParameterValue=placeholder-overridden-post-deploy"
+SAM_EXIT=$?
+set -e
+if [ "$SAM_EXIT" -ne 0 ]; then
+  echo ">>> sam deploy exited $SAM_EXIT (likely 'No changes to deploy') — continuing to env patch"
+fi
 
 STACK_NAME="kinevents-backend"
 REGION="ap-southeast-2"
-echo ">>> Resolving backend Lambda function name"
-FN_NAME=$(aws cloudformation describe-stack-resource \
-  --stack-name "$STACK_NAME" \
-  --region "$REGION" \
-  --logical-resource-id KinEventsFunction \
-  --query 'StackResourceDetail.PhysicalResourceId' \
-  --output text)
+ENV_BLOCK="Variables={NODE_ENV=production,JWT_SECRET=$JWT_SECRET,SENDGRID_API_KEY=$SENDGRID_API_KEY,APP_URL=$APP_URL,MONGODB_URI=$MONGODB_URI,MONGODB_DB_NAME=$MONGODB_DB_NAME,GMAIL_USER=$GMAIL_USER,GMAIL_APP_PASSWORD=$GMAIL_APP_PASSWORD,RESEND_API_KEY=$RESEND_API_KEY,EMAIL_FROM_NAME=$EMAIL_FROM_NAME,EMAIL_SERVICE_URL=$EMAIL_SERVICE_URL,EMAIL_SERVICE_API_KEY=$EMAIL_SERVICE_API_KEY}"
 
-echo ">>> Overwriting Lambda env vars with real values"
-aws lambda update-function-configuration \
-  --function-name "$FN_NAME" \
-  --region "$REGION" \
-  --environment "Variables={NODE_ENV=production,JWT_SECRET=$JWT_SECRET,SENDGRID_API_KEY=$SENDGRID_API_KEY,APP_URL=$APP_URL,MONGODB_URI=$MONGODB_URI,MONGODB_DB_NAME=$MONGODB_DB_NAME,GMAIL_USER=$GMAIL_USER,GMAIL_APP_PASSWORD=$GMAIL_APP_PASSWORD,RESEND_API_KEY=$RESEND_API_KEY,EMAIL_FROM_NAME=$EMAIL_FROM_NAME,EMAIL_SERVICE_URL=$EMAIL_SERVICE_URL,EMAIL_SERVICE_API_KEY=$EMAIL_SERVICE_API_KEY}" \
-  --no-cli-pager >/dev/null
+for LOGICAL_ID in KinEventsFunction ScheduledJobRunnerFunction; do
+  echo ">>> Overwriting env on $LOGICAL_ID"
+  FN_NAME=$(aws cloudformation describe-stack-resource \
+    --stack-name "$STACK_NAME" \
+    --region "$REGION" \
+    --logical-resource-id "$LOGICAL_ID" \
+    --query 'StackResourceDetail.PhysicalResourceId' \
+    --output text 2>/dev/null) || continue
+  if [ -z "$FN_NAME" ] || [ "$FN_NAME" = "None" ]; then
+    echo "    (no such resource — skipping)"
+    continue
+  fi
+  aws lambda update-function-configuration \
+    --function-name "$FN_NAME" \
+    --region "$REGION" \
+    --environment "$ENV_BLOCK" \
+    --no-cli-pager >/dev/null
+done
 
 echo ">>> Done."
