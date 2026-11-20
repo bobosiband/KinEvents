@@ -9,6 +9,7 @@ import type { IAccessRequest } from '../interfaces/auth.interface'
 import type { IUser } from '../interfaces/user.interface'
 import { notificationDispatcher } from './notification-dispatcher.service'
 import { notificationService } from './notification.service'
+import { OwnerPolicy } from '../auth/OwnerPolicy'
 
 export interface RequestAccessInput {
   name: string
@@ -140,6 +141,10 @@ export class AuthService {
     if (requestIndex < 0) throw new Error('Access request not found')
 
     const request = db.accessRequests[requestIndex]
+
+    // Owner access requests cannot be revoked. Owner identity is pinned by
+    // email in env OWNER_EMAIL and is independent of request state.
+    OwnerPolicy.enforceNotTargetingOwner({ email: request.email }, 'revoke')
     const now = new Date().toISOString()
     const previousState = {
       status: request.status,
