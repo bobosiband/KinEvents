@@ -9,6 +9,13 @@ Globals:
     MemorySize: 1769
   Api:
     EndpointConfiguration: REGIONAL
+    # API-Gateway-level CORS so OPTIONS preflights succeed even on Lambda
+    # cold-start and don't depend on Express middleware running first.
+    Cors:
+      AllowOrigin: "'*'"
+      AllowHeaders: "'Content-Type,Authorization,X-Requested-With,Accept,Origin,X-Idempotency-Key'"
+      AllowMethods: "'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS'"
+      MaxAge: "'86400'"
 
 Parameters:
   JwtSecret:
