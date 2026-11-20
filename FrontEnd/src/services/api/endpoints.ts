@@ -33,4 +33,5 @@ export const ENDPOINTS = {
   CHAT_MESSAGES_READ: '/api/chat/messages/read',
   CHAT_UNREAD_COUNT: '/api/chat/unread-count',
   CHAT_MESSAGE_DELETE: (id: string) => `/api/chat/messages/${id}`,
+  CONFIG_FLAGS: '/api/config/flags',
 } as const

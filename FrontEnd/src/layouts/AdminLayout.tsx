@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, Link } from 'react-router-dom'
-import { LayoutDashboard, Users, Calendar, UserCheck, Settings, Bell, Shield, Menu, Cake } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, UserCheck, Settings, Bell, Shield, Menu, Cake, Flag } from 'lucide-react'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { useAdminDashboard } from '@/admin/hooks/useAdmin'
 import { Avatar } from '@/components/ui/Avatar'
@@ -21,6 +21,7 @@ export function AdminLayout() {
     { icon: Users, label: 'User Management', path: '/admin/users' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
+    { icon: Flag, label: 'Feature Flags', path: '/admin/feature-flags' },
   ]
 
   return (

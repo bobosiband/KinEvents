@@ -27,6 +27,7 @@ import { ManageUsers } from '@/pages/admin/ManageUsers'
 import { ManageEvents } from '@/pages/admin/ManageEvents'
 import { AccessRequests } from '@/pages/admin/AccessRequests'
 import { Settings } from '@/pages/admin/Settings'
+import { FeatureFlags } from '@/pages/admin/FeatureFlags'
 import { PendingContributions } from '@/pages/admin/PendingContributions'
 
 import { RouteError } from '@/components/feedback/RouteError'
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
           { path: '/admin/pending-contributions', element: <PendingContributions /> },
           { path: '/admin/access-requests', element: <AccessRequests /> },
           { path: '/admin/settings', element: <Settings /> },
+          { path: '/admin/feature-flags', element: <FeatureFlags /> },
         ],
       },
     ],

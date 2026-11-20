@@ -204,6 +204,41 @@ const swaggerDocument: OpenAPIV3_0 = {
         },
       },
     },
+    '/api/config/flags': {
+      get: {
+        tags: ['System'],
+        summary: 'Read feature flag state',
+        description: 'Public read-only endpoint returning every feature flag as a camelCase boolean. Frontend reads once per session.',
+        responses: {
+          '200': {
+            description: 'Feature flag snapshot',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: {
+                      type: 'object',
+                      properties: {
+                        useCollections: { type: 'boolean' },
+                        shadowWrites: { type: 'boolean' },
+                        adminPin: { type: 'boolean' },
+                        calendarSync: { type: 'boolean' },
+                        eventComments: { type: 'boolean' },
+                        wishesWall: { type: 'boolean' },
+                        sharedLists: { type: 'boolean' },
+                        paymentsLedger: { type: 'boolean' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     '/api/auth/request-access': {
       post: {
         tags: ['Authentication'],
