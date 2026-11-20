@@ -11,6 +11,12 @@ import { resetDb } from './helpers/db.helper'
 describe('Coverage Improvements', () => {
   beforeEach(() => {
     resetDb()
+    jest.useFakeTimers({ doNotFake: ['nextTick'] })
+    jest.setSystemTime(new Date('2026-05-10T12:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
   })
 
   it('covers content service upsert and lookup branches', async () => {
@@ -454,8 +460,8 @@ describe('Coverage Improvements', () => {
       updatedAt: new Date().toISOString(),
     })
 
-    const first = await birthdayService.generateBirthdayEvents(2026)
-    const second = await birthdayService.generateBirthdayEvents(2026)
+    const first = await birthdayService.generateBirthdayEvents(new Date().getFullYear())
+    const second = await birthdayService.generateBirthdayEvents(new Date().getFullYear())
 
     expect(first.events).toHaveLength(1)
     expect(first.skipped).toBe(0)
@@ -480,7 +486,7 @@ describe('Coverage Improvements', () => {
       updatedAt: new Date().toISOString(),
     })
 
-    const first = await birthdayService.generateBirthdayEvents(2026)
+    const first = await birthdayService.generateBirthdayEvents(new Date().getFullYear())
     expect(first.events).toHaveLength(1)
     expect(first.skipped).toBe(0)
 
@@ -497,7 +503,7 @@ describe('Coverage Improvements', () => {
       updatedAt: new Date().toISOString(),
     })
 
-    const second = await birthdayService.generateBirthdayEvents(2026)
+    const second = await birthdayService.generateBirthdayEvents(new Date().getFullYear())
 
     expect(second.events).toHaveLength(1)
     expect(second.skipped).toBe(1)
