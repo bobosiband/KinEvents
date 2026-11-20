@@ -90,6 +90,10 @@ export const ROUTE_POLICIES: Readonly<Record<string, IRouteRequirement>> = {
   '/api/celebrate/:eventId': { policy: ANY_APPROVED, notes: 'Celebration page read' },
   '/api/celebrate/:eventId/wishes': { policy: ANY_APPROVED, notes: 'Create or update own wish' },
   '/api/admin/wishes/:id/hide': { policy: ADMIN_OR_MANAGER, notes: 'Moderate: hide a wish' },
+  // Shared lists (flag-gated)
+  '/api/events/:eventId/lists': { policy: ANY_APPROVED, notes: 'GET any; POST admin/manager inside handler' },
+  '/api/lists/:listId/items': { policy: ANY_APPROVED, notes: 'GET any; POST admin/manager inside handler' },
+  '/api/lists/items/:itemId/claim': { policy: ANY_APPROVED, notes: 'POST to claim; DELETE to release own claim' },
 }
 
 export function policyFor(path: string): IRouteRequirement | null {

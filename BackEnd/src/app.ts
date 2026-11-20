@@ -43,6 +43,9 @@ import eventCommentByIdHandler from '../api/events/[eventId]/comments/[commentId
 import celebrateEventHandler from '../api/celebrate/[eventId]'
 import celebrateWishesHandler from '../api/celebrate/[eventId]/wishes'
 import adminHideWishHandler from '../api/admin/wishes/[id]/hide'
+import sharedListsHandler from '../api/events/[eventId]/lists'
+import sharedListItemsHandler from '../api/lists/[listId]/items'
+import sharedListItemClaimHandler from '../api/lists/items/[itemId]/claim'
 import chatMessagesHandler from '../api/chat/messages/index'
 import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
@@ -116,6 +119,9 @@ export const routes = [
   { method: 'all', path: '/api/celebrate/:eventId/wishes', handler: celebrateWishesHandler },
   { method: 'all', path: '/api/celebrate/:eventId', handler: celebrateEventHandler },
   { method: 'all', path: '/api/admin/wishes/:id/hide', handler: adminHideWishHandler },
+  { method: 'all', path: '/api/events/:eventId/lists', handler: sharedListsHandler },
+  { method: 'all', path: '/api/lists/:listId/items', handler: sharedListItemsHandler },
+  { method: 'all', path: '/api/lists/items/:itemId/claim', handler: sharedListItemClaimHandler },
 ] as const
 
 function toVercelHandler(handler: VercelHandler) {
