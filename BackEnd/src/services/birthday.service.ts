@@ -76,13 +76,16 @@ export class BirthdayService {
       .slice(0, limit)
   }
 
-  async generateBirthdayEvents(year = new Date().getFullYear(), referenceDate = new Date()): Promise<BirthdayGenerationResult> {
+  async generateBirthdayEvents(year = new Date().getFullYear(), referenceDate = new Date(), withinDays?: number): Promise<BirthdayGenerationResult> {
     const db = await readData()
     const now = new Date().toISOString()
     const created: IEvent[] = []
     let skipped = 0
     const targetYear = String(year)
     const todayUTC = toUtcMidnight(referenceDate)
+    const horizonUTC = withinDays !== undefined
+      ? new Date(todayUTC.getTime() + withinDays * 24 * 60 * 60 * 1000)
+      : null
 
     for (const user of db.users) {
       if (!user.birthday) continue
@@ -93,6 +96,14 @@ export class BirthdayService {
       const eventDate = new Date(Date.UTC(year, Number(parts.month) - 1, Number(parts.day)))
 
       if (eventDate < todayUTC) {
+        skipped += 1
+        continue
+      }
+
+      // When called from the daily schedule we only create events within the
+      // next N days — the manual admin button omits this and creates
+      // everything to year-end.
+      if (horizonUTC && eventDate > horizonUTC) {
         skipped += 1
         continue
       }
