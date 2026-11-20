@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.lambda-pkg/
+.lambda-pkg.zip
+*.tsbuildinfo
+.env
+.env.local
+coverage/

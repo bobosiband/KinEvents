@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { readData, persistData } from '../config/db'
 import { getTransport, getFromAddress } from '../config/email.config'
+import { EmailServiceClient } from './EmailServiceClient'
 import type {
   EmailPayload,
   EmailTemplateName,
@@ -10,10 +11,8 @@ import type {
 } from '../interfaces/email.interface'
 
 export class EmailService {
-  /**
-   * Sends an email with the provided payload.
-   * Never throws; logs failures and returns false on error.
-   */
+  private readonly client: EmailServiceClient | null = EmailServiceClient.fromEnv()
+
   async send(payload: EmailPayload, meta: { templateName: EmailTemplateName; recipientId: string }): Promise<boolean> {
     if (process.env.NODE_ENV === 'test') {
       const to = Array.isArray(payload.to) ? payload.to[0] : payload.to
@@ -30,8 +29,6 @@ export class EmailService {
     }
 
     const transport = getTransport()
-
-    // Handle missing transport gracefully
     if (!transport) {
       const to = Array.isArray(payload.to) ? payload.to[0] : payload.to
       await this.logEmail({
@@ -95,16 +92,16 @@ export class EmailService {
     }
   }
 
-  /**
-   * Sends an email using a template with context.
-   */
   async sendTemplate<T extends TemplateContext>(
     templateName: EmailTemplateName,
     context: T,
     recipient: EmailAddress,
     recipientId: string
   ): Promise<boolean> {
-    // Dynamic import of template - this will be populated during build
+    if (this.client && process.env.NODE_ENV !== 'test') {
+      return this.client.sendTemplate(templateName, context as Record<string, unknown>, recipient, recipientId)
+    }
+
     let template
     try {
       template = await import(`../templates/email/${templateName}`)
@@ -131,39 +128,28 @@ export class EmailService {
     )
   }
 
-  /**
-   * Logs an email dispatch attempt to the database.
-   */
   private async logEmail(entry: Omit<EmailLogEntry, 'id' | 'createdAt'> & { createdAt: string }): Promise<void> {
     const logEntry: EmailLogEntry = {
       id: randomUUID(),
       ...entry,
     }
-
-      const db = await readData()
-      db.emailLogs.push(logEntry)
+    const db = await readData()
+    db.emailLogs.push(logEntry)
     await persistData()
   }
 
-  /**
-   * Retrieves email logs, optionally filtered by recipient ID.
-   */
   async getEmailLogs(recipientId?: string): Promise<EmailLogEntry[]> {
-      const db = await readData()
-      const logs = db.emailLogs
+    const db = await readData()
+    const logs = db.emailLogs
     if (recipientId) {
       return logs.filter((log) => log.recipientId === recipientId)
     }
     return logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }
 
-  /**
-   * Resends a previous email by log entry ID.
-   * Increments retryCount and attempts delivery again.
-   */
   async resend(logEntryId: string): Promise<boolean> {
-      const db = await readData()
-      const logs = db.emailLogs
+    const db = await readData()
+    const logs = db.emailLogs
     const logEntry = logs.find((log) => log.id === logEntryId)
 
     if (!logEntry) {
@@ -172,13 +158,15 @@ export class EmailService {
     }
 
     logEntry.retryCount += 1
-
-    // For now, we can't fully resend without context, but we can mark retry and attempt
-    // In a full implementation, you'd store context or load it from the template
     console.log(`[EMAIL] Retry attempt ${logEntry.retryCount} for log ${logEntryId}`)
 
     try {
-      // Attempt to resend by creating a new log entry
+      if (this.client && process.env.NODE_ENV !== 'test') {
+        logEntry.status = 'skipped'
+        await persistData()
+        return false
+      }
+
       const transport = getTransport()
       if (!transport) {
         logEntry.status = 'skipped'
@@ -186,7 +174,6 @@ export class EmailService {
         return false
       }
 
-      // Verify recipient email exists
       if (!logEntry.recipientEmail) {
         console.warn(`[EMAIL] Recipient email missing for retry log ${logEntryId}`)
         logEntry.status = 'skipped'

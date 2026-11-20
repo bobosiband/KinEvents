@@ -26,6 +26,30 @@ Parameters:
   MongoDbName:
     Type: String
     Default: kinevents
+  GmailUser:
+    Type: String
+    NoEcho: true
+    Default: ""
+  GmailAppPassword:
+    Type: String
+    NoEcho: true
+    Default: ""
+  ResendApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+  EmailFromName:
+    Type: String
+    Default: KinEvents
+  EmailServiceUrl:
+    Type: String
+    Default: ""
+    Description: Base URL of the standalone EmailService API; if set, backend sends via it.
+  EmailServiceApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Shared API key the backend uses to call EmailService.
 
 Resources:
   KinEventsFunction:
@@ -41,6 +65,12 @@ Resources:
           APP_URL: !Ref AppUrl
           MONGODB_URI: !Ref MongoDbUri
           MONGODB_DB_NAME: !Ref MongoDbName
+          GMAIL_USER: !Ref GmailUser
+          GMAIL_APP_PASSWORD: !Ref GmailAppPassword
+          RESEND_API_KEY: !Ref ResendApiKey
+          EMAIL_FROM_NAME: !Ref EmailFromName
+          EMAIL_SERVICE_URL: !Ref EmailServiceUrl
+          EMAIL_SERVICE_API_KEY: !Ref EmailServiceApiKey
       Events:
         ApiProxy:
           Type: Api

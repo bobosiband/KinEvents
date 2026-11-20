@@ -1,0 +1,7 @@
+node_modules/.cache
+tests
+*.test.ts
+.env
+.env.local
+coverage
+*.tsbuildinfo

@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: KinEvents Email Service — standalone SAM stack
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Timeout: 25
+    MemorySize: 512
+  Api:
+    EndpointConfiguration: REGIONAL
+
+Parameters:
+  GmailUser:
+    Type: String
+    NoEcho: true
+    Description: Gmail account used as the SMTP sender
+  GmailAppPassword:
+    Type: String
+    NoEcho: true
+    Description: Gmail app password for the sender account
+  EmailFromName:
+    Type: String
+    Default: KinEvents
+  EmailServiceApiKey:
+    Type: String
+    NoEcho: true
+    Description: Shared secret required on the X-Api-Key header
+  EmailLogsRetentionDays:
+    Type: Number
+    Default: 30
+    Description: How long email log rows live before DynamoDB TTL deletes them
+
+Resources:
+  EmailLogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: EmailLogs
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: recipientId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: byRecipient
+          KeySchema:
+            - AttributeName: recipientId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  EmailServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: dist/src/lambda.handler
+      CodeUri: .lambda-pkg/
+      Environment:
+        Variables:
+          NODE_ENV: production
+          GMAIL_USER: !Ref GmailUser
+          GMAIL_APP_PASSWORD: !Ref GmailAppPassword
+          EMAIL_FROM_NAME: !Ref EmailFromName
+          EMAIL_SERVICE_API_KEY: !Ref EmailServiceApiKey
+          EMAIL_LOGS_TABLE: !Ref EmailLogsTable
+          EMAIL_LOGS_RETENTION_DAYS: !Ref EmailLogsRetentionDays
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EmailLogsTable
+      Events:
+        SendEmail:
+          Type: Api
+          Properties:
+            Path: /emails
+            Method: POST
+        Health:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: GET
+        Logs:
+          Type: Api
+          Properties:
+            Path: /emails/logs
+            Method: GET
+
+Outputs:
+  ApiUrl:
+    Description: Base URL of the Email Service API
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  TableName:
+    Description: Name of the DynamoDB email logs table
+    Value: !Ref EmailLogsTable
