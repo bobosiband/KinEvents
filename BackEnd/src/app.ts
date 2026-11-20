@@ -38,6 +38,8 @@ import debugDbHandler from '../api/debug/db'
 import configFlagsHandler from '../api/config/flags'
 import icsFeedHandler from '../api/ics/feed'
 import icsRotateHandler from '../api/me/ics/rotate'
+import eventCommentsHandler from '../api/events/[eventId]/comments'
+import eventCommentByIdHandler from '../api/events/[eventId]/comments/[commentId]'
 import chatMessagesHandler from '../api/chat/messages/index'
 import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
@@ -106,6 +108,8 @@ export const routes = [
   { method: 'all', path: '/api/config/flags', handler: configFlagsHandler },
   { method: 'all', path: '/api/ics/feed', handler: icsFeedHandler },
   { method: 'all', path: '/api/me/ics/rotate', handler: icsRotateHandler },
+  { method: 'all', path: '/api/events/:eventId/comments/:commentId', handler: eventCommentByIdHandler },
+  { method: 'all', path: '/api/events/:eventId/comments', handler: eventCommentsHandler },
 ] as const
 
 function toVercelHandler(handler: VercelHandler) {
