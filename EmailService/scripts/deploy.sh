@@ -18,6 +18,11 @@ set -a
 source .env
 set +a
 
+# Accept legacy EMAIL_USER / EMAIL_PASS names as fallbacks so an existing
+# backend .env works without edits.
+: "${GMAIL_USER:=${EMAIL_USER:-}}"
+: "${GMAIL_APP_PASSWORD:=${EMAIL_PASS:-}}"
+
 REQUIRED_VARS=(GMAIL_USER GMAIL_APP_PASSWORD EMAIL_SERVICE_API_KEY)
 MISSING=()
 for v in "${REQUIRED_VARS[@]}"; do
