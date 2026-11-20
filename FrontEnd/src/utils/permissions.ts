@@ -20,4 +20,8 @@ export const can = {
   accessAdmin: (user: User | null) => user?.role === 'admin',
   editLockedEvent: (user: User | null) =>
     user?.capabilities.includes('edit_locked_event') || user?.role === 'admin',
+  manageGiftPools: (user: User | null) =>
+    user?.role === 'admin' || user?.role === 'manager',
+  approveContributions: (user: User | null) =>
+    user?.role === 'admin' || user?.role === 'manager',
 }
