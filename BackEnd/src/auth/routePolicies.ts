@@ -94,6 +94,9 @@ export const ROUTE_POLICIES: Readonly<Record<string, IRouteRequirement>> = {
   '/api/events/:eventId/lists': { policy: ANY_APPROVED, notes: 'GET any; POST admin/manager inside handler' },
   '/api/lists/:listId/items': { policy: ANY_APPROVED, notes: 'GET any; POST admin/manager inside handler' },
   '/api/lists/items/:itemId/claim': { policy: ANY_APPROVED, notes: 'POST to claim; DELETE to release own claim' },
+  // Payments ledger (flag-gated)
+  '/api/ledger': { policy: ANY_APPROVED, notes: 'Members see own entries; managers/admin see all' },
+  '/api/ledger/adjust': { policy: ADMIN_OR_MANAGER, notes: 'Post an adjusting entry (append-only)' },
 }
 
 export function policyFor(path: string): IRouteRequirement | null {

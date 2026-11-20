@@ -46,6 +46,8 @@ import adminHideWishHandler from '../api/admin/wishes/[id]/hide'
 import sharedListsHandler from '../api/events/[eventId]/lists'
 import sharedListItemsHandler from '../api/lists/[listId]/items'
 import sharedListItemClaimHandler from '../api/lists/items/[itemId]/claim'
+import ledgerListHandler from '../api/ledger/index'
+import ledgerAdjustHandler from '../api/ledger/adjust'
 import chatMessagesHandler from '../api/chat/messages/index'
 import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
@@ -122,6 +124,8 @@ export const routes = [
   { method: 'all', path: '/api/events/:eventId/lists', handler: sharedListsHandler },
   { method: 'all', path: '/api/lists/:listId/items', handler: sharedListItemsHandler },
   { method: 'all', path: '/api/lists/items/:itemId/claim', handler: sharedListItemClaimHandler },
+  { method: 'all', path: '/api/ledger/adjust', handler: ledgerAdjustHandler },
+  { method: 'all', path: '/api/ledger', handler: ledgerListHandler },
 ] as const
 
 function toVercelHandler(handler: VercelHandler) {
