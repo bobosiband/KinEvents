@@ -12,5 +12,7 @@ export function usePermissions() {
     canManageUsers: can.manageUsers(user),
     canAccessAdmin: can.accessAdmin(user),
     canEditLockedEvent: can.editLockedEvent(user),
+    canManageGiftPools: can.manageGiftPools(user),
+    canApproveContributions: can.approveContributions(user),
   }
 }
