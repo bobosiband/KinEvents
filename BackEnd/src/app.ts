@@ -31,6 +31,7 @@ import userByIdHandler from '../api/users/[id]'
 import usersHandler from '../api/users/index'
 import promoteUserHandler from '../api/users/promote'
 import debugDbHandler from '../api/debug/db'
+import configFlagsHandler from '../api/config/flags'
 import chatMessagesHandler from '../api/chat/messages/index'
 import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
@@ -92,6 +93,7 @@ export const routes = [
   { method: 'all', path: '/api/admin/email-test', handler: emailTestHandler },
   { method: 'all', path: '/api/admin/invalid-phones', handler: invalidPhonesHandler },
   { method: 'all', path: '/api/debug/db', handler: debugDbHandler },
+  { method: 'all', path: '/api/config/flags', handler: configFlagsHandler },
 ] as const
 
 function toVercelHandler(handler: VercelHandler) {

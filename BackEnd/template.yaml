@@ -57,6 +57,34 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: Shared API key the backend uses to call EmailService.
+  OwnerEmail:
+    Type: String
+    Default: ""
+    Description: The single owner account's email; used by OwnerPolicy.
+  FeatureUseCollections:
+    Type: String
+    Default: "false"
+  FeatureShadowWrites:
+    Type: String
+    Default: "false"
+  FeatureAdminPin:
+    Type: String
+    Default: "false"
+  FeatureCalendarSync:
+    Type: String
+    Default: "false"
+  FeatureEventComments:
+    Type: String
+    Default: "false"
+  FeatureWishesWall:
+    Type: String
+    Default: "false"
+  FeatureSharedLists:
+    Type: String
+    Default: "false"
+  FeaturePaymentsLedger:
+    Type: String
+    Default: "false"
 
 Resources:
   KinEventsFunction:
@@ -78,6 +106,15 @@ Resources:
           EMAIL_FROM_NAME: !Ref EmailFromName
           EMAIL_SERVICE_URL: !Ref EmailServiceUrl
           EMAIL_SERVICE_API_KEY: !Ref EmailServiceApiKey
+          OWNER_EMAIL: !Ref OwnerEmail
+          FEATURE_USE_COLLECTIONS: !Ref FeatureUseCollections
+          FEATURE_SHADOW_WRITES: !Ref FeatureShadowWrites
+          FEATURE_ADMIN_PIN: !Ref FeatureAdminPin
+          FEATURE_CALENDAR_SYNC: !Ref FeatureCalendarSync
+          FEATURE_EVENT_COMMENTS: !Ref FeatureEventComments
+          FEATURE_WISHES_WALL: !Ref FeatureWishesWall
+          FEATURE_SHARED_LISTS: !Ref FeatureSharedLists
+          FEATURE_PAYMENTS_LEDGER: !Ref FeaturePaymentsLedger
       Events:
         ApiProxy:
           Type: Api
@@ -110,6 +147,15 @@ Resources:
           EMAIL_FROM_NAME: !Ref EmailFromName
           EMAIL_SERVICE_URL: !Ref EmailServiceUrl
           EMAIL_SERVICE_API_KEY: !Ref EmailServiceApiKey
+          OWNER_EMAIL: !Ref OwnerEmail
+          FEATURE_USE_COLLECTIONS: !Ref FeatureUseCollections
+          FEATURE_SHADOW_WRITES: !Ref FeatureShadowWrites
+          FEATURE_ADMIN_PIN: !Ref FeatureAdminPin
+          FEATURE_CALENDAR_SYNC: !Ref FeatureCalendarSync
+          FEATURE_EVENT_COMMENTS: !Ref FeatureEventComments
+          FEATURE_WISHES_WALL: !Ref FeatureWishesWall
+          FEATURE_SHARED_LISTS: !Ref FeatureSharedLists
+          FEATURE_PAYMENTS_LEDGER: !Ref FeaturePaymentsLedger
       Events:
         Daily07Sydney:
           Type: ScheduleV2
