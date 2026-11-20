@@ -2,6 +2,7 @@ import { BirthdayEventJob } from './jobs/BirthdayEventJob'
 import { BirthdayReminderJob } from './jobs/BirthdayReminderJob'
 import { CleanupJob } from './jobs/CleanupJob'
 import { EventReminderJob } from './jobs/EventReminderJob'
+import { SoftDeletePurgeJob } from './jobs/SoftDeletePurgeJob'
 import type { ScheduledJob } from './ScheduledJob'
 
 export function buildDefaultJobs(): readonly ScheduledJob[] {
@@ -10,5 +11,6 @@ export function buildDefaultJobs(): readonly ScheduledJob[] {
     new BirthdayReminderJob(),
     new EventReminderJob(),
     new CleanupJob(),
+    new SoftDeletePurgeJob(),
   ]
 }
