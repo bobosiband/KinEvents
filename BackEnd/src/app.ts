@@ -15,6 +15,7 @@ import adminCleanupHandler from '../api/admin/cleanup'
 import emailLogsHandler from '../api/admin/email-logs'
 import emailResendHandler from '../api/admin/email-resend'
 import emailTestHandler from '../api/admin/email-test'
+import invalidPhonesHandler from '../api/admin/invalid-phones'
 import birthdayGenerateHandler from '../api/birthdays/generate'
 import birthdayRemindersHandler from '../api/birthdays/reminders'
 import birthdayUpcomingHandler from '../api/birthdays/upcoming'
@@ -89,6 +90,7 @@ export const routes = [
   { method: 'all', path: '/api/admin/email-logs', handler: emailLogsHandler },
   { method: 'all', path: '/api/admin/email-resend', handler: emailResendHandler },
   { method: 'all', path: '/api/admin/email-test', handler: emailTestHandler },
+  { method: 'all', path: '/api/admin/invalid-phones', handler: invalidPhonesHandler },
   { method: 'all', path: '/api/debug/db', handler: debugDbHandler },
 ] as const
 
