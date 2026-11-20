@@ -40,6 +40,9 @@ import icsFeedHandler from '../api/ics/feed'
 import icsRotateHandler from '../api/me/ics/rotate'
 import eventCommentsHandler from '../api/events/[eventId]/comments'
 import eventCommentByIdHandler from '../api/events/[eventId]/comments/[commentId]'
+import celebrateEventHandler from '../api/celebrate/[eventId]'
+import celebrateWishesHandler from '../api/celebrate/[eventId]/wishes'
+import adminHideWishHandler from '../api/admin/wishes/[id]/hide'
 import chatMessagesHandler from '../api/chat/messages/index'
 import chatMessagesReadHandler from '../api/chat/messages/read'
 import chatMessageByIdHandler from '../api/chat/messages/[id]'
@@ -110,6 +113,9 @@ export const routes = [
   { method: 'all', path: '/api/me/ics/rotate', handler: icsRotateHandler },
   { method: 'all', path: '/api/events/:eventId/comments/:commentId', handler: eventCommentByIdHandler },
   { method: 'all', path: '/api/events/:eventId/comments', handler: eventCommentsHandler },
+  { method: 'all', path: '/api/celebrate/:eventId/wishes', handler: celebrateWishesHandler },
+  { method: 'all', path: '/api/celebrate/:eventId', handler: celebrateEventHandler },
+  { method: 'all', path: '/api/admin/wishes/:id/hide', handler: adminHideWishHandler },
 ] as const
 
 function toVercelHandler(handler: VercelHandler) {

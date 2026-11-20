@@ -86,6 +86,10 @@ export const ROUTE_POLICIES: Readonly<Record<string, IRouteRequirement>> = {
   // Event comments (flag-gated)
   '/api/events/:eventId/comments': { policy: ANY_APPROVED },
   '/api/events/:eventId/comments/:commentId': { policy: ANY_APPROVED, notes: 'PATCH/DELETE self or admin inside handler' },
+  // Wishes wall (flag-gated)
+  '/api/celebrate/:eventId': { policy: ANY_APPROVED, notes: 'Celebration page read' },
+  '/api/celebrate/:eventId/wishes': { policy: ANY_APPROVED, notes: 'Create or update own wish' },
+  '/api/admin/wishes/:id/hide': { policy: ADMIN_OR_MANAGER, notes: 'Moderate: hide a wish' },
 }
 
 export function policyFor(path: string): IRouteRequirement | null {
