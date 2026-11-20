@@ -5,6 +5,7 @@ import { readData, persistData } from '../../src/config/db'
 import { ROLE_CAPABILITIES, USER_ROLES } from '../../src/constants/roles'
 import { withAuth, type RequestWithUser } from '../../src/middleware/withAuth'
 import { bumpTokenVersion } from '../../src/services/auth.service'
+import { OwnerPolicy, OwnerProtectedError } from '../../src/auth/OwnerPolicy'
 
 const promoteUserSchema = z.object({
   userId: z.string().uuid(),
@@ -43,6 +44,19 @@ async function handler(req: RequestWithUser, res: VercelResponse) {
     }
 
     const roleChanged = user.role !== parseResult.data.role
+
+    // Owner admin is immutable: no role change may remove the admin role.
+    if (roleChanged && parseResult.data.role !== 'admin') {
+      try {
+        OwnerPolicy.enforceNotTargetingOwner(user, 'demote')
+      } catch (error) {
+        if (error instanceof OwnerProtectedError) {
+          res.status(error.statusCode).json({ success: false, message: error.message })
+          return
+        }
+        throw error
+      }
+    }
 
     user.role = parseResult.data.role
     user.capabilities = [...ROLE_CAPABILITIES[parseResult.data.role]]

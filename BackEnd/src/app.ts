@@ -8,6 +8,12 @@ import approveAccessHandler from '../api/auth/approve-access'
 import requestAccessHandler from '../api/auth/request-access'
 import loginHandler from '../api/auth/login'
 import revokeAccessHandler from '../api/auth/revoke-access'
+import pinVerifyHandler from '../api/auth/pin/verify'
+import pinSetupRequestHandler from '../api/auth/pin/setup-request'
+import pinSetupConfirmHandler from '../api/auth/pin/setup-confirm'
+import pinChangeHandler from '../api/auth/pin/change'
+import devicesListHandler from '../api/auth/devices/index'
+import devicesForgetHandler from '../api/auth/devices/forget'
 import adminContentHandler from '../api/admin/content'
 import adminDashboardHandler from '../api/admin/dashboard'
 import createAdminHandler from '../api/admin/create-admin'
@@ -52,6 +58,12 @@ export const routes = [
   { method: 'all', path: '/api/auth/login', handler: loginHandler },
   { method: 'all', path: '/api/auth/approve-access', handler: approveAccessHandler },
   { method: 'all', path: '/api/auth/revoke-access', handler: revokeAccessHandler },
+  { method: 'all', path: '/api/auth/pin/verify', handler: pinVerifyHandler },
+  { method: 'all', path: '/api/auth/pin/setup/request', handler: pinSetupRequestHandler },
+  { method: 'all', path: '/api/auth/pin/setup/confirm', handler: pinSetupConfirmHandler },
+  { method: 'all', path: '/api/auth/pin/change', handler: pinChangeHandler },
+  { method: 'all', path: '/api/auth/devices', handler: devicesListHandler },
+  { method: 'all', path: '/api/auth/devices/forget', handler: devicesForgetHandler },
   { method: 'all', path: '/api/users', handler: usersHandler },
   { method: 'all', path: '/api/users/promote', handler: promoteUserHandler },
   { method: 'all', path: '/api/users/:id', handler: userByIdHandler },
