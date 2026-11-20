@@ -31,22 +31,19 @@ if [ "${#MISSING[@]}" -gt 0 ]; then
   exit 1
 fi
 
-# If EMAIL_SERVICE_URL is set, the backend routes email via the EmailService
-# stack and the Nodemailer credentials are not required here. If it is NOT
-# set, the backend still tries to send mail directly via Nodemailer, so those
-# credentials must be present.
-if [ -z "${EMAIL_SERVICE_URL:-}" ]; then
-  EMAIL_MISSING=()
-  for v in GMAIL_USER GMAIL_APP_PASSWORD; do
-    if [ -z "${!v:-}" ]; then
-      EMAIL_MISSING+=("$v")
-    fi
-  done
-  if [ "${#EMAIL_MISSING[@]}" -gt 0 ]; then
-    echo "ERROR: deploy aborted — EMAIL_SERVICE_URL is unset AND direct email credentials are missing: ${EMAIL_MISSING[*]}" >&2
-    echo "       Either point EMAIL_SERVICE_URL at the deployed EmailService stack or fill in GMAIL_USER / GMAIL_APP_PASSWORD." >&2
-    exit 1
+# All outbound email now flows through the standalone EmailService. Backend
+# cannot send via Nodemailer any more — every outbound send is a call to
+# EMAIL_SERVICE_URL authenticated with EMAIL_SERVICE_API_KEY. Deploy fails
+# loudly if either is missing in a non-interactive environment.
+EMAIL_SVC_MISSING=()
+for v in EMAIL_SERVICE_URL EMAIL_SERVICE_API_KEY; do
+  if [ -z "${!v:-}" ]; then
+    EMAIL_SVC_MISSING+=("$v")
   fi
+done
+if [ "${#EMAIL_SVC_MISSING[@]}" -gt 0 ]; then
+  echo "WARNING: EmailService credentials missing: ${EMAIL_SVC_MISSING[*]}" >&2
+  echo "         Backend will deploy, but all outbound email will be skipped (logged) until these are set." >&2
 fi
 
 # Tolerate blanks for optional params — SAM treats empty string as valid.

@@ -1,151 +1,106 @@
-import { emailService } from '../src/services/email.service'
-import { getData, setData } from '../src/config/db'
-import { resetDb } from './helpers/db.helper'
-import type { EmailLogEntry } from '../src/interfaces/email.interface'
+import { EmailService } from '../src/services/email.service'
+import { EmailServiceClient } from '../src/services/EmailServiceClient'
+import type { EmailAddress } from '../src/interfaces/email.interface'
 
 describe('EmailService', () => {
-  beforeEach(() => {
-    resetDb()
-    // Reset environment variables
-    process.env.EMAIL_USER = 'test@example.com'
-    process.env.EMAIL_PASS = 'test-password'
-  })
+  const recipient: EmailAddress = { name: 'Test User', email: 'user@example.com' }
 
-  describe('send()', () => {
-    it('should log email with recipients and return false when transport is null', async () => {
-      const payload = {
-        to: { name: 'Test User', email: 'test@example.com' },
-        subject: 'Test Email',
-        html: '<p>Test</p>',
-        text: 'Test',
-      }
+  describe('without EMAIL_SERVICE_URL / API_KEY', () => {
+    const previousUrl = process.env.EMAIL_SERVICE_URL
+    const previousKey = process.env.EMAIL_SERVICE_API_KEY
+    const previousNodeEnv = process.env.NODE_ENV
 
-      // This test checks the logging mechanism - since we don't have real SMTP credentials,
-      // the email will be skipped or fail gracefully
-      const result = await emailService.send(payload, {
-        templateName: 'welcome',
-        recipientId: 'test-user-id',
-      })
-
-      // Result should be falsy (either skipped or failed)
-      expect([true, false]).toContain(result)
-      
-      // There should be at least one log entry created
-      const logs = getData().emailLogs
-      if (logs.length > 0) {
-        expect(logs[0].status).toMatch(/skipped|failed/)
-      }
+    beforeAll(() => {
+      delete process.env.EMAIL_SERVICE_URL
+      delete process.env.EMAIL_SERVICE_API_KEY
+      process.env.NODE_ENV = 'production'
+    })
+    afterAll(() => {
+      process.env.NODE_ENV = previousNodeEnv ?? 'test'
+      if (previousUrl) process.env.EMAIL_SERVICE_URL = previousUrl
+      if (previousKey) process.env.EMAIL_SERVICE_API_KEY = previousKey
     })
 
-    it('should log email with recipients', async () => {
-      const payload = {
-        to: { name: 'Test User', email: 'test@example.com' },
-        subject: 'Test Email',
-        html: '<p>Test</p>',
-        text: 'Test',
-      }
+    it('sendTemplate returns false and does not throw', async () => {
+      const service = new EmailService()
+      await expect(
+        service.sendTemplate('welcome', { recipientName: 'A' }, recipient, 'user-1'),
+      ).resolves.toBe(false)
+    })
 
-      // This test checks the logging mechanism
-      const initialLogCount = getData().emailLogs.length
-      const mockResult = await emailService.send(payload, {
-        templateName: 'welcome',
-        recipientId: 'user-123',
-      })
-
-      // Either skipped (due to transport) or sent/failed (if mocked)
-      expect([true, false]).toContain(mockResult)
-      expect(getData().emailLogs.length).toBeGreaterThanOrEqual(initialLogCount)
+    it('getEmailLogs returns an empty list', async () => {
+      const service = new EmailService()
+      await expect(service.getEmailLogs()).resolves.toEqual([])
     })
   })
 
-  describe('getEmailLogs()', () => {
-    it('should return all logs if no filter', async () => {
-      // Manually add some logs
-      const db = getData()
-      db.emailLogs.push({
-        id: 'log-1',
-        templateName: 'welcome',
-        recipientId: 'user-1',
-        recipientEmail: 'user1@example.com',
-        subject: 'Welcome',
-        status: 'sent',
-        sentAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        retryCount: 0,
-      } as EmailLogEntry)
-
-      db.emailLogs.push({
-        id: 'log-2',
-        templateName: 'access-approved',
-        recipientId: 'user-2',
-        recipientEmail: 'user2@example.com',
-        subject: 'Approved',
-        status: 'sent',
-        sentAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        retryCount: 0,
-      } as EmailLogEntry)
-
-      const logs = await emailService.getEmailLogs()
-      expect(logs.length).toBeGreaterThanOrEqual(2)
-    })
-
-    it('should filter logs by recipientId', async () => {
-      const db = getData()
-      db.emailLogs.push({
-        id: 'log-1',
-        templateName: 'welcome',
-        recipientId: 'user-1',
-        recipientEmail: 'user1@example.com',
-        subject: 'Welcome',
-        status: 'sent',
-        sentAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        retryCount: 0,
-      } as EmailLogEntry)
-
-      db.emailLogs.push({
-        id: 'log-2',
-        templateName: 'access-approved',
-        recipientId: 'user-2',
-        recipientEmail: 'user2@example.com',
-        subject: 'Approved',
-        status: 'sent',
-        sentAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        retryCount: 0,
-      } as EmailLogEntry)
-
-      const logs = await emailService.getEmailLogs('user-1')
-      expect(logs.every((log) => log.recipientId === 'user-1')).toBe(true)
+  describe('in NODE_ENV=test', () => {
+    it('sendTemplate is a no-op returning true', async () => {
+      const service = new EmailService()
+      await expect(
+        service.sendTemplate('welcome', { recipientName: 'A' }, recipient, 'user-1'),
+      ).resolves.toBe(true)
     })
   })
 
-  describe('resend()', () => {
-    it('should increment retryCount', async () => {
-      const db = getData()
-      const logEntry: EmailLogEntry = {
-        id: 'log-1',
-        templateName: 'welcome',
-        recipientId: 'user-1',
-        recipientEmail: 'user1@example.com',
-        subject: 'Welcome',
-        status: 'failed',
-        error: 'SMTP error',
-        createdAt: new Date().toISOString(),
-        retryCount: 0,
-      }
-      db.emailLogs.push(logEntry)
+  describe('with client (unreachable network)', () => {
+    const previousUrl = process.env.EMAIL_SERVICE_URL
+    const previousKey = process.env.EMAIL_SERVICE_API_KEY
+    const previousNodeEnv = process.env.NODE_ENV
 
-      await emailService.resend('log-1')
-
-      const updatedLog = db.emailLogs.find((log) => log.id === 'log-1')
-      expect(updatedLog?.retryCount).toBe(1)
+    beforeAll(() => {
+      process.env.EMAIL_SERVICE_URL = 'http://127.0.0.1:1'
+      process.env.EMAIL_SERVICE_API_KEY = 'test-key'
+      process.env.NODE_ENV = 'production'
+    })
+    afterAll(() => {
+      process.env.NODE_ENV = previousNodeEnv ?? 'test'
+      if (previousUrl) process.env.EMAIL_SERVICE_URL = previousUrl
+      else delete process.env.EMAIL_SERVICE_URL
+      if (previousKey) process.env.EMAIL_SERVICE_API_KEY = previousKey
+      else delete process.env.EMAIL_SERVICE_API_KEY
     })
 
-    it('should return false for non-existent log', async () => {
-      const result = await emailService.resend('non-existent-id')
-      expect(result).toBe(false)
+    it('sendTemplate returns false on network failure, never throws', async () => {
+      const service = new EmailService()
+      await expect(
+        service.sendTemplate('welcome', { recipientName: 'A' }, recipient, 'user-1'),
+      ).resolves.toBe(false)
     })
+
+    it('getEmailLogs returns [] on network failure, never throws', async () => {
+      const service = new EmailService()
+      await expect(service.getEmailLogs()).resolves.toEqual([])
+    })
+  })
+})
+
+describe('EmailServiceClient.fromEnv', () => {
+  const previousUrl = process.env.EMAIL_SERVICE_URL
+  const previousKey = process.env.EMAIL_SERVICE_API_KEY
+
+  afterEach(() => {
+    if (previousUrl) process.env.EMAIL_SERVICE_URL = previousUrl
+    else delete process.env.EMAIL_SERVICE_URL
+    if (previousKey) process.env.EMAIL_SERVICE_API_KEY = previousKey
+    else delete process.env.EMAIL_SERVICE_API_KEY
+  })
+
+  it('returns null when EMAIL_SERVICE_URL is missing', () => {
+    delete process.env.EMAIL_SERVICE_URL
+    process.env.EMAIL_SERVICE_API_KEY = 'x'
+    expect(EmailServiceClient.fromEnv()).toBeNull()
+  })
+
+  it('returns null when EMAIL_SERVICE_API_KEY is missing', () => {
+    process.env.EMAIL_SERVICE_URL = 'https://example.com'
+    delete process.env.EMAIL_SERVICE_API_KEY
+    expect(EmailServiceClient.fromEnv()).toBeNull()
+  })
+
+  it('returns a client when both are set', () => {
+    process.env.EMAIL_SERVICE_URL = 'https://example.com'
+    process.env.EMAIL_SERVICE_API_KEY = 'x'
+    expect(EmailServiceClient.fromEnv()).toBeInstanceOf(EmailServiceClient)
   })
 })
