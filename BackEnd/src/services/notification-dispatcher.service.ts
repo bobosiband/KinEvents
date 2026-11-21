@@ -1,5 +1,4 @@
 import { env } from '../config/env'
-import { buildEmailContent } from '../utils/emailTemplates'
 import { emailService } from './email.service'
 import { emailDispatcher } from './email-dispatcher.service'
 import { whatsappDispatcher } from './whatsapp-dispatcher.service'
@@ -38,34 +37,88 @@ function getMessageLevel(type: INotification['type']): NotificationLevel {
   return type === 'access_approved' || type === 'access_rejected' ? 'important' : 'all'
 }
 
-function buildNotificationContext(notification: INotification): Record<string, string | number | undefined> {
-  return {
+/**
+ * Builds the `data` payload that EmailService's template registry will
+ * validate. Every required `requireString` field on the matching template
+ * must be a non-empty string in the returned record. The recipient is
+ * always the current user being dispatched to — that's where recipientName
+ * comes from (notification.payload rarely carries it).
+ *
+ * Keep this in lockstep with EmailService/src/templates/*Template.ts and
+ * tests/emailContract.test.ts; the contract test fails loudly on drift.
+ */
+function buildEmailContextFor(
+  notification: INotification,
+  recipient: IUser,
+): Record<string, string> {
+  const payload = notification.payload as Record<string, unknown>
+  const asString = (v: unknown): string => (typeof v === 'string' && v.length > 0 ? v : '')
+
+  const base: Record<string, string> = {
+    recipientName: recipient.name,
     appUrl: env.APP_URL,
-    eventTitle: notification.payload.title ?? notification.payload.eventTitle,
-    eventDate: notification.payload.date ?? notification.payload.eventDate,
-    daysUntil: notification.payload.daysUntil ?? notification.payload.daysRemaining,
-    birthdayName: notification.payload.name ?? notification.payload.birthdayPersonName,
-    birthdayPersonName: notification.payload.name ?? notification.payload.birthdayPersonName,
-    recipientName: notification.payload.recipientName,
+  }
+
+  const eventTitle = asString(payload.title ?? payload.eventTitle)
+  const eventId = asString(payload.eventId)
+  const eventUrl = eventId ? `${env.APP_URL.replace(/\/$/, '')}/events/${eventId}` : env.APP_URL
+  const daysUntil = asString(payload.daysUntil ?? payload.daysRemaining)
+  const birthdayName = asString(payload.name ?? payload.birthdayPersonName)
+
+  switch (notification.type) {
+    case 'event_created':
+      return {
+        ...base,
+        eventTitle,
+        eventDate: asString(payload.date ?? payload.eventDate),
+        eventUrl,
+      }
+    case 'event_updated':
+      return { ...base, eventTitle, eventUrl }
+    case 'event_reminder':
+      return { ...base, eventTitle, eventUrl, daysUntil }
+    case 'birthday_reminder':
+      return { ...base, birthdayName, daysUntil }
+    case 'birthday_today':
+      return { ...base, birthdayName: birthdayName || recipient.name }
+    case 'access_approved':
+      return { ...base, loginUrl: `${env.APP_URL.replace(/\/$/, '')}/login` }
+    case 'access_rejected':
+      return { ...base, supportEmail: 'kinfamevents@gmail.com' }
+    case 'rsvp_received':
+      return {
+        ...base,
+        eventTitle,
+        rsvpStatus: asString(payload.rsvpStatus ?? payload.status),
+      }
+    case 'gift_pool_reminder':
+      return {
+        ...base,
+        title: asString(payload.title) || 'Gift pool reminder',
+        message: asString(payload.message) || `Gift pool reminder for ${birthdayName}`,
+      }
+    case 'contribution_verified':
+    case 'contribution_rejected':
+    default:
+      return {
+        ...base,
+        title: asString(payload.title) || 'KinEvents notification',
+        message: asString(payload.message) || asString(payload.body) || 'You have a new update.',
+      }
   }
 }
 
 export class NotificationDispatcherService {
   async dispatchNotification(notification: INotification, recipient: IUser): Promise<void> {
     const messageLevel = getMessageLevel(notification.type)
-    const context = buildNotificationContext(notification)
 
     if (shouldSendChannel(recipient, 'email', messageLevel)) {
       try {
-        const { subject, text, html } = buildEmailContent(notification.type, context as never)
-        await emailService.send(
-          {
-            to: { name: recipient.name, email: recipient.email },
-            subject,
-            html,
-            text,
-          },
-          { templateName: this.mapEmailTemplate(notification.type), recipientId: recipient.id }
+        await emailService.sendTemplate(
+          this.mapEmailTemplate(notification.type),
+          buildEmailContextFor(notification, recipient),
+          { name: recipient.name, email: recipient.email },
+          recipient.id,
         )
       } catch (error) {
         console.error(`[NotificationDispatcher] Email dispatch failed for ${recipient.id}:`, error)
