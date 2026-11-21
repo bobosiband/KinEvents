@@ -1,9 +1,11 @@
 import { randomUUID } from 'crypto'
 import { emailDispatcher } from '../src/services/email-dispatcher.service'
 import { emailService } from '../src/services/email.service'
+import { notificationDispatcher } from '../src/services/notification-dispatcher.service'
 import type { IUser } from '../src/interfaces/user.interface'
 import type { IEvent } from '../src/interfaces/event.interface'
 import type { IAccessRequest } from '../src/interfaces/auth.interface'
+import type { INotification } from '../src/interfaces/notification.interface'
 import { resetDb } from './helpers/db.helper'
 import { getData } from '../src/config/db'
 
@@ -155,6 +157,52 @@ describe('EmailService contract: dispatcher payloads match template requirements
     expect(captured).toHaveLength(1)
     expect(captured[0].templateName).toBe('access-request')
     expect(typeof captured[0].context.adminUrl).toBe('string')
+  })
+
+  describe('notificationDispatcher.dispatchNotification (scheduled job path)', () => {
+    function makeNotification(type: INotification['type'], payload: Record<string, unknown> = {}): INotification {
+      return {
+        id: randomUUID(),
+        type,
+        recipientId: 'r1',
+        payload,
+        createdAt: '2024-01-01T00:00:00Z',
+        readBy: [],
+      } as unknown as INotification
+    }
+
+    it('birthday_reminder populates recipientName from the recipient and stringifies daysUntil', async () => {
+      const recipient = makeUser({ name: 'Alex' })
+      const notification = makeNotification('birthday_reminder', { name: 'Mom', daysUntil: '7' })
+      await notificationDispatcher.dispatchNotification(notification, recipient)
+      expect(captured[0].templateName).toBe('birthday-reminder')
+      expect(captured[0].context.recipientName).toBe('Alex')
+      expect(captured[0].context.birthdayName).toBe('Mom')
+      expect(captured[0].context.daysUntil).toBe('7')
+    })
+
+    it('birthday_today falls back to recipient name when payload.name is missing', async () => {
+      const recipient = makeUser({ name: 'Mom' })
+      const notification = makeNotification('birthday_today', {})
+      await notificationDispatcher.dispatchNotification(notification, recipient)
+      expect(captured[0].context.birthdayName).toBe('Mom')
+      expect(captured[0].context.recipientName).toBe('Mom')
+    })
+
+    it('event_reminder sends all required strings', async () => {
+      const recipient = makeUser({ name: 'Alex' })
+      const notification = makeNotification('event_reminder', {
+        eventId: 'e1',
+        title: 'Lunch',
+        date: '2026-12-25T13:30:00Z',
+        daysUntil: '3',
+      })
+      await notificationDispatcher.dispatchNotification(notification, recipient)
+      expect(captured[0].templateName).toBe('event-reminder')
+      expect(captured[0].context.eventTitle).toBe('Lunch')
+      expect(captured[0].context.eventUrl).toMatch(/\/events\/e1$/)
+      expect(captured[0].context.daysUntil).toBe('3')
+    })
   })
 
   it('every dispatcher call produces a payload with all required string fields', async () => {

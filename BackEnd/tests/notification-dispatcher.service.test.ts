@@ -34,7 +34,7 @@ describe('NotificationDispatcherService', () => {
 
   beforeEach(() => {
     resetDb()
-    jest.spyOn(emailService, 'send').mockResolvedValue(true)
+    jest.spyOn(emailService, 'sendTemplate').mockResolvedValue(true)
     jest.spyOn(whatsappDispatcher, 'dispatchNotification').mockResolvedValue(undefined)
     jest.spyOn(whatsappDispatcher, 'onWelcome').mockResolvedValue(undefined)
     jest.spyOn(whatsappDispatcher, 'onAccessApproved').mockResolvedValue(undefined)
@@ -47,7 +47,7 @@ describe('NotificationDispatcherService', () => {
   it('routes a notification to both email and WhatsApp when enabled', async () => {
     await notificationDispatcher.dispatchNotification(notification, mockUser)
 
-    expect(emailService.send).toHaveBeenCalledTimes(1)
+    expect(emailService.sendTemplate).toHaveBeenCalledTimes(1)
     expect(whatsappDispatcher.dispatchNotification).toHaveBeenCalledTimes(1)
   })
 
@@ -59,7 +59,7 @@ describe('NotificationDispatcherService', () => {
 
     await notificationDispatcher.dispatchNotification(notification, emailOnlyUser)
 
-    expect(emailService.send).toHaveBeenCalledTimes(1)
+    expect(emailService.sendTemplate).toHaveBeenCalledTimes(1)
     expect(whatsappDispatcher.dispatchNotification).not.toHaveBeenCalled()
   })
 
