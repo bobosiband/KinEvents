@@ -96,7 +96,11 @@ class EmailDispatcherService {
         'account-updated',
         {
           recipientName: user.name,
-          changedFields,
+          // EmailService validates a `summary` string; keep the changed fields
+          // as an inline summary so the message still tells the user what moved.
+          summary: changedFields.length > 0
+            ? `Updated: ${changedFields.join(', ')}`
+            : 'Your account details were updated.',
         },
         { name: user.name, email: user.email },
         user.id
@@ -256,7 +260,8 @@ class EmailDispatcherService {
               recipientName: user.name,
               eventTitle: event.title,
               eventDate: event.date,
-              daysUntil,
+              // EmailService requireString('daysUntil') — must be string
+              daysUntil: String(daysUntil),
               eventUrl,
             },
             { name: user.name, email: user.email },
@@ -311,6 +316,9 @@ class EmailDispatcherService {
         'birthday-today',
         {
           recipientName: user.name,
+          // EmailService requires birthdayName — send the celebrant's own name
+          // since the message is "today is <birthdayName>'s birthday".
+          birthdayName: user.name,
         },
         { name: user.name, email: user.email },
         user.id
@@ -330,14 +338,16 @@ class EmailDispatcherService {
     }
 
     try {
-      const birthdayDate = birthdayUser.birthday || 'upcoming'
       await emailService.sendTemplate(
         'birthday-reminder',
         {
           recipientName: notifyUser.name,
-          birthdayPersonName: birthdayUser.name,
-          daysUntil,
-          birthdayDate,
+          // EmailService contract: expects `birthdayName` and `daysUntil` as a
+          // string. Prior field name `birthdayPersonName` + numeric daysUntil
+          // both failed requireString() on the EmailService side so this email
+          // was silently dropped for every recipient.
+          birthdayName: birthdayUser.name,
+          daysUntil: String(daysUntil),
         },
         { name: notifyUser.name, email: notifyUser.email },
         notifyUser.id
@@ -369,8 +379,11 @@ class EmailDispatcherService {
             'announcement',
             {
               recipientName: user.name,
-              announcementTitle: title,
-              announcementBody: body,
+              // EmailService expects `title` and `message`; the prior
+              // `announcementTitle`/`announcementBody` fields failed
+              // requireString and the email was silently dropped.
+              title,
+              message: body,
               priority,
             },
             { name: user.name, email: user.email },
@@ -411,6 +424,10 @@ class EmailDispatcherService {
                 requesterName: request.name,
                 requesterEmail: request.email,
                 message: request.message,
+                // EmailService contract: requires a single `adminUrl` string
+                // pointing at the review page. Approval / rejection are both
+                // reachable from there.
+                adminUrl: `${this.baseUrl}/admin/access-requests`,
                 approvalUrl,
                 rejectionUrl,
               },

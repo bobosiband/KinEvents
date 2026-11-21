@@ -157,8 +157,8 @@ describe('EmailDispatcherService', () => {
         'birthday-reminder',
         expect.objectContaining({
           recipientName: notifyUser.name,
-          birthdayPersonName: birthdayUser.name,
-          daysUntil: 3,
+          birthdayName: birthdayUser.name,
+          daysUntil: '3',
         }),
         expect.any(Object),
         notifyUser.id
